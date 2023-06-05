@@ -55,7 +55,7 @@ impl AssetManager {
 
             let sign_tx_ops = tx
                 .construct_payload(
-                    asset.address(),
+                    asset.contract_address(),
                     &to,
                     asset.token_id(),
                     asset.function_selector(),

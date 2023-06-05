@@ -24,9 +24,9 @@ pub trait AssetManagerAttributes {
 pub trait AssetManagerTrait: AssetManagerAttributes {}
 
 pub trait Asset {
-    fn address(&self) -> &str;
+    fn contract_address(&self) -> &str;
 
-    fn id(&self) -> i64;
+    fn token_id(&self) -> i64;
 
     fn function_selector(&self) -> &str;
 }
