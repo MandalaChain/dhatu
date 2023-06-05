@@ -4,16 +4,9 @@ use futures::{future, FutureExt};
 use sp_core::sr25519::Pair;
 use tokio::sync::RwLock;
 
-use crate::{
-    db::{
-        client::Database,
-        model::prelude::{AssetEntity, AssetMetadataEntity},
-        traits::AssetMigrationAttr,
-    },
-    extrinsics::{
-        funds_reserve::traits::FundsReserveTraits,
-        prelude::{reserve::FundsReserve, BlockchainClient},
-    },
+use crate::extrinsics::{
+    funds_reserve::traits::FundsReserveTraits,
+    prelude::{reserve::FundsReserve, BlockchainClient},
 };
 
 use super::{
@@ -23,7 +16,7 @@ use super::{
         types::{MigrationTransactionResultNotifier, MigrationTransactionResultReceiver},
     },
     traits::{
-        AssetManagerAttributes, AssetManagerTask, AssetManagerTrait, MigrationTransactionMap,
+        AssetManagerAttributes, AssetManagerTask, AssetManagerTrait, MigrationTransactionMap, Asset,
     },
     types::ManageAssetTask,
 };
@@ -32,25 +25,21 @@ pub type PublicAddress = String;
 
 pub struct AssetManager {
     db: Database,
-    notifier: Option<MigrationTransactionResultNotifier>,
+    notifier: MigrationTransactionResultNotifier,
     txs: MigrationTransactionMap,
 }
 
 impl AssetManager {
-    pub fn new(db: Database) -> Self {
+    pub fn new(notifier: MigrationTransactionResultNotifier) -> Self {
         let txs = HashMap::new();
         let txs = Arc::new(RwLock::new(txs));
 
-        Self {
-            db,
-            notifier: None,
-            txs,
-        }
+        Self { db, notifier, txs }
     }
 
     pub fn migrate(
         &self,
-        assets: Vec<(AssetEntity, AssetMetadataEntity)>,
+        assets: Vec<impl Asset>,
         from: Pair,
         to: PublicAddress,
         client: BlockchainClient,
@@ -59,7 +48,7 @@ impl AssetManager {
         let mut vec = Vec::new();
         let notifier = self.notifider();
 
-        for (asset, metadata) in assets {
+        for (asset) in assets {
             let mut tx = MigrationTransactionBuilderStruct::new()
                 .set_signer(from.clone())
                 .set_notifier(notifier.clone())
@@ -68,7 +57,7 @@ impl AssetManager {
                 .build();
 
             let sign_tx_ops = tx
-                .construct_payload(&metadata.address, &to, asset.token_id, &metadata.selector)
+                .construct_payload(asset.address(), &to, asset.token_id(), asset.function_selector())
                 .sign();
 
             vec.push(sign_tx_ops)
@@ -103,67 +92,9 @@ impl AssetManager {
     }
 }
 
-impl AssetManagerTask for AssetManager {
-    fn update_owner(db: Database, asset_id: i64, email: &str) -> ManageAssetTask {
-        db.update_owner(email, asset_id)
-    }
-
-    fn set_migration_as_main(db: Database, email: String) -> ManageAssetTask {
-        db.set_migration_account_as_main(email)
-    }
-
-    fn receive_notifier(
-        inner: MigrationTransactionMap,
-        db: Database,
-        mut channel: MigrationTransactionResultReceiver,
-    ) {
-        let task = async move {
-            loop {
-                let (tx_id, _status, _) = channel.recv().await.unwrap();
-                let mut inner = inner.write().await;
-
-                let (email, asset_id) = inner.remove(&tx_id).unwrap();
-
-                Self::update_owner(db.clone(), asset_id, &email).await;
-
-                if Self::is_asset_migration_done(db.clone(), email.clone()).await {
-                    Self::set_migration_as_main(db.clone(), email).await;
-                }
-            }
-        };
-
-        tokio::spawn(task);
-    }
-
-    fn start(&mut self) {
-        let (sender, receiver) = Self::create_channels();
-
-        self.notifier = Some(sender);
-
-        let inner = self.txs.clone();
-        let db = self.db.clone();
-
-        Self::receive_notifier(inner, db, receiver);
-    }
-
-    fn is_asset_migration_done(db: Database, email: String) -> ManageAssetTask<bool> {
-        async move {
-            let main_account_assets = db.query_main_account_assets(email).await.unwrap();
-            main_account_assets.is_empty()
-        }
-        .boxed()
-    }
-}
-
 impl AssetManagerAttributes for AssetManager {
-    fn database(&self) -> &Database {
-        &self.db
-    }
-
     fn notifider(&self) -> &MigrationTransactionResultNotifier {
-        self.notifier
-            .as_ref()
-            .expect("channel should have been built when starting")
+        &self.notifier
     }
 
     fn txs(&self) -> &super::traits::MigrationTransactionMap {
