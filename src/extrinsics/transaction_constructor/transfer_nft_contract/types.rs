@@ -1,3 +1,3 @@
-use subxt::tx::StaticTxPayload;
+use subxt::tx::{StaticTxPayload, DynamicTxPayload};
 
-pub type ContractTransactionPayload = StaticTxPayload<runtime_types::api::contracts::calls::Call>;
+pub type ContractTransactionPayload = DynamicTxPayload;

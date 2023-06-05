@@ -15,10 +15,7 @@ use super::{
         traits::{MigrationTask, MigrationTransactionBuilder},
         types::{MigrationTransactionResultNotifier, MigrationTransactionResultReceiver},
     },
-    traits::{
-        AssetManagerAttributes, AssetManagerTask, AssetManagerTrait, MigrationTransactionMap, Asset,
-    },
-    types::ManageAssetTask,
+    traits::{Asset, AssetManagerAttributes, AssetManagerTrait, MigrationTransactionMap},
 };
 
 pub type PublicAddress = String;
@@ -57,7 +54,12 @@ impl AssetManager {
                 .build();
 
             let sign_tx_ops = tx
-                .construct_payload(asset.address(), &to, asset.token_id(), asset.function_selector())
+                .construct_payload(
+                    asset.address(),
+                    &to,
+                    asset.token_id(),
+                    asset.function_selector(),
+                )
                 .sign();
 
             vec.push(sign_tx_ops)

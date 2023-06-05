@@ -7,7 +7,6 @@ use super::{
     migration_transaction::types::{
         MigrationTransactionResultNotifier, MigrationTransactionResultReceiver,
     },
-    types::ManageAssetTask,
 };
 
 pub type AssetDatabaseId = i64;
