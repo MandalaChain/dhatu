@@ -38,8 +38,9 @@ pub trait FundsReserveTask: FundsReserveAtributes {
             let address = subxt::dynamic::storage("System", "Account", vec![account]);
             let result = client.storage().at_latest().await?.fetch(&address).await?;
 
-            let account = result?.to_value()?;
+            let account = result.unwrap().to_value()?;
             let account_balance = account.at("data").at("free").unwrap().to_owned();
+            let account_balance = account_balance.as_u128().unwrap();
 
             match account_balance.cmp(&value) {
                 std::cmp::Ordering::Less => Ok(false),
@@ -60,7 +61,7 @@ pub trait FundsReserveTask: FundsReserveAtributes {
         let signer = PairSigner::new(self.reserve_signer().to_owned());
 
         let task = async move {
-            let payload = BalanceTransfer::construct(&account, value, client.clone())?;
+            let payload = BalanceTransfer::construct(&account, value)?;
 
             let tx = client
                 .tx()

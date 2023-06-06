@@ -17,7 +17,6 @@ pub trait ToContractPayload<T = ContractCall>: ValidateHash {
     fn to_payload(
         self,
         address: &str,
-        client: BlockchainClient,
     ) -> Result<ContractTransactionPayload<T>, GenericError>;
 }
 

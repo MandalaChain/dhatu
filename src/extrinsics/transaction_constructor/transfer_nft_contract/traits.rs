@@ -8,7 +8,6 @@ pub trait NftTransferTransactionConstructor<T: TxPayload> {
         to: &str,
         token_id: i64,
         function_selector: String,
-        client: BlockchainClient,
     ) -> Result<T, GenericError>;
 }
 

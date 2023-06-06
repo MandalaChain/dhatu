@@ -69,7 +69,6 @@ impl<Reserve: FundsReserveTraits> MigrationTransaction<Reserve> {
             to,
             token_id,
             function_selector.to_string(),
-            self.client.clone(),
         )
         .unwrap();
 

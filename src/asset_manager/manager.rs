@@ -21,7 +21,6 @@ use super::{
 pub type PublicAddress = String;
 
 pub struct AssetManager {
-    db: Database,
     notifier: MigrationTransactionResultNotifier,
     txs: MigrationTransactionMap,
 }
@@ -31,7 +30,7 @@ impl AssetManager {
         let txs = HashMap::new();
         let txs = Arc::new(RwLock::new(txs));
 
-        Self { db, notifier, txs }
+        Self { notifier, txs }
     }
 
     pub fn migrate(

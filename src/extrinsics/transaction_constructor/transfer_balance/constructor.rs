@@ -10,8 +10,17 @@ use crate::extrinsics::{
     transaction_constructor::traits::ValidateHash,
 };
 
-#[derive(subxt::ext::codec::Encode, subxt::ext::codec::Decode)]
-struct BalanceTransferArgs {
+#[derive(
+    :: subxt :: ext :: codec :: Decode,
+    :: subxt :: ext :: codec :: Encode,
+    :: subxt :: ext :: scale_decode :: DecodeAsType,
+    :: subxt :: ext :: scale_encode :: EncodeAsType,
+    Debug,
+)]
+#[codec (crate = :: subxt :: ext :: codec)]
+#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+pub struct BalanceTransferArgs {
     pub dest: MultiAddress<AccountId32, ()>,
     pub value: u128,
 }

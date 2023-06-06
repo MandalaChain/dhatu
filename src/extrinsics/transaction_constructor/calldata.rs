@@ -59,7 +59,7 @@ impl<T> ValidateHash for CallData<T> {
     }
 
     fn function_name() -> &'static str {
-        "Call"
+        "call"
     }
 }
 
@@ -71,8 +71,17 @@ const DEFAULT_REF_TIME: u64 = 1_000_000_000;
 const DEFAULT_TX_VALUE: u128 = 0;
 const DEFAULT_DEPOSIT_LIMIT: u128 = 0;
 
-#[derive(subxt::ext::codec::Decode, subxt::ext::codec::Encode, Debug)]
-struct GasLimit {
+#[derive(
+    :: subxt :: ext :: codec :: Decode,
+    :: subxt :: ext :: codec :: Encode,
+    :: subxt :: ext :: scale_decode :: DecodeAsType,
+    :: subxt :: ext :: scale_encode :: EncodeAsType,
+    Debug,
+)]
+#[codec (crate = :: subxt :: ext :: codec)]
+#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+pub struct GasLimit {
     pub ref_time: u64,
     pub proof_size: u64,
 }
@@ -86,7 +95,16 @@ impl Default for GasLimit {
     }
 }
 
-#[derive(subxt::ext::codec::Decode, subxt::ext::codec::Encode, Debug)]
+#[derive(
+    :: subxt :: ext :: codec :: Decode,
+    :: subxt :: ext :: codec :: Encode,
+    :: subxt :: ext :: scale_decode :: DecodeAsType,
+    :: subxt :: ext :: scale_encode :: EncodeAsType,
+    Debug,
+)]
+#[codec (crate = :: subxt :: ext :: codec)]
+#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 pub struct ContractCall {
     pub dest: MultiAddress<AccountId32, ()>,
     pub value: u128,
