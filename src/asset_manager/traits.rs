@@ -4,7 +4,7 @@ use sp_core::H256;
 use tokio::sync::RwLock;
 
 use super::migration_transaction::types::{
-    MigrationTransactionResultNotifier, MigrationTransactionResultReceiver,
+    MigrationTransactionResultNotifier,
 };
 
 pub type AssetDatabaseId = i64;

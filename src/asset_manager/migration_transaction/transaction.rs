@@ -1,4 +1,4 @@
-use futures::FutureExt;
+
 use sp_core::{sr25519::Pair, Pair as PairTraits};
 
 use crate::{
@@ -18,11 +18,11 @@ use crate::{
 
 use super::{
     traits::{
-        MigrationProcess, MigrationTask, MigrationTransaction as Transaction,
+        MigrationTask, MigrationTransaction as Transaction,
         MigrationTransactionAttributes,
     },
     types::{
-        MigrationTask as Task, MigrationTransaction as SubmittableTransaction,
+        MigrationTransaction as SubmittableTransaction,
         MigrationTransactionPayload, MigrationTransactionResultNotifier,
     },
 };

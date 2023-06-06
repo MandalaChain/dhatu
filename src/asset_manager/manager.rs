@@ -1,11 +1,10 @@
 use std::{collections::HashMap, sync::Arc};
 
-use futures::{future, FutureExt};
+use futures::{future};
 use sp_core::sr25519::Pair;
 use tokio::sync::RwLock;
 
 use crate::extrinsics::{
-    funds_reserve::traits::FundsReserveTraits,
     prelude::{reserve::FundsReserve, BlockchainClient},
 };
 
@@ -44,8 +43,8 @@ impl AssetManager {
         let mut vec = Vec::new();
         let notifier = self.notifider();
 
-        for (asset) in assets {
-            let mut tx = MigrationTransactionBuilderStruct::new()
+        for asset in assets {
+            let tx = MigrationTransactionBuilderStruct::new()
                 .set_signer(from.clone())
                 .set_notifier(notifier.clone())
                 .set_gas_reserve(reserve.clone())
@@ -79,7 +78,7 @@ impl AssetManager {
                 vec.push(tx.submit())
             }
 
-            let txs = future::join_all(vec).await;
+            let _txs = future::join_all(vec).await;
         };
 
         tokio::task::spawn(transactions);

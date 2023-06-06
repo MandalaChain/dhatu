@@ -1,16 +1,12 @@
-use std::str::FromStr;
 
-use subxt::{
-    ext::scale_value::Composite,
-    utils::{AccountId32, MultiAddress},
-    OnlineClient, PolkadotConfig,
-};
 
-use crate::extrinsics::prelude::{BlockchainClient, GenericError};
+
+
+use crate::extrinsics::prelude::{GenericError};
 
 use super::{
-    calldata::{CallData, ContractCall},
-    transfer_nft_contract::{constructor::TransferNFT, types::ContractTransactionPayload},
+    calldata::{ContractCall},
+    transfer_nft_contract::{types::ContractTransactionPayload},
 };
 
 pub trait ToContractPayload<T = ContractCall>: ValidateHash {

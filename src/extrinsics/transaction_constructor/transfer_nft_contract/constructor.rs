@@ -4,7 +4,7 @@ use parity_scale_codec::Encode;
 use subxt::utils::AccountId32;
 
 use crate::extrinsics::{
-    prelude::{calldata::CallData, BlockchainClient, GenericError},
+    prelude::{calldata::CallData, GenericError},
     transaction_constructor::traits::{ScaleEncodeable, ToContractPayload},
 };
 
