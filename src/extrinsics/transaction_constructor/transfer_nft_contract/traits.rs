@@ -1,6 +1,6 @@
 use subxt::tx::TxPayload;
 
-use crate::extrinsics::prelude::{calldata::CallData, GenericError};
+use crate::extrinsics::prelude::{calldata::CallData, BlockchainClient, GenericError};
 
 pub trait NftTransferTransactionConstructor<T: TxPayload> {
     fn construct(
@@ -8,6 +8,7 @@ pub trait NftTransferTransactionConstructor<T: TxPayload> {
         to: &str,
         token_id: i64,
         function_selector: &str,
+        client: BlockchainClient,
     ) -> Result<T, GenericError>;
 }
 

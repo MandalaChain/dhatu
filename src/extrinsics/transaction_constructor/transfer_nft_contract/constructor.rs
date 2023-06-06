@@ -3,7 +3,7 @@ use std::str::FromStr;
 use subxt::utils::AccountId32;
 
 use crate::extrinsics::{
-    prelude::{calldata::CallData, GenericError},
+    prelude::{calldata::CallData, BlockchainClient, GenericError},
     transaction_constructor::traits::ToContractPayload,
 };
 
@@ -39,7 +39,8 @@ impl NftTransferTransactionConstructor<ContractTransactionPayload> for TransferN
         to: &str,
         token_id: i64,
         function_selector: &str,
+        client: BlockchainClient,
     ) -> Result<ContractTransactionPayload, GenericError> {
-        Self::encode_calldata(to, token_id, function_selector)?.to_payload(address)
+        Self::encode_calldata(to, token_id, function_selector)?.to_payload(address, client)
     }
 }
