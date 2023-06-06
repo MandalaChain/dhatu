@@ -14,7 +14,7 @@ use super::{
     transfer_nft_contract::{constructor::TransferNFT, types::ContractTransactionPayload},
 };
 
-pub trait ToContractPayload<T = ContractCall>: ContractValidateHash {
+pub trait ToContractPayload<T = ContractCall>: ValidateHash {
     fn to_payload(
         self,
         address: &str,
@@ -22,7 +22,7 @@ pub trait ToContractPayload<T = ContractCall>: ContractValidateHash {
     ) -> Result<ContractTransactionPayload<T>, GenericError>;
 }
 
-pub trait ContractValidateHash {
+pub trait ValidateHash {
     fn call_hash(client: BlockchainClient) -> [u8; 32] {
         client
             .metadata()
@@ -30,13 +30,9 @@ pub trait ContractValidateHash {
             .expect("static values must be valid, this should not happen")
     }
 
-    fn pallet_name() -> &'static str {
-        "Contract"
-    }
+    fn pallet_name() -> &'static str;
 
-    fn function_name() -> &'static str {
-        "Call"
-    }
+    fn function_name() -> &'static str;
 }
 
 pub trait ScaleEncodeable {

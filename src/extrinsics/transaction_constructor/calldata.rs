@@ -4,7 +4,7 @@ use subxt::utils::{AccountId32, MultiAddress};
 use crate::extrinsics::prelude::{BlockchainClient, GenericError};
 
 use super::{
-    traits::{ContractValidateHash, ScaleEncodeable, ToContractPayload},
+    traits::{ScaleEncodeable, ToContractPayload, ValidateHash},
     transfer_nft_contract::{
         constructor::{NftTransferAgrs, TransferNFT},
         types::ContractTransactionPayload,
@@ -28,7 +28,6 @@ impl From<Vec<u8>> for CallData {
         CallData(val, PhantomData)
     }
 }
-
 
 impl<T> From<CallData<T>> for Vec<u8> {
     fn from(value: CallData<T>) -> Self {
@@ -63,7 +62,15 @@ impl<T> ToContractPayload for CallData<T> {
     }
 }
 
-impl<T> ContractValidateHash for CallData<T> {}
+impl<T> ValidateHash for CallData<T> {
+    fn pallet_name() -> &'static str {
+        "Contract"
+    }
+
+    fn function_name() -> &'static str {
+        "Call"
+    }
+}
 
 //
 
