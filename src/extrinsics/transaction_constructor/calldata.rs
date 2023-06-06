@@ -42,21 +42,12 @@ impl From<NftTransferAgrs> for CallData<TransferNFT> {
 }
 
 impl<T> ToContractPayload for CallData<T> {
-    fn to_payload(
-        self,
-        address: &str,
-        client: BlockchainClient,
-    ) -> Result<ContractTransactionPayload, GenericError> {
+    fn to_payload(self, address: &str) -> Result<ContractTransactionPayload, GenericError> {
         let address = MultiAddress::Id(AccountId32::from_str(address)?);
 
         let args = ContractCall::new_with_arbitrary_args(address, self);
 
-        let tx = subxt::tx::StaticTxPayload::new(
-            Self::pallet_name(),
-            Self::function_name(),
-            args,
-            Self::call_hash(client),
-        );
+        let tx = subxt::tx::Payload::new(Self::pallet_name(), Self::function_name(), args);
 
         Ok(tx)
     }

@@ -2,7 +2,6 @@ use std::str::FromStr;
 
 use subxt::{
     ext::scale_value::Composite,
-    tx::DynamicTxPayload,
     utils::{AccountId32, MultiAddress},
     OnlineClient, PolkadotConfig,
 };
@@ -23,13 +22,6 @@ pub trait ToContractPayload<T = ContractCall>: ValidateHash {
 }
 
 pub trait ValidateHash {
-    fn call_hash(client: BlockchainClient) -> [u8; 32] {
-        client
-            .metadata()
-            .call_hash(Self::pallet_name(), Self::function_name())
-            .expect("static values must be valid, this should not happen")
-    }
-
     fn pallet_name() -> &'static str;
 
     fn function_name() -> &'static str;

@@ -1,12 +1,13 @@
 use std::{pin::Pin, str::FromStr};
 
+use crate::extrinsics::prelude::{
+    enums::ExtrinsicStatus, extrinsics::Transaction,
+    transfer_balance::constructor::BalanceTransfer, BlockchainClient, GenericError,
+};
 use futures::Future;
 use sp_core::sr25519::Pair;
+use subxt::dynamic::At;
 use subxt::{tx::PairSigner, utils::AccountId32};
-
-use crate::extrinsics::prelude::{
-    enums::ExtrinsicStatus, extrinsics::Transaction, BlockchainClient, GenericError,
-};
 
 // TODO : make this a macro
 
@@ -32,17 +33,13 @@ pub trait FundsReserveTask: FundsReserveAtributes {
 
         let task = async move {
             let account = AccountId32::from_str(&account)?;
-            let address = runtime_types::api::storage().system().account(account);
-            let result = client
-                .storage()
-                .at(None)
-                .await
-                .unwrap()
-                .fetch(&address)
-                .await?;
+            let account = subxt::dynamic::Value::from_bytes(account);
 
-            let account = result.unwrap();
-            let account_balance = account.data.free;
+            let address = subxt::dynamic::storage("System", "Account", vec![account]);
+            let result = client.storage().at_latest().await?.fetch(&address).await?;
+
+            let account = result?.to_value()?;
+            let account_balance = account.at("data").at("free").unwrap().to_owned();
 
             match account_balance.cmp(&value) {
                 std::cmp::Ordering::Less => Ok(false),
@@ -55,19 +52,15 @@ pub trait FundsReserveTask: FundsReserveAtributes {
 
     fn transfer_funds(
         &self,
-        account: &str,
+        account: String,
         value: u128,
     ) -> Pin<Box<dyn Future<Output = Result<ExtrinsicStatus, GenericError>> + Send>> {
         // we need this outside of the async block to avoid lifetime's issues
         let client = self.client().clone();
         let signer = PairSigner::new(self.reserve_signer().to_owned());
-        let account = String::from(account);
 
         let task = async move {
-            let dest = subxt::utils::MultiAddress::Id(AccountId32::from_str(&account)?);
-            let payload = runtime_types::api::tx()
-                .balances()
-                .transfer_keep_alive(dest, value);
+            let payload = BalanceTransfer::construct(&account, value, client.clone())?;
 
             let tx = client
                 .tx()
@@ -86,11 +79,11 @@ pub trait FundsReserveTask: FundsReserveAtributes {
     // value should be what the transaction will cost
     fn check_and_transfer(
         &self,
-        account: &str,
+        account: String,
         threshold: u128,
         value: u128,
     ) -> Pin<Box<dyn Future<Output = Result<Option<ExtrinsicStatus>, GenericError>>>> {
-        let check_balance = self.check_funds(account, threshold);
+        let check_balance = self.check_funds(&account, threshold);
         let transfer = self.transfer_funds(account, value);
 
         let task = async move {

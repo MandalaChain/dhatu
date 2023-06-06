@@ -6,19 +6,24 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# substrate stuff ( must be synchronized as these modules does not follow semver!)
+sp-core = { version = "21.0.0", features = ["full_crypto"] }
+subxt = "0.29"
+sp-keyring = "24.0.0"
+
+# async stuff
 futures = "0.3.28"
-mockall = "0.11.4"
-serde = { version = "1.0.160", features = ["derive"] }
-sp-core = { version = "16.0.0", features = ["full_crypto"] }
-subxt = "0.27.1"
-tiny-keccak = { version = "2.0.2", features = ["sha3"] }
 tokio = { version = "1.28.1", features = ["sync"] }
 reqwest = { version = "0.11.17", features = ["json"] }
+
+# data encoding
+serde = { version = "1.0.160", features = ["derive"] }
+tiny-keccak = { version = "2.0.2", features = ["sha3"] }
 serde_json = "1.0.96"
-sp-keyring = "18.0.0"
 hex = "0.4.3"
-rand = "0.8.5"
 parity-scale-codec = "3.5.0"
+rand = "0.8.5"
 
 [dev-dependencies]
-rand = "0.8.5"
+# testing
+mockall = "0.11.4"

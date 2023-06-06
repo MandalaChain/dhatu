@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use subxt::{
-    tx::{DynamicTxPayload, StaticTxPayload},
+    tx::Payload,
     utils::{AccountId32, MultiAddress},
 };
 
@@ -25,16 +25,8 @@ impl BalanceTransferArgs {
 pub struct BalanceTransfer;
 
 impl BalanceTransfer {
-    fn generate_payload(
-        client: BlockchainClient,
-        args: BalanceTransferArgs,
-    ) -> BalanceTransferPayload {
-        subxt::tx::StaticTxPayload::new(
-            Self::pallet_name(),
-            Self::function_name(),
-            args,
-            Self::call_hash(client),
-        )
+    fn generate_payload(args: BalanceTransferArgs) -> BalanceTransferPayload {
+        subxt::tx::Payload::new(Self::pallet_name(), Self::function_name(), args)
     }
 }
 
@@ -48,19 +40,15 @@ impl ValidateHash for BalanceTransfer {
     }
 }
 
-type BalanceTransferPayload = StaticTxPayload<BalanceTransferArgs>;
+type BalanceTransferPayload = subxt::tx::Payload<BalanceTransferArgs>;
 
 impl BalanceTransfer {
-    pub fn construct(
-        to: &str,
-        value: u128,
-        client: BlockchainClient,
-    ) -> Result<BalanceTransferPayload, GenericError> {
+    pub fn construct(to: &str, value: u128) -> Result<BalanceTransferPayload, GenericError> {
         let dest = subxt::utils::MultiAddress::Id(AccountId32::from_str(to)?);
 
         let args = BalanceTransferArgs::new(dest, value);
 
-        let payload = Self::generate_payload(client, args);
+        let payload = Self::generate_payload(args);
 
         Ok(payload)
     }

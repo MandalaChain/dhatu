@@ -64,7 +64,14 @@ impl<Reserve: FundsReserveTraits> MigrationTransaction<Reserve> {
         token_id: i64,
         function_selector: &str,
     ) -> Self {
-        let tx = TransferNFT::construct(address, to, token_id, function_selector).unwrap();
+        let tx = TransferNFT::construct(
+            address,
+            to,
+            token_id,
+            function_selector.to_string(),
+            self.client.clone(),
+        )
+        .unwrap();
 
         self.payload = Some(tx);
 
@@ -94,7 +101,7 @@ impl<Reserve: FundsReserveTraits> MigrationTransaction<Reserve> {
         // future implementation will dynamically check the threshold and then transfer.
         // currently this automatically transfer funds regardless of quota threshold
         self.reserve
-            .transfer_funds(&account, STATIC_NFT_TRANSFER_FEE)
+            .transfer_funds(account, STATIC_NFT_TRANSFER_FEE)
             .await
             .unwrap();
 

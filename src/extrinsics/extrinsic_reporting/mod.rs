@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use tokio::sync::{RwLock};
+use tokio::sync::RwLock;
 
 use super::prelude::{enums::ExtrinsicStatus, TransactionId};
 

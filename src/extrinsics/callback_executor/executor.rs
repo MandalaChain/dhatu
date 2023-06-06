@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use serde_json::Value;
 use tokio::sync::RwLock;
 
-use crate::extrinsics::prelude::{TransactionId};
+use crate::extrinsics::prelude::TransactionId;
 
 pub struct CallbackExecutor {
     result: Arc<RwLock<HashMap<TransactionId, Result<Value, reqwest::Error>>>>,

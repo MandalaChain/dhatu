@@ -1,5 +1,5 @@
+pub mod builder;
 #[doc(hidden)]
 pub mod traits;
-pub mod types;
 pub mod transaction;
-pub mod builder;
+pub mod types;

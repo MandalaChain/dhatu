@@ -1,8 +1,6 @@
 use subxt::tx::TxPayload;
 
-use crate::extrinsics::{
-    prelude::GenericError,
-};
+use crate::extrinsics::prelude::GenericError;
 
 pub trait TransferBalanceTransactionConstructor<T: TxPayload> {
     fn construct_tx(

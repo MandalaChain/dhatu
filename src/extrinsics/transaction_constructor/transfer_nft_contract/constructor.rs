@@ -61,8 +61,7 @@ impl NftTransferTransactionConstructor<ContractTransactionPayload> for TransferN
         to: &str,
         token_id: i64,
         function_selector: String,
-        client: BlockchainClient,
     ) -> Result<ContractTransactionPayload, GenericError> {
-        Self::encode_calldata(to, token_id, function_selector)?.to_payload(address, client)
+        Self::encode_calldata(to, token_id, function_selector)?.to_payload(address)
     }
 }

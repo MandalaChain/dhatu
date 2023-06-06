@@ -115,7 +115,9 @@ mod tests {
         let payload = mock_payload(&node_client);
 
         let pair = mock_pair();
-        let extrinsic = TxBuilder::signed(&node_client, pair, &payload).await.unwrap();
+        let extrinsic = TxBuilder::signed(&node_client, pair, &payload)
+            .await
+            .unwrap();
 
         let dry_run_result = extrinsic.dry_run(None).await.unwrap();
         let actual_result = extrinsic.submit().await;
