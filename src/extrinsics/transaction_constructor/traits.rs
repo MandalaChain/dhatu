@@ -10,11 +10,11 @@ use subxt::{
 use crate::extrinsics::prelude::{BlockchainClient, GenericError};
 
 use super::{
-    calldata::CallData,
+    calldata::{CallData, ContractCall},
     transfer_nft_contract::{constructor::TransferNFT, types::ContractTransactionPayload},
 };
 
-pub trait ToContractPayload<T = ContractCall> {
+pub trait ToContractPayload<T = ContractCall>: ContractValidateHash {
     fn to_payload(
         self,
         address: &str,
@@ -22,14 +22,23 @@ pub trait ToContractPayload<T = ContractCall> {
     ) -> Result<ContractTransactionPayload<T>, GenericError>;
 }
 
-pub trait ValidateHash {
-    fn call_hash(client: BlockchainClient) -> Option<[u8; 32]> {
+pub trait ContractValidateHash {
+    fn call_hash(client: BlockchainClient) -> [u8; 32] {
         client
             .metadata()
             .call_hash(Self::pallet_name(), Self::function_name())
+            .expect("static values must be valid, this should not happen")
     }
 
-    fn pallet_name() -> &'static str;
+    fn pallet_name() -> &'static str {
+        "Contract"
+    }
 
-    fn function_name() -> &'static str;
+    fn function_name() -> &'static str {
+        "Call"
+    }
+}
+
+pub trait ScaleEncodeable {
+    fn encode(self) -> Vec<u8>;
 }

@@ -1,3 +1,5 @@
-use subxt::tx::{StaticTxPayload, DynamicTxPayload};
+use subxt::tx::{DynamicTxPayload, StaticTxPayload};
 
-pub type ContractTransactionPayload<T> = StaticTxPayload<T>;
+use crate::extrinsics::prelude::calldata::ContractCall;
+
+pub type ContractTransactionPayload<T = ContractCall> = StaticTxPayload<T>;

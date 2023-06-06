@@ -1,9 +1,15 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, str::FromStr};
 use subxt::utils::{AccountId32, MultiAddress};
 
 use crate::extrinsics::prelude::{BlockchainClient, GenericError};
 
-use super::{traits::ToContractPayload, transfer_nft_contract::{constructor::TransferNFT, types::ContractTransactionPayload}};
+use super::{
+    traits::{ContractValidateHash, ScaleEncodeable, ToContractPayload},
+    transfer_nft_contract::{
+        constructor::{NftTransferAgrs, TransferNFT},
+        types::ContractTransactionPayload,
+    },
+};
 
 pub struct CallData<T = ()>(Vec<u8>, PhantomData<T>);
 
@@ -23,13 +29,20 @@ impl From<Vec<u8>> for CallData {
     }
 }
 
-impl From<CallData> for Vec<u8> {
-    fn from(val: CallData) -> Self {
-        val.0
+
+impl<T> From<CallData<T>> for Vec<u8> {
+    fn from(value: CallData<T>) -> Self {
+        value.0
     }
 }
 
-impl ToContractPayload for CallData<TransferNFT> {
+impl From<NftTransferAgrs> for CallData<TransferNFT> {
+    fn from(value: NftTransferAgrs) -> Self {
+        CallData(value.encode(), PhantomData)
+    }
+}
+
+impl<T> ToContractPayload for CallData<T> {
     fn to_payload(
         self,
         address: &str,
@@ -37,20 +50,20 @@ impl ToContractPayload for CallData<TransferNFT> {
     ) -> Result<ContractTransactionPayload, GenericError> {
         let address = MultiAddress::Id(AccountId32::from_str(address)?);
 
-        let fields = ContractCall::new_with_arbitrary_args(address, self);
+        let args = ContractCall::new_with_arbitrary_args(address, self);
 
-        let tx =
-            subxt::tx::StaticTxPayload::new(pallet_name, call_name, call_data, validation_hash);
+        let tx = subxt::tx::StaticTxPayload::new(
+            Self::pallet_name(),
+            Self::function_name(),
+            args,
+            Self::call_hash(client),
+        );
 
         Ok(tx)
     }
-
-    fn call_hash(client: BlockchainClient) -> Option<[u8; 32]> {
-        client
-            .metadata()
-            .call_hash("Contract", "transfer_keep_alive")
-    }
 }
+
+impl<T> ContractValidateHash for CallData<T> {}
 
 //
 
@@ -76,7 +89,7 @@ impl Default for GasLimit {
 }
 
 #[derive(subxt::ext::codec::Decode, subxt::ext::codec::Encode, Debug)]
-struct ContractCall {
+pub struct ContractCall {
     pub dest: MultiAddress<AccountId32, ()>,
     pub value: u128,
     pub gas_limit: GasLimit,
@@ -101,9 +114,9 @@ impl ContractCall {
         }
     }
 
-    fn new_with_arbitrary_args(dest: MultiAddress<AccountId32, ()>, args: CallData) -> Self {
+    fn new_with_arbitrary_args<T>(dest: MultiAddress<AccountId32, ()>, args: CallData<T>) -> Self {
         Self {
-            dest: contract_address,
+            dest,
             value: DEFAULT_TX_VALUE,
             gas_limit: GasLimit::default(),
             storage_deposit_limit: None,

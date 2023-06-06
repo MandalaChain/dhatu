@@ -1,10 +1,11 @@
 use std::str::FromStr;
 
+use parity_scale_codec::Encode;
 use subxt::utils::AccountId32;
 
 use crate::extrinsics::{
     prelude::{calldata::CallData, BlockchainClient, GenericError},
-    transaction_constructor::traits::ToContractPayload,
+    transaction_constructor::traits::{ScaleEncodeable, ToContractPayload},
 };
 
 use super::{
@@ -14,11 +15,33 @@ use super::{
 
 pub struct TransferNFT;
 
-impl ContractCallDataEncoder for TransferNFT {
+pub struct NftTransferAgrs {
+    pub function_selector: String,
+    pub to: AccountId32,
+    pub id: u32,
+}
+
+impl NftTransferAgrs {
+    fn new(function_selector: String, to: AccountId32, id: u32) -> Self {
+        Self {
+            function_selector,
+            to,
+            id,
+        }
+    }
+}
+
+impl ScaleEncodeable for NftTransferAgrs {
+    fn encode(self) -> Vec<u8> {
+        (self.function_selector, self.to, self.id).encode()
+    }
+}
+
+impl ContractCallDataEncoder<TransferNFT> for TransferNFT {
     fn encode_calldata(
         to: &str,
         token_id: i64,
-        function_selector: &str,
+        function_selector: String,
     ) -> Result<CallData<TransferNFT>, GenericError> {
         // convert rust types to substrate primitives
         let to = AccountId32::from_str(to)?;
@@ -26,8 +49,7 @@ impl ContractCallDataEncoder for TransferNFT {
 
         // build call data
         // TODO : make this standardized by using traits
-        let args = (function_selector, to, id);
-        let args = subxt::ext::codec::Encode::encode(&args);
+        let args = NftTransferAgrs::new(function_selector, to, id);
 
         Ok(args.into())
     }
@@ -38,7 +60,7 @@ impl NftTransferTransactionConstructor<ContractTransactionPayload> for TransferN
         address: &str,
         to: &str,
         token_id: i64,
-        function_selector: &str,
+        function_selector: String,
         client: BlockchainClient,
     ) -> Result<ContractTransactionPayload, GenericError> {
         Self::encode_calldata(to, token_id, function_selector)?.to_payload(address, client)

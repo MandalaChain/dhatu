@@ -7,15 +7,15 @@ pub trait NftTransferTransactionConstructor<T: TxPayload> {
         address: &str,
         to: &str,
         token_id: i64,
-        function_selector: &str,
+        function_selector: String,
         client: BlockchainClient,
     ) -> Result<T, GenericError>;
 }
 
-pub(super) trait ContractCallDataEncoder {
+pub(super) trait ContractCallDataEncoder<T> {
     fn encode_calldata(
         to: &str,
         token_id: i64,
-        function_selector: &str,
-    ) -> Result<CallData, GenericError>;
+        function_selector: String,
+    ) -> Result<CallData<T>, GenericError>;
 }
