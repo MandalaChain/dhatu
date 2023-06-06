@@ -19,7 +19,7 @@ impl ContractCallDataEncoder for TransferNFT {
         to: &str,
         token_id: i64,
         function_selector: &str,
-    ) -> Result<CallData, GenericError> {
+    ) -> Result<CallData<TransferNFT>, GenericError> {
         // convert rust types to substrate primitives
         let to = AccountId32::from_str(to)?;
         let id = token_id as u32;
