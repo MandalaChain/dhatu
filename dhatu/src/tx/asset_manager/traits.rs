@@ -13,13 +13,13 @@ pub type TransactionId = H256;
 pub type MigrationTransactionMap =
     Arc<RwLock<HashMap<TransactionId, (UserEmail, AssetDatabaseId)>>>;
 
-pub trait AssetManagerAttributes {
+pub(crate) trait AssetManagerAttributes {
     fn notifider(&self) -> &MigrationTransactionResultNotifier;
 
     fn txs(&self) -> &MigrationTransactionMap;
 }
 
-pub trait AssetManagerTrait: AssetManagerAttributes {}
+pub(crate) trait AssetManagerTrait: AssetManagerAttributes {}
 
 pub trait Asset {
     fn contract_address(&self) -> &str;

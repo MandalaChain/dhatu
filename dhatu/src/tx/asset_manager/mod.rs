@@ -1,3 +1,3 @@
 pub mod manager;
-pub mod migration_transaction;
+pub(crate) mod migration_transaction;
 pub mod traits;
