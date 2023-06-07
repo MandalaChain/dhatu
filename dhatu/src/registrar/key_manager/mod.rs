@@ -13,12 +13,12 @@ pub mod prelude {
     pub use super::traits::*;
 }
 
-/// represent a keypair manager.
-pub struct KeyManager;
-
 use prelude::*;
 
 use crate::tx::extrinsics::prelude::GenericError;
+
+/// represent a keypair manager.
+pub struct KeyManager;
 
 impl KeyManager {
     /// generate a new keypair given a [web 2 user](User)
@@ -30,29 +30,6 @@ impl KeyManager {
     pub fn new_default() -> Keypair {
         let password = Password::new();
         Self::gen(password)
-    }
-
-    fn gen(password: Password) -> Keypair {
-        let password_phrase = password.as_pwd();
-
-        let (keypair, phrase, _) = Keys::generate_with_phrase(password_phrase);
-
-        Self::construct(password, phrase, keypair)
-    }
-
-    fn gen_from_phrase(password: Password, phrase: &str) -> Result<Keypair, GenericError> {
-        let password_phrase = password.as_pwd();
-
-        let (keys, _) = Keys::from_phrase(phrase, password_phrase)?;
-        let keypair = Self::construct(password, String::from(phrase), keys);
-        Ok(keypair)
-    }
-
-    fn construct(password: Password, phrase: String, keypair: Keys) -> Keypair {
-        let pub_key = keypair.public().to_ss58check();
-        let password_hash = password.as_pwd().unwrap().to_string();
-
-        Keypair::new(password_hash, phrase, pub_key, keypair)
     }
 
     /// recover a user keypair using web 2 to web 3 user mapping [information](VerifiableUser)
@@ -77,6 +54,31 @@ impl KeyManager {
             Ok(_) => true,
             _ => false,
         }
+    }
+}
+
+impl KeyManager {
+    fn gen(password: Password) -> Keypair {
+        let password_phrase = password.as_pwd();
+
+        let (keypair, phrase, _) = Keys::generate_with_phrase(password_phrase);
+
+        Self::construct(password, phrase, keypair)
+    }
+
+    fn gen_from_phrase(password: Password, phrase: &str) -> Result<Keypair, GenericError> {
+        let password_phrase = password.as_pwd();
+
+        let (keys, _) = Keys::from_phrase(phrase, password_phrase)?;
+        let keypair = Self::construct(password, String::from(phrase), keys);
+        Ok(keypair)
+    }
+
+    fn construct(password: Password, phrase: String, keypair: Keys) -> Keypair {
+        let pub_key = keypair.public().to_ss58check();
+        let password_hash = password.as_pwd().unwrap().to_string();
+
+        Keypair::new(password_hash, phrase, pub_key, keypair)
     }
 }
 

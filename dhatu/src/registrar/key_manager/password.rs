@@ -13,14 +13,6 @@ const DEFAULT_PASSWORD_LENGTH: usize = 32;
 #[derive(Clone)]
 pub struct Password(pub String);
 
-impl FromStr for Password {
-    type Err = GenericError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(String::from(s)))
-    }
-}
-
 impl Password {
     pub fn new() -> Self {
         Self(Self::generate_random_string(DEFAULT_PASSWORD_LENGTH))
@@ -44,7 +36,17 @@ impl Password {
 
         Self(hash)
     }
+}
 
+impl FromStr for Password {
+    type Err = GenericError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(String::from(s)))
+    }
+}
+
+impl Password {
     fn gen_hash(email: &str, password: &str) -> Sha3 {
         let mut hasher = tiny_keccak::Sha3::v256();
 
