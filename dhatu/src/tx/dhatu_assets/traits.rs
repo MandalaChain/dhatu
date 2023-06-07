@@ -7,10 +7,10 @@ use super::migration_transaction::types::{
     MigrationTransactionResultNotifier,
 };
 
-pub type AssetDatabaseId = i64;
-pub type UserEmail = String;
-pub type TransactionId = H256;
-pub type MigrationTransactionMap =
+pub(crate) type AssetDatabaseId = i64;
+pub(crate) type UserEmail = String;
+pub(crate) type TransactionId = H256;
+pub(crate) type MigrationTransactionMap =
     Arc<RwLock<HashMap<TransactionId, (UserEmail, AssetDatabaseId)>>>;
 
 pub(crate) trait AssetManagerAttributes {

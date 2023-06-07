@@ -15,14 +15,14 @@ use super::{
     traits::{Asset, AssetManagerAttributes, AssetManagerTrait, MigrationTransactionMap},
 };
 
-pub type PublicAddress = String;
+pub(crate) type PublicAddress = String;
 
-pub struct AssetManager {
+pub struct DhatuAssetsFacade {
     notifier: MigrationTransactionResultNotifier,
     txs: MigrationTransactionMap,
 }
 
-impl AssetManager {
+impl DhatuAssetsFacade {
     pub fn new(notifier: MigrationTransactionResultNotifier) -> Self {
         let txs = HashMap::new();
         let txs = Arc::new(RwLock::new(txs));
@@ -90,7 +90,7 @@ impl AssetManager {
     }
 }
 
-impl AssetManagerAttributes for AssetManager {
+impl AssetManagerAttributes for DhatuAssetsFacade {
     fn notifider(&self) -> &MigrationTransactionResultNotifier {
         &self.notifier
     }
@@ -100,4 +100,4 @@ impl AssetManagerAttributes for AssetManager {
     }
 }
 
-impl AssetManagerTrait for AssetManager {}
+impl AssetManagerTrait for DhatuAssetsFacade {}

@@ -9,7 +9,7 @@ pub struct Keypair {
 }
 
 impl Keypair {
-    pub fn new(password_hash: String, phrase: String, pub_key: String, keypair: Keys) -> Self {
+    pub(crate) fn new(password_hash: String, phrase: String, pub_key: String, keypair: Keys) -> Self {
         Self {
             password_hash,
             phrase,

@@ -10,9 +10,6 @@ use subxt::{
 
 pub struct TxBuilder;
 
-pub type Payload = Vec<u8>;
-
-// TODO : Refactor all ScaleEncoded struct!
 
 impl TxBuilder {
     /// create a new unsigned transaction from a transaction payload

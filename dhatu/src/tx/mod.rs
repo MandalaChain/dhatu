@@ -1,2 +1,2 @@
 pub mod extrinsics;
-pub mod asset_manager;
+pub mod dhatu_assets;
