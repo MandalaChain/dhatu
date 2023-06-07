@@ -1,8 +1,8 @@
-
 use sp_core::{sr25519::Pair, Pair as PairTraits};
 
-use crate::{tx::{
-    extrinsics::{
+use crate::{
+    registrar::signer::TxBuilder,
+    tx::extrinsics::{
         funds_reserve::traits::FundsReserveTraits,
         prelude::{
             extrinsics,
@@ -13,16 +13,13 @@ use crate::{tx::{
             BlockchainClient,
         },
     },
-}, registrar::signer::TxBuilder};
+};
 
 use super::{
-    traits::{
-        MigrationTask, MigrationTransaction as Transaction,
-        MigrationTransactionAttributes,
-    },
+    traits::{MigrationTransaction as Transaction, MigrationTransactionAttributes},
     types::{
-        MigrationTransaction as SubmittableTransaction,
-        MigrationTransactionPayload, MigrationTransactionResultNotifier,
+        MigrationTransaction as SubmittableTransaction, MigrationTransactionPayload,
+        MigrationTransactionResultNotifier,
     },
 };
 
@@ -63,13 +60,8 @@ impl<Reserve: FundsReserveTraits> MigrationTransaction<Reserve> {
         token_id: i64,
         function_selector: &str,
     ) -> Self {
-        let tx = TransferNFT::construct(
-            address,
-            to,
-            token_id,
-            function_selector.to_string(),
-        )
-        .unwrap();
+        let tx =
+            TransferNFT::construct(address, to, token_id, function_selector.to_string()).unwrap();
 
         self.payload = Some(tx);
 

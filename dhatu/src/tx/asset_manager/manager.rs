@@ -1,17 +1,15 @@
 use std::{collections::HashMap, sync::Arc};
 
-use futures::{future};
+use futures::future;
 use sp_core::sr25519::Pair;
 use tokio::sync::RwLock;
 
-use crate::tx::extrinsics::{
-    prelude::{reserve::FundsReserve, BlockchainClient},
-};
+use crate::tx::extrinsics::prelude::{reserve::FundsReserve, BlockchainClient};
 
 use super::{
     migration_transaction::{
         builder::MigrationTransactionBuilderStruct,
-        traits::{MigrationTask, MigrationTransactionBuilder},
+        traits::MigrationTransactionBuilder,
         types::{MigrationTransactionResultNotifier, MigrationTransactionResultReceiver},
     },
     traits::{Asset, AssetManagerAttributes, AssetManagerTrait, MigrationTransactionMap},
