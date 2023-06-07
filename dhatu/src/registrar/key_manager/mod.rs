@@ -22,7 +22,7 @@ pub struct KeyManager;
 
 impl KeyManager {
     /// generate a new keypair given a [web 2 user](User)
-    pub fn new_keypair(user: &impl User) -> Keypair {
+    pub fn with_user(user: &impl User) -> Keypair {
         let password = Password::new_with_creds(user.email(), user.password());
         Self::gen(password)
     }
@@ -138,7 +138,7 @@ mod tests {
         user.expect_email().return_const(email());
         user.expect_password().return_const(password());
 
-        let keypair = KeyManager::new_keypair(&user);
+        let keypair = KeyManager::with_user(&user);
 
         user.expect_phrase()
             .return_const(keypair.phrase().to_string());
