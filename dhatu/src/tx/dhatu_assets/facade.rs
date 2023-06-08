@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{error::Error, registrar::key_manager::prelude::Keypair};
+use crate::{error::Error, registrar::key_manager::prelude::Keypair, MandalaClient};
 use futures::{future, FutureExt};
 use sp_core::sr25519::Pair;
 use std::str::FromStr;
@@ -57,14 +57,18 @@ impl From<Keypair> for SecretKey {
 
 pub struct DhatuAssetsFacade {
     txs: MigrationTransactionMap,
+    client: MandalaClient,
 }
 
 impl DhatuAssetsFacade {
-    pub fn new() -> Self {
+    pub fn new(mandala_client: MandalaClient) -> Self {
         let txs = HashMap::new();
         let txs = Arc::new(RwLock::new(txs));
 
-        Self { txs }
+        Self {
+            client: mandala_client,
+            txs,
+        }
     }
 
     // TODO : optimize the migration with queue
@@ -73,11 +77,11 @@ impl DhatuAssetsFacade {
         assets: Vec<impl Asset>,
         from: SecretKey,
         to: PublicKey,
-        client: BlockchainClient,
         reserve: &FundsReserve,
         notifier: MigrationTransactionResultNotifier,
     ) {
         let mut tx_batch = Vec::new();
+        let client = self.client.inner();
 
         for asset in assets {
             let tx = MigrationTransactionBuilderStruct::new()
