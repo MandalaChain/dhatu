@@ -11,7 +11,7 @@ use subxt::{tx::PairSigner, utils::AccountId32};
 
 // TODO : make this a macro
 
-pub trait FundsReserveAtributes {
+pub(crate) trait FundsReserveAtributes {
     fn reserve_signer(&self) -> &sp_core::sr25519::Pair;
 
     fn reserve_adress(&self) -> String;
@@ -21,7 +21,7 @@ pub trait FundsReserveAtributes {
     fn change_signer(&mut self, pair: Pair);
 }
 
-pub trait FundsReserveTask: FundsReserveAtributes {
+pub(crate) trait FundsReserveTask: FundsReserveAtributes {
     fn check_funds(
         &self,
         account: &str,
@@ -100,4 +100,4 @@ pub trait FundsReserveTask: FundsReserveAtributes {
     }
 }
 
-pub trait FundsReserveTraits: FundsReserveAtributes + FundsReserveTask + Clone {}
+pub(crate) trait FundsReserveTraits: FundsReserveAtributes + FundsReserveTask + Clone {}

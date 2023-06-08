@@ -25,7 +25,7 @@ use super::{
 
 const STATIC_NFT_TRANSFER_FEE: u128 = 9_000_000_000; // 9  mili units (9mU)
 
-pub struct MigrationTransaction<Reserve: FundsReserveTraits> {
+pub(crate) struct MigrationTransaction<Reserve: FundsReserveTraits> {
     signer: Pair,
     notifier: MigrationTransactionResultNotifier,
     reserve: Reserve,

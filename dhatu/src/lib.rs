@@ -6,7 +6,7 @@ pub mod registrar;
 pub mod tx;
 
 #[derive(Clone)]
-pub struct MandalaClient(OnlineClient<PolkadotConfig>);
+pub struct MandalaClient(pub(crate) OnlineClient<PolkadotConfig>);
 
 #[derive(thiserror::Error, Debug)]
 pub enum MandalaClientErorr {

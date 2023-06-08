@@ -1,28 +1,34 @@
 use sp_core::Pair;
 
-use crate::tx::extrinsics::prelude::BlockchainClient;
+use crate::{
+    registrar::key_manager::prelude::SecretKey, tx::extrinsics::prelude::BlockchainClient,
+    MandalaClient,
+};
 
 use super::traits::{FundsReserveAtributes, FundsReserveTask, FundsReserveTraits};
 
 #[derive(Clone)]
 pub struct FundsReserve {
-    pair: sp_core::sr25519::Pair,
+    reserve: sp_core::sr25519::Pair,
     client: BlockchainClient,
 }
 
 impl FundsReserve {
-    pub fn new(pair: sp_core::sr25519::Pair, client: BlockchainClient) -> Self {
-        Self { pair, client }
+    pub fn new(reserve_key: SecretKey, client: MandalaClient) -> Self {
+        Self {
+            reserve: reserve_key.into(),
+            client: client.inner().to_owned(),
+        }
     }
 }
 
 impl FundsReserveAtributes for FundsReserve {
     fn reserve_signer(&self) -> &sp_core::sr25519::Pair {
-        &self.pair
+        &self.reserve
     }
 
     fn reserve_adress(&self) -> String {
-        self.pair.public().to_string()
+        self.reserve.public().to_string()
     }
 
     fn client(&self) -> &BlockchainClient {
@@ -30,7 +36,7 @@ impl FundsReserveAtributes for FundsReserve {
     }
 
     fn change_signer(&mut self, pair: sp_core::sr25519::Pair) {
-        self.pair = pair;
+        self.reserve = pair;
     }
 }
 

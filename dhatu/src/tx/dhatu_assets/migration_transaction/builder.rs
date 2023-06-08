@@ -2,7 +2,7 @@ use crate::tx::extrinsics::{funds_reserve::traits::FundsReserveTraits, prelude::
 
 use super::{traits::MigrationTransactionBuilder, transaction::MigrationTransaction};
 
-pub struct MigrationTransactionBuilderStruct<Reserve: FundsReserveTraits> {
+pub(crate) struct MigrationTransactionBuilderStruct<Reserve: FundsReserveTraits> {
     signer: Option<sp_core::sr25519::Pair>,
     notifier: Option<super::types::MigrationTransactionResultNotifier>,
     reserve: Option<Reserve>,

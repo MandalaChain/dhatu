@@ -82,3 +82,9 @@ impl From<Keypair> for SecretKey {
         SecretKey(value.keypair().clone())
     }
 }
+
+impl From<SecretKey> for Pair {
+    fn from(val: SecretKey) -> Self {
+        val.0
+    }
+}
