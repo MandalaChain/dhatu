@@ -14,7 +14,6 @@ pub(crate) type MigrationTransactionMap =
     Arc<RwLock<HashMap<TransactionId, (UserEmail, AssetDatabaseId)>>>;
 
 pub(crate) trait AssetManagerAttributes {
-    fn notifider(&self) -> &MigrationTransactionResultNotifier;
 
     fn txs(&self) -> &MigrationTransactionMap;
 }

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use futures::future;
+use futures::{future, FutureExt};
 use sp_core::sr25519::Pair;
 use tokio::sync::RwLock;
 
@@ -18,18 +18,18 @@ use super::{
 pub(crate) type PublicAddress = String;
 
 pub struct DhatuAssetsFacade {
-    notifier: MigrationTransactionResultNotifier,
     txs: MigrationTransactionMap,
 }
 
 impl DhatuAssetsFacade {
-    pub fn new(notifier: MigrationTransactionResultNotifier) -> Self {
+    pub fn new() -> Self {
         let txs = HashMap::new();
         let txs = Arc::new(RwLock::new(txs));
 
-        Self { notifier, txs }
+        Self { txs }
     }
 
+    // TODO : optimize the migration with queue
     pub fn migrate(
         &self,
         assets: Vec<impl Asset>,
@@ -37,9 +37,9 @@ impl DhatuAssetsFacade {
         to: PublicAddress,
         client: BlockchainClient,
         reserve: &FundsReserve,
+        notifier: MigrationTransactionResultNotifier,
     ) {
-        let mut vec = Vec::new();
-        let notifier = self.notifider();
+        let mut tx_batch = Vec::new();
 
         for asset in assets {
             let tx = MigrationTransactionBuilderStruct::new()
@@ -49,40 +49,26 @@ impl DhatuAssetsFacade {
                 .set_client(client.clone())
                 .build();
 
-            let sign_tx_ops = tx
+            let tx = tx
                 .construct_payload(
                     asset.contract_address(),
                     &to,
                     asset.token_id(),
                     asset.function_selector(),
                 )
-                .sign();
+                .sign()
+                .then(|tx| async move { tx.ensure_enough_gas().await })
+                .then(|tx| async move { tx.submit().await });
 
-            vec.push(sign_tx_ops)
+            tx_batch.push(tx)
         }
 
-        let transactions = async move {
-            let txs = future::join_all(vec).await;
-            let mut vec = Vec::new();
-
-            for tx in txs {
-                vec.push(tx.ensure_enough_gas());
-            }
-
-            let txs = future::join_all(vec).await;
-            let mut vec = Vec::new();
-
-            for tx in txs {
-                vec.push(tx.submit())
-            }
-
-            let _txs = future::join_all(vec).await;
-        };
-
+        // TODO : refactor this to executes the futures in pararell
+        let transactions =  future::join_all(tx_batch);
         tokio::task::spawn(transactions);
     }
 
-    fn create_channels() -> (
+    pub fn create_channels() -> (
         MigrationTransactionResultNotifier,
         MigrationTransactionResultReceiver,
     ) {
@@ -91,10 +77,6 @@ impl DhatuAssetsFacade {
 }
 
 impl AssetManagerAttributes for DhatuAssetsFacade {
-    fn notifider(&self) -> &MigrationTransactionResultNotifier {
-        &self.notifier
-    }
-
     fn txs(&self) -> &super::traits::MigrationTransactionMap {
         &self.txs
     }
