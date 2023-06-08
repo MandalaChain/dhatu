@@ -58,7 +58,7 @@ pub enum KeypairGenerationError {
     SecretKey(String),
 
     #[error("{0}")]
-    Other(String)
+    Recover(String),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -91,8 +91,11 @@ impl From<Pair> for PublicKey {
 pub struct MnemonicPhrase(pub(crate) String);
 
 impl MnemonicPhrase {
-    pub fn new(phrase: &str, password: Password) -> Result<Self, Error> {
-        let vrf = Pair::from_phrase(phrase, password.as_pwd());
+    pub fn new(phrase: &str, password: Option<Password>) -> Result<Self, Error> {
+        let vrf = match password {
+            Some(password) => Pair::from_phrase(phrase, Some(password.as_str())),
+            None => Pair::from_phrase(phrase, None),
+        };
 
         match vrf {
             Ok(_) => Ok(Self(String::from(phrase))),

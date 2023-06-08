@@ -27,7 +27,7 @@ impl KeyManager {
     pub fn recover(pass: &str, phrase: &str) -> Result<Keypair, Error> {
         let password = Password::from_str(pass)?;
         Self::gen_from_phrase(password, phrase)
-            .map_err(|e| KeypairGenerationError::Other(e.to_string()).into())
+            .map_err(|e| KeypairGenerationError::Recover(e.to_string()).into())
     }
 }
 
@@ -49,7 +49,7 @@ impl KeyManager {
     }
 
     fn construct(password: Password, phrase: String, keypair: Keys) -> Keypair {
-        let phrase = MnemonicPhrase::new(&phrase, password.clone())
+        let phrase = MnemonicPhrase::new(&phrase, Some(password.clone()))
             .expect("internal function should not fail!");
         let pub_key = keypair.clone().into();
 
