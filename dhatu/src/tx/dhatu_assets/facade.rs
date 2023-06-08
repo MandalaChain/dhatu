@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::error::Error;
+use crate::{error::Error, registrar::key_manager::prelude::Keypair};
 use futures::{future, FutureExt};
 use sp_core::sr25519::Pair;
 use std::str::FromStr;
@@ -17,6 +17,7 @@ use super::{
     traits::{Asset, AssetManagerAttributes, AssetManagerTrait, MigrationTransactionMap},
 };
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PublicKey(String);
 
 impl FromStr for PublicKey {
@@ -29,6 +30,13 @@ impl FromStr for PublicKey {
     }
 }
 
+impl From<Keypair> for PublicKey {
+    fn from(value: Keypair) -> Self {
+        PublicKey(String::from(value.pub_key()))
+    }
+}
+
+#[derive(Clone)]
 pub struct SecretKey(Pair);
 
 impl FromStr for SecretKey {
@@ -41,7 +49,11 @@ impl FromStr for SecretKey {
     }
 }
 
-pub(crate) type PublicAddress = String;
+impl From<Keypair> for SecretKey {
+    fn from(value: Keypair) -> Self {
+        SecretKey(value.keypair().clone())
+    }
+}
 
 pub struct DhatuAssetsFacade {
     txs: MigrationTransactionMap,
@@ -59,8 +71,8 @@ impl DhatuAssetsFacade {
     pub fn migrate(
         &self,
         assets: Vec<impl Asset>,
-        from: Pair,
-        to: PublicAddress,
+        from: SecretKey,
+        to: PublicKey,
         client: BlockchainClient,
         reserve: &FundsReserve,
         notifier: MigrationTransactionResultNotifier,
@@ -69,7 +81,7 @@ impl DhatuAssetsFacade {
 
         for asset in assets {
             let tx = MigrationTransactionBuilderStruct::new()
-                .set_signer(from.clone())
+                .set_signer(from.0.clone())
                 .set_notifier(notifier.clone())
                 .set_gas_reserve(reserve.clone())
                 .set_client(client.clone())
@@ -78,7 +90,7 @@ impl DhatuAssetsFacade {
             let tx = tx
                 .construct_payload(
                     asset.contract_address(),
-                    &to,
+                    &to.0,
                     asset.token_id(),
                     asset.function_selector(),
                 )

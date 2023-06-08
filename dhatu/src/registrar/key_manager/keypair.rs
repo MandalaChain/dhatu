@@ -1,6 +1,8 @@
 use sp_core::sr25519::Pair as Keys;
 
 /// represent a user keypair and its infos.
+#[derive(Clone)]
+
 pub struct Keypair {
     password_hash: String,
     phrase: String,
