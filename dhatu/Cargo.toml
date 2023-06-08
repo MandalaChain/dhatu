@@ -10,6 +10,7 @@ edition = "2021"
 sp-core = { version = "21.0.0", features = ["full_crypto"] }
 subxt = "0.29"
 sp-keyring = "24.0.0"
+schnorrkel = "0.9.1"
 
 # async stuff
 futures = "0.3.28"

@@ -2,6 +2,7 @@
 pub mod keypair;
 pub mod password;
 
+
 use std::str::FromStr;
 
 use sp_core::{crypto::Ss58Codec, sr25519::Pair as Keys, Pair};
@@ -13,7 +14,7 @@ pub mod prelude {
 
 use prelude::*;
 
-use crate::{error::DhatuError, tx::extrinsics::prelude::GenericError};
+use crate::{error::Error, tx::extrinsics::prelude::GenericError};
 
 /// represent a keypair manager.
 pub struct KeyManager;
@@ -24,10 +25,10 @@ impl KeyManager {
         Self::gen(password)
     }
 
-    pub fn recover(pass: &str, phrase: &str) -> Result<Keypair, DhatuError> {
+    pub fn recover(pass: &str, phrase: &str) -> Result<Keypair, Error> {
         let password = Password::from_str(pass)?;
         Self::gen_from_phrase(password, phrase)
-            .map_err(|e| DhatuError::KeypairGenError(e.to_string()))
+            .map_err(|e| Error::KeypairGenError(e.to_string()))
     }
 }
 

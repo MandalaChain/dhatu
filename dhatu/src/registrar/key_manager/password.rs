@@ -5,7 +5,7 @@ use tiny_keccak::{Hasher, Sha3};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
-use crate::error::DhatuError;
+use crate::error::Error;
 use crate::tx::extrinsics::prelude::GenericError;
 
 const DEFAULT_PASSWORD_LENGTH: usize = 32;
@@ -40,11 +40,11 @@ impl Password {
 }
 
 impl FromStr for Password {
-    type Err = DhatuError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.len().cmp(&DEFAULT_PASSWORD_LENGTH) {
-            std::cmp::Ordering::Less => Err(DhatuError::PasswordGenError),
+            std::cmp::Ordering::Less => Err(Error::PasswordGenError),
             _ => Ok(Self(String::from(s))),
         }
     }
