@@ -15,34 +15,21 @@ pub mod prelude {
 
 use prelude::*;
 
-use crate::tx::extrinsics::prelude::GenericError;
+use crate::{error::DhatuError, tx::extrinsics::prelude::GenericError};
 
 /// represent a keypair manager.
 pub struct KeyManager;
 
 impl KeyManager {
-    /// generate a new keypair given a [web 2 user](User)
-    pub fn with_user(user: &impl User) -> Keypair {
-        let password = Password::new_with_creds(user.email(), user.password());
-        Self::gen(password)
-    }
-
     pub fn new_default() -> Keypair {
         let password = Password::new();
         Self::gen(password)
     }
 
-    /// recover a user keypair using web 2 to web 3 user mapping [information](VerifiableUser)
-    pub fn recover_with_creds(
-        user: &impl VerifiableUser,
-    ) -> Result<Keypair, Box<dyn std::error::Error>> {
-        let password = Password::new_with_creds(user.email(), user.password());
-        Self::gen_from_phrase(password, user.phrase())
-    }
-
-    pub fn recover(pass: &str, phrase: &str) -> Result<Keypair, GenericError> {
+    pub fn recover(pass: &str, phrase: &str) -> Result<Keypair, DhatuError> {
         let password = Password::from_str(pass)?;
         Self::gen_from_phrase(password, phrase)
+            .map_err(|e| DhatuError::KeypairGenError(e.to_string()))
     }
 
     /// verify a user keypair using web 2 to web 3 user mapping [information](VerifiableUser)
