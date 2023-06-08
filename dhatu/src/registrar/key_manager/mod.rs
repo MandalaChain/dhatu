@@ -1,7 +1,6 @@
 /// module responsible for all related task regarding user keypair. e.g creating, recovering, etc.
 pub mod keypair;
 pub mod password;
-pub mod traits;
 
 use std::str::FromStr;
 
@@ -10,7 +9,6 @@ use sp_core::{crypto::Ss58Codec, sr25519::Pair as Keys, Pair};
 pub mod prelude {
     pub use super::keypair::*;
     pub use super::password::*;
-    pub use super::traits::*;
 }
 
 use prelude::*;
@@ -30,17 +28,6 @@ impl KeyManager {
         let password = Password::from_str(pass)?;
         Self::gen_from_phrase(password, phrase)
             .map_err(|e| DhatuError::KeypairGenError(e.to_string()))
-    }
-
-    /// verify a user keypair using web 2 to web 3 user mapping [information](VerifiableUser)
-    pub fn verify(user: &impl VerifiableUser) -> bool {
-        let password = Password::new_with_creds(user.email(), user.password());
-        let password = password.as_pwd();
-
-        match Keys::from_phrase(user.phrase(), password) {
-            Ok(_) => true,
-            _ => false,
-        }
     }
 }
 
