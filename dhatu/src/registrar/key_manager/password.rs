@@ -6,7 +6,7 @@ use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
 use crate::error::Error;
-use crate::tx::extrinsics::prelude::GenericError;
+
 
 const DEFAULT_PASSWORD_LENGTH: usize = 32;
 

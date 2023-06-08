@@ -22,7 +22,7 @@ impl MandalaClient {
     pub async fn new(node_url: String) -> Result<Self, crate::error::Error> {
         let client = OnlineClient::<PolkadotConfig>::from_url(node_url)
             .await
-            .map_err(|e| MandalaClientErorr::from(e))?;
+            .map_err(MandalaClientErorr::from)?;
 
         Ok(Self(client))
     }
@@ -30,7 +30,7 @@ impl MandalaClient {
     pub async fn dev() -> Result<Self, crate::error::Error> {
         let client = OnlineClient::<PolkadotConfig>::new()
             .await
-            .map_err(|e| MandalaClientErorr::from(e))?;
+            .map_err(MandalaClientErorr::from)?;
 
         Ok(Self(client))
     }

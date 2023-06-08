@@ -1,12 +1,12 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{error::Error, registrar::key_manager::prelude::Keypair, MandalaClient};
+use crate::{registrar::key_manager::prelude::{SecretKey, PublicKey}, MandalaClient};
 use futures::{future, FutureExt};
-use sp_core::sr25519::Pair;
-use std::str::FromStr;
+
+
 use tokio::sync::RwLock;
 
-use crate::tx::extrinsics::prelude::{reserve::FundsReserve, BlockchainClient};
+use crate::tx::extrinsics::prelude::{reserve::FundsReserve};
 
 use super::{
     migration_transaction::{
@@ -17,43 +17,6 @@ use super::{
     traits::{Asset, AssetManagerAttributes, AssetManagerTrait, MigrationTransactionMap},
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PublicKey(String);
-
-impl FromStr for PublicKey {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        subxt::utils::AccountId32::from_str(s)
-            .map(|v| PublicKey(v.to_string()))
-            .map_err(|e| Error::KeypairGenError(e.to_string()))
-    }
-}
-
-impl From<Keypair> for PublicKey {
-    fn from(value: Keypair) -> Self {
-        PublicKey(String::from(value.pub_key()))
-    }
-}
-
-#[derive(Clone)]
-pub struct SecretKey(Pair);
-
-impl FromStr for SecretKey {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        schnorrkel::Keypair::from_bytes(s.as_bytes())
-            .map(|v| SecretKey(Pair::from(v)))
-            .map_err(|e| Error::KeypairGenError(e.to_string()))
-    }
-}
-
-impl From<Keypair> for SecretKey {
-    fn from(value: Keypair) -> Self {
-        SecretKey(value.keypair().clone())
-    }
-}
 
 pub struct DhatuAssetsFacade {
     txs: MigrationTransactionMap,
