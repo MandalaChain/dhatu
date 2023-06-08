@@ -7,7 +7,6 @@ use rand::{thread_rng, Rng};
 
 use crate::error::Error;
 
-
 const DEFAULT_PASSWORD_LENGTH: usize = 32;
 
 /// represents a password hash used to securely generate and recover user keypair.
@@ -44,9 +43,20 @@ impl FromStr for Password {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.len().cmp(&DEFAULT_PASSWORD_LENGTH) {
-            std::cmp::Ordering::Less => Err(Error::PasswordGenError),
+            std::cmp::Ordering::Less => Err(Error::PasswordGenError(String::from(
+                "password length must be at least 32 characters long!",
+            ))),
             _ => Ok(Self(String::from(s))),
         }
+    }
+}
+impl From<Option<&str>> for Password {
+    fn from(value: Option<&str>) -> Self {
+        let value = value
+            .expect("this implemetation should only been called from inside the crates!")
+            .to_string();
+
+        Password(value)
     }
 }
 

@@ -1,7 +1,6 @@
-/// module responsible for all related task regarding user keypair. e.g creating, recovering, etc.
+//! module responsible for all related task regarding user keypair. e.g creating, recovering, etc.
 pub mod keypair;
 pub mod password;
-
 
 use std::str::FromStr;
 
@@ -28,7 +27,7 @@ impl KeyManager {
     pub fn recover(pass: &str, phrase: &str) -> Result<Keypair, Error> {
         let password = Password::from_str(pass)?;
         Self::gen_from_phrase(password, phrase)
-            .map_err(|e| Error::KeypairGenError(e.to_string()))
+            .map_err(|e| KeypairGenerationError::Other(e.to_string()).into())
     }
 }
 
@@ -50,10 +49,11 @@ impl KeyManager {
     }
 
     fn construct(password: Password, phrase: String, keypair: Keys) -> Keypair {
-        let pub_key = keypair.public().to_ss58check();
-        let password_hash = password.as_pwd().unwrap().to_string();
+        let phrase = MnemonicPhrase::new(&phrase, password.clone())
+            .expect("internal function should not fail!");
+        let pub_key = keypair.clone().into();
 
-        Keypair::new(password_hash, phrase, pub_key, keypair)
+        Keypair::new(password, phrase, pub_key, keypair)
     }
 }
 
