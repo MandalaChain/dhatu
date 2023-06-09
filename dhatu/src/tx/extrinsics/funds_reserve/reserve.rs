@@ -14,7 +14,6 @@ use subxt::{tx::PairSigner, utils::AccountId32};
 
 use crate::{registrar::key_manager::prelude::PrivateKey, MandalaClient};
 
-
 #[derive(thiserror::Error, Debug)]
 pub enum FundsReserveError {
     #[error("{0}")]
@@ -116,7 +115,8 @@ impl FundsReserve {
         let tx = client
             .tx()
             .sign_and_submit_then_watch_default(&payload, &signer)
-            .await?;
+            .await
+            .map_err(|e: subxt::Error| FundsReserveError::RpcError(e))?;
 
         let status = Transaction::wait(tx).await;
 
