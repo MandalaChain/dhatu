@@ -124,23 +124,20 @@ impl FundsReserve {
     }
 }
 
-// impl FundsReserve {
-//     // threshold should be the account balance quotas to compare against,
-//     // value should be what the transaction will cost
-//     pub async fn check_and_transfer(
-//         &self,
-//         account: String,
-//         threshold: u128,
-//         value: u128,
-//     ) -> Result<Option<ExtrinsicStatus>, Error> {
-//         let check_balance = self.check_funds(&account, threshold);
-//         let transfer = self.transfer_funds(account, value);
+impl FundsReserve {
+    // threshold should be the account balance quotas to compare against,
+    // value should be what the transaction will cost
+    pub async fn check_and_transfer(
+        &self,
+        account: PublicAddress,
+        threshold: u128,
+        value: u128,
+    ) -> Result<Option<ExtrinsicStatus>, Error> {
+        let is_balance_low = self.check_funds(account.clone(), threshold).await?;
 
-//         let balance_result = check_balance.await?;
-
-//         match balance_result {
-//             true => Ok(Some(transfer.await?)),
-//             false => Ok(None),
-//         }
-//     }
-// }
+        match is_balance_low {
+            true => Ok(Some(self.transfer_funds(account, value).await?)),
+            false => Ok(None),
+        }
+    }
+}
