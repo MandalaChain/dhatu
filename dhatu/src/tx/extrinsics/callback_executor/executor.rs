@@ -1,19 +1,36 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use serde_json::Value;
 use tokio::sync::RwLock;
 
-use crate::tx::extrinsics::prelude::TransactionId;
+use crate::{error::Error, tx::extrinsics::prelude::TransactionId};
 
 pub struct CallbackExecutor {
-    result: Arc<RwLock<HashMap<TransactionId, Result<Value, reqwest::Error>>>>,
     http_connection_pool: reqwest::Client,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum CallbackExecutorError {
+    #[error("{0}")]
+    InvalidUrl(String),
+}
+
+pub struct Url(pub(crate) reqwest::Url);
+
+impl FromStr for Url {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let url = reqwest::Url::from_str(s)
+            .map_err(|e| CallbackExecutorError::InvalidUrl(e.to_string()))?;
+
+        Ok(Self(url))
+    }
 }
 
 impl Clone for CallbackExecutor {
     fn clone(&self) -> Self {
         Self {
-            result: self.result.clone(),
             http_connection_pool: self.http_connection_pool.clone(),
         }
     }
@@ -23,28 +40,12 @@ impl CallbackExecutor {
     pub fn new() -> Self {
         Self {
             http_connection_pool: reqwest::Client::new(),
-            result: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
-    pub fn execute(&self, tx_id: TransactionId, body: Value, callback: String) {
+    pub fn execute(&self, body: Value, callback: String) {
         let client = self.http_connection_pool.clone();
-        let callback_result_clone = self.result.clone();
-
-        let task = async move {
-            let response = client.post(callback).json(&body).send().await;
-            let response = async move {
-                match response {
-                    Ok(res) => Ok(res.json::<Value>().await.unwrap_or_default()),
-                    Err(e) => Err(e),
-                }
-            }
-            .await;
-
-            let mut callback_result = callback_result_clone.write().await;
-
-            callback_result.insert(tx_id, response);
-        };
+        let task = client.post(callback).json(&body).send();
 
         tokio::task::spawn(task);
     }

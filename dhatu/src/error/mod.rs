@@ -1,6 +1,6 @@
 use crate::{
     registrar::key_manager::prelude::KeypairGenerationError,
-    tx::extrinsics::prelude::reserve::FundsReserveError, MandalaClientErorr,
+    tx::extrinsics::prelude::{reserve::FundsReserveError, executor::CallbackExecutorError}, MandalaClientErorr,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -12,8 +12,11 @@ pub enum Error {
     KeypairGenError(#[from] KeypairGenerationError),
 
     #[error("mandala client error :")]
-    MandalaClient(#[from] MandalaClientErorr),
+    Client(#[from] MandalaClientErorr),
 
     #[error("reserve error : ")]
     ReserveError(#[from] FundsReserveError),
+
+    #[error("callback executor error : ")]
+    CallbackError(#[from] CallbackExecutorError)
 }
