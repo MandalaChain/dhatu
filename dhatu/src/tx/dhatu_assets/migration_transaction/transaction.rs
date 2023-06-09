@@ -85,7 +85,7 @@ impl MigrationTransaction {
     }
 
     pub async fn ensure_enough_gas(self) -> Self {
-        let account = self.signer.public().to_string();
+        let account = self.signer.clone().into();
 
         // future implementation will dynamically check the threshold and then transfer.
         // currently this automatically transfer funds regardless of quota threshold

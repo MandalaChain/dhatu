@@ -8,10 +8,10 @@ use crate::tx::extrinsics::{
     prelude::{extrinsics::Transaction as RunningTransaction, BlockchainClient, reserve::FundsReserve},
 };
 
-use super::types::{
+use super::{types::{
     MigrationTask as Task, MigrationTransaction as Transaction, MigrationTransactionPayload,
     MigrationTransactionResultNotifier,
-};
+}, transaction, };
 
 pub(crate) trait MigrationTask {
     fn construct_payload(
@@ -44,7 +44,7 @@ pub(crate) trait MigrationTransactionBuilder
 
     fn set_client(&mut self, client: BlockchainClient) -> &mut Self;
 
-    fn build(&mut self) -> Transaction;
+    fn build(&mut self) -> transaction::MigrationTransaction;
 }
 
 pub(crate) trait MigrationTransactionAttributes {
