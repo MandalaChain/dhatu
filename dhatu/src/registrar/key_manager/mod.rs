@@ -4,7 +4,7 @@ pub mod password;
 
 use std::str::FromStr;
 
-use sp_core::{crypto::Ss58Codec, sr25519::Pair as Keys, Pair};
+use sp_core::{sr25519::Pair as Keys, Pair};
 
 pub mod prelude {
     pub use super::keypair::*;

@@ -1,10 +1,10 @@
-use std::str::FromStr;
+
 
 use subxt::utils::{AccountId32, MultiAddress};
 
 use crate::{
     registrar::key_manager::prelude::PublicAddress,
-    tx::extrinsics::{prelude::GenericError, transaction_constructor::traits::ValidateHash},
+    tx::extrinsics::{transaction_constructor::traits::ValidateHash},
 };
 
 #[derive(

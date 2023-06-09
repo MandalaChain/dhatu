@@ -126,7 +126,7 @@ impl MnemonicPhrase {
 
         match vrf {
             Ok(_) => Ok(Self(String::from(phrase))),
-            Err(e) => Err(KeypairGenerationError::MnemonicPhrase(String::from(phrase)))?,
+            Err(_e) => Err(KeypairGenerationError::MnemonicPhrase(String::from(phrase)))?,
         }
     }
 

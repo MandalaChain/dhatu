@@ -1,16 +1,16 @@
-use sp_core::Pair as PairTraits;
-use std::{pin::Pin, str::FromStr};
+
+
 
 use crate::error::Error;
 use crate::registrar::key_manager::prelude::PublicAddress;
 use crate::tx::extrinsics::prelude::{
     enums::ExtrinsicStatus, extrinsics::Transaction,
-    transfer_balance::constructor::BalanceTransfer, BlockchainClient, GenericError,
+    transfer_balance::constructor::BalanceTransfer,
 };
-use futures::Future;
-use sp_core::sr25519::Pair;
+
+
 use subxt::dynamic::{At, DecodedValueThunk};
-use subxt::{tx::PairSigner, utils::AccountId32};
+use subxt::{tx::PairSigner};
 
 use crate::{registrar::key_manager::prelude::PrivateKey, MandalaClient};
 
@@ -73,10 +73,10 @@ impl FundsReserve {
             .storage()
             .at_latest()
             .await
-            .map_err(|e: subxt::Error| FundsReserveError::RpcError(e))?
+            .map_err(FundsReserveError::RpcError)?
             .fetch(&address)
             .await
-            .map_err(|e: subxt::Error| FundsReserveError::RpcError(e))?;
+            .map_err(FundsReserveError::RpcError)?;
 
         let account_balance = Self::infer_balance(result)?;
 
@@ -116,7 +116,7 @@ impl FundsReserve {
             .tx()
             .sign_and_submit_then_watch_default(&payload, &signer)
             .await
-            .map_err(|e: subxt::Error| FundsReserveError::RpcError(e))?;
+            .map_err(FundsReserveError::RpcError)?;
 
         let status = Transaction::wait(tx).await;
 

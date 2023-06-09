@@ -1,9 +1,9 @@
-use std::{collections::HashMap, str::FromStr, sync::Arc};
+use std::{str::FromStr};
 
 use serde_json::Value;
-use tokio::sync::RwLock;
 
-use crate::{error::Error, tx::extrinsics::prelude::TransactionId};
+
+use crate::{error::Error};
 
 pub struct Executor {
     http_connection_pool: reqwest::Client,

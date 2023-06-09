@@ -1,4 +1,4 @@
-use sp_core::{sr25519::Pair, Pair as PairTraits};
+use sp_core::{sr25519::Pair};
 
 use crate::{
     registrar::signer::TxBuilder,

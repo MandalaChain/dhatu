@@ -6,7 +6,7 @@ use crate::tx::extrinsics::prelude::{NotificationMessage, TransactionId};
 
 use super::super::{
     callback_executor::Executor,
-    extrinsics_tracker::{enums::ExtrinsicStatus, tracker::ExtrinsicWatcher},
+    extrinsics_tracker::{tracker::ExtrinsicWatcher},
     prelude::{ExtrinsicSubmitter, GenericError},
     types::{BlockchainClient, Extrinsic},
 };
@@ -66,7 +66,7 @@ impl ExtrinsicFacade {
     ) -> Task {
         let recv = async move {
             loop {
-                let (id, status, callback) = tx_receiver_channel.recv().await.unwrap();
+                let (id, _status, callback) = tx_receiver_channel.recv().await.unwrap();
 
                 tx_watcher.stop_watching(&id).await;
 
