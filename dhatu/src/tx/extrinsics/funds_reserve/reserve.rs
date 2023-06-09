@@ -14,7 +14,6 @@ use subxt::{tx::PairSigner, utils::AccountId32};
 
 use crate::{registrar::key_manager::prelude::PrivateKey, MandalaClient};
 
-use super::traits::{FundsReserveAtributes, FundsReserveTask, FundsReserveTraits};
 
 #[derive(thiserror::Error, Debug)]
 pub enum FundsReserveError {
@@ -75,7 +74,7 @@ impl FundsReserve {
             .storage()
             .at_latest()
             .await
-            .map_err(|e:subxt::Error| FundsReserveError::RpcError(e))?
+            .map_err(|e: subxt::Error| FundsReserveError::RpcError(e))?
             .fetch(&address)
             .await
             .map_err(|e: subxt::Error| FundsReserveError::RpcError(e))?;
@@ -102,28 +101,28 @@ impl FundsReserve {
     }
 }
 
-// impl FundsReserve {
-//     pub async fn transfer_funds(
-//         &self,
-//         account: String,
-//         value: u128,
-//     ) -> Result<ExtrinsicStatus, Error> {
-//         // we need this outside of the async block to avoid lifetime's issues
-//         let client = self.client().clone();
-//         let signer = PairSigner::new(self.reserve_signer().to_owned());
+impl FundsReserve {
+    pub async fn transfer_funds(
+        &self,
+        account: PublicAddress,
+        value: u128,
+    ) -> Result<ExtrinsicStatus, Error> {
+        let client = self.client().inner();
 
-//         let payload = BalanceTransfer::construct(&account, value)?;
+        let signer = PairSigner::new(self.reserve_signer().inner().to_owned());
 
-//         let tx = client
-//             .tx()
-//             .sign_and_submit_then_watch_default(&payload, &signer)
-//             .await?;
+        let payload = BalanceTransfer::construct(account, value);
 
-//         let status = Transaction::wait(tx).await;
+        let tx = client
+            .tx()
+            .sign_and_submit_then_watch_default(&payload, &signer)
+            .await?;
 
-//         Ok(status)
-//     }
-// }
+        let status = Transaction::wait(tx).await;
+
+        Ok(status)
+    }
+}
 
 // impl FundsReserve {
 //     // threshold should be the account balance quotas to compare against,

@@ -3,14 +3,13 @@ use sp_core::{sr25519::Pair, Pair as PairTraits};
 use crate::{
     registrar::signer::TxBuilder,
     tx::extrinsics::{
-        funds_reserve::traits::FundsReserveTraits,
         prelude::{
             extrinsics,
             submitter::ExtrinsicSubmitter,
             transfer_nft_contract::{
                 constructor::TransferNFT, traits::NftTransferTransactionConstructor,
             },
-            BlockchainClient,
+            BlockchainClient, reserve::FundsReserve,
         },
     },
 };
@@ -25,20 +24,20 @@ use super::{
 
 const STATIC_NFT_TRANSFER_FEE: u128 = 9_000_000_000; // 9  mili units (9mU)
 
-pub(crate) struct MigrationTransaction<Reserve: FundsReserveTraits> {
+pub(crate) struct MigrationTransaction {
     signer: Pair,
     notifier: MigrationTransactionResultNotifier,
-    reserve: Reserve,
+    reserve: FundsReserve,
     client: BlockchainClient,
     payload: Option<MigrationTransactionPayload>,
     inner_tx: Option<SubmittableTransaction>,
 }
 
-impl<Reserve: FundsReserveTraits> MigrationTransaction<Reserve> {
+impl MigrationTransaction {
     pub fn new(
         signer: Pair,
         notifier: MigrationTransactionResultNotifier,
-        reserve: Reserve,
+        reserve: FundsReserve,
         client: BlockchainClient,
         payload: Option<MigrationTransactionPayload>,
         inner_tx: Option<SubmittableTransaction>,
@@ -111,8 +110,8 @@ impl<Reserve: FundsReserveTraits> MigrationTransaction<Reserve> {
     }
 }
 
-impl<Reserve: FundsReserveTraits> MigrationTransactionAttributes<Reserve>
-    for MigrationTransaction<Reserve>
+impl MigrationTransactionAttributes
+    for MigrationTransaction
 {
     fn signer(&self) -> &Pair {
         &self.signer
@@ -122,7 +121,7 @@ impl<Reserve: FundsReserveTraits> MigrationTransactionAttributes<Reserve>
         &self.notifier
     }
 
-    fn reserve(&self) -> &Reserve {
+    fn reserve(&self) -> &FundsReserve {
         &self.reserve
     }
 
@@ -139,4 +138,4 @@ impl<Reserve: FundsReserveTraits> MigrationTransactionAttributes<Reserve>
     }
 }
 
-impl<Reserve: FundsReserveTraits> Transaction<Reserve> for MigrationTransaction<Reserve> {}
+impl Transaction for MigrationTransaction {}

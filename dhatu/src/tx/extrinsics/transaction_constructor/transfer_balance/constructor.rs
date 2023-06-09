@@ -1,12 +1,10 @@
 use std::str::FromStr;
 
-use subxt::{
-    utils::{AccountId32, MultiAddress},
-};
+use subxt::utils::{AccountId32, MultiAddress};
 
-use crate::tx::extrinsics::{
-    prelude::{GenericError},
-    transaction_constructor::traits::ValidateHash,
+use crate::{
+    registrar::key_manager::prelude::PublicAddress,
+    tx::extrinsics::{prelude::GenericError, transaction_constructor::traits::ValidateHash},
 };
 
 #[derive(
@@ -51,13 +49,10 @@ impl ValidateHash for BalanceTransfer {
 type BalanceTransferPayload = subxt::tx::Payload<BalanceTransferArgs>;
 
 impl BalanceTransfer {
-    pub fn construct(to: &str, value: u128) -> Result<BalanceTransferPayload, GenericError> {
-        let dest = subxt::utils::MultiAddress::Id(AccountId32::from_str(to)?);
-
+    pub fn construct(to: PublicAddress, value: u128) -> BalanceTransferPayload {
+        let dest = subxt::utils::MultiAddress::Id(to.into());
         let args = BalanceTransferArgs::new(dest, value);
-
-        let payload = Self::generate_payload(args);
-
-        Ok(payload)
+        
+        Self::generate_payload(args)
     }
 }

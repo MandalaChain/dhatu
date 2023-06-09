@@ -1,19 +1,15 @@
-use crate::tx::extrinsics::{funds_reserve::traits::FundsReserveTraits, prelude::BlockchainClient};
+use crate::tx::extrinsics::prelude::{reserve::FundsReserve, BlockchainClient};
 
 use super::{traits::MigrationTransactionBuilder, transaction::MigrationTransaction};
 
-pub(crate) struct MigrationTransactionBuilderStruct<Reserve: FundsReserveTraits> {
+pub(crate) struct MigrationTransactionBuilderStruct {
     signer: Option<sp_core::sr25519::Pair>,
     notifier: Option<super::types::MigrationTransactionResultNotifier>,
-    reserve: Option<Reserve>,
+    reserve: Option<FundsReserve>,
     client: Option<BlockchainClient>,
 }
 
-impl<Reserve> MigrationTransactionBuilder<Reserve, MigrationTransaction<Reserve>>
-    for MigrationTransactionBuilderStruct<Reserve>
-where
-    Reserve: FundsReserveTraits,
-{
+impl MigrationTransactionBuilder for MigrationTransactionBuilderStruct {
     fn new() -> Self {
         Self {
             signer: None,
@@ -38,19 +34,22 @@ where
         self
     }
 
-    fn set_gas_reserve(&mut self, reserve: Reserve) -> &mut Self {
+    fn set_gas_reserve(&mut self, reserve: FundsReserve) -> &mut Self {
         self.reserve = Some(reserve);
 
         self
     }
 
-    fn set_client(&mut self, client: crate::tx::extrinsics::prelude::BlockchainClient) -> &mut Self {
+    fn set_client(
+        &mut self,
+        client: crate::tx::extrinsics::prelude::BlockchainClient,
+    ) -> &mut Self {
         self.client = Some(client);
 
         self
     }
 
-    fn build(&mut self) -> MigrationTransaction<Reserve> {
+    fn build(&mut self) -> MigrationTransaction {
         let signer = self.signer.take().expect("signer should be set");
         let notifier = self.notifier.take().expect("notifier should be set");
         let reserve = self.reserve.take().expect("funds reserve should be set");

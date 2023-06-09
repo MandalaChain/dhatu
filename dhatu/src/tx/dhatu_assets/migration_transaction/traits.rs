@@ -5,8 +5,7 @@
 use sp_core::sr25519::Pair;
 
 use crate::tx::extrinsics::{
-    funds_reserve::traits::FundsReserveTraits,
-    prelude::{extrinsics::Transaction as RunningTransaction, BlockchainClient},
+    prelude::{extrinsics::Transaction as RunningTransaction, BlockchainClient, reserve::FundsReserve},
 };
 
 use super::types::{
@@ -33,10 +32,7 @@ pub(crate) trait MigrationProcess {
     fn start(&mut self);
 }
 
-pub(crate) trait MigrationTransactionBuilder<
-    Reserve: FundsReserveTraits,
-    Transaction: MigrationTransaction<Reserve>,
->
+pub(crate) trait MigrationTransactionBuilder
 {
     fn new() -> Self;
 
@@ -44,19 +40,19 @@ pub(crate) trait MigrationTransactionBuilder<
 
     fn set_notifier(&mut self, notifier: MigrationTransactionResultNotifier) -> &mut Self;
 
-    fn set_gas_reserve(&mut self, reserve: Reserve) -> &mut Self;
+    fn set_gas_reserve(&mut self, reserve: FundsReserve) -> &mut Self;
 
     fn set_client(&mut self, client: BlockchainClient) -> &mut Self;
 
     fn build(&mut self) -> Transaction;
 }
 
-pub(crate) trait MigrationTransactionAttributes<Reserve: FundsReserveTraits> {
+pub(crate) trait MigrationTransactionAttributes {
     fn signer(&self) -> &Pair;
 
     fn notifier(&self) -> &MigrationTransactionResultNotifier;
 
-    fn reserve(&self) -> &Reserve;
+    fn reserve(&self) -> &FundsReserve;
 
     fn client(&self) -> &BlockchainClient;
 
@@ -65,7 +61,7 @@ pub(crate) trait MigrationTransactionAttributes<Reserve: FundsReserveTraits> {
     fn inner_tx(&self) -> Option<&Transaction>;
 }
 
-pub(crate) trait MigrationTransaction<Reserve: FundsReserveTraits>:
-    MigrationTransactionAttributes<Reserve>
+pub(crate) trait MigrationTransaction:
+    MigrationTransactionAttributes
 {
 }

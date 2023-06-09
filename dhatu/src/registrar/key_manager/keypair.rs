@@ -65,6 +65,12 @@ pub enum KeypairGenerationError {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PublicAddress(pub(crate) String);
 
+impl PublicAddress {
+    pub fn inner(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
 impl FromStr for PublicAddress {
     type Err = Error;
 
@@ -123,6 +129,10 @@ impl MnemonicPhrase {
             Err(e) => Err(KeypairGenerationError::MnemonicPhrase(String::from(phrase)))?,
         }
     }
+
+    pub fn inner(&self) -> &str{
+        self.0.as_str()
+    }
 }
 
 #[derive(Clone)]
@@ -131,6 +141,10 @@ pub struct PrivateKey(pub(crate) Pair);
 impl PrivateKey {
     pub fn public_key(&self) -> PublicAddress {
         self.clone().into()
+    }
+
+    pub fn inner(&self) -> &Pair{
+        &self.0
     }
 }
 
