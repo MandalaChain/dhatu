@@ -5,7 +5,7 @@ use crate::{
     tx::extrinsics::{
         prelude::{
             extrinsics,
-            submitter::ExtrinsicSubmitter,
+            ExtrinsicSubmitter,
             transfer_nft_contract::{
                 constructor::TransferNFT, traits::NftTransferTransactionConstructor,
             },
