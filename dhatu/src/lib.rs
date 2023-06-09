@@ -1,12 +1,26 @@
-use subxt::{OnlineClient, PolkadotConfig};
+use subxt::{tx::SubmittableExtrinsic, OnlineClient, PolkadotConfig};
 
 pub mod error;
 pub(crate) mod private;
 pub mod registrar;
 pub mod tx;
 
+pub type MandalaConfig = PolkadotConfig;
+pub(crate) type NodeClient = OnlineClient<MandalaConfig>;
+ 
+pub struct MandalaExtrinsics(pub(crate) SubmittableExtrinsic<NodeClient,MandalaConfig>);
+
+impl MandalaExtrinsics {
+    pub(crate) fn new(tx: SubmittableExtrinsic<NodeClient, MandalaConfig>) -> Self {
+        Self(tx)
+    }
+
+    pub(crate) fn into_inner(self) -> SubmittableExtrinsic<NodeClient,MandalaConfig>{
+        self.0
+    }
+}
 #[derive(Clone)]
-pub struct MandalaClient(pub(crate) OnlineClient<PolkadotConfig>);
+pub struct MandalaClient(pub(crate) OnlineClient<MandalaConfig>);
 
 #[derive(thiserror::Error, Debug)]
 pub enum MandalaClientErorr {
