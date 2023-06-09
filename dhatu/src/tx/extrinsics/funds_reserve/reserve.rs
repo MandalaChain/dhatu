@@ -7,12 +7,13 @@ use crate::tx::extrinsics::prelude::{
     enums::ExtrinsicStatus, extrinsics::Transaction,
     transfer_balance::constructor::BalanceTransfer,
 };
+use crate::types::MandalaClient;
 
 
 use subxt::dynamic::{At, DecodedValueThunk};
 use subxt::{tx::PairSigner};
 
-use crate::{registrar::key_manager::prelude::PrivateKey, MandalaClient};
+use crate::{registrar::key_manager::prelude::PrivateKey};
 
 #[derive(thiserror::Error, Debug)]
 pub enum FundsReserveError {

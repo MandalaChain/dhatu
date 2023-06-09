@@ -1,6 +1,6 @@
 use crate::{
     registrar::key_manager::prelude::KeypairGenerationError,
-    tx::extrinsics::prelude::{reserve::FundsReserveError, CallbackExecutorError}, MandalaClientErorr,
+    tx::extrinsics::prelude::{reserve::FundsReserveError, CallbackExecutorError}, types::MandalaClientErorr, 
 };
 
 #[derive(thiserror::Error, Debug)]

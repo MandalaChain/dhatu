@@ -1,5 +1,4 @@
 use subxt::{tx::SubmittableExtrinsic, OnlineClient, PolkadotConfig};
-use types::{Extrinsic, MandalaConfig, NodeClient};
 
 pub(crate) type MandalaConfig = PolkadotConfig;
 pub(crate) type NodeClient = OnlineClient<MandalaConfig>;

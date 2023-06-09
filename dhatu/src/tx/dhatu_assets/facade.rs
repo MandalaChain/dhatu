@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{registrar::key_manager::prelude::{PrivateKey, PublicAddress}, MandalaClient};
+use crate::{registrar::key_manager::prelude::{PrivateKey, PublicAddress}, types::MandalaClient};
 use futures::{future, FutureExt};
 
 
