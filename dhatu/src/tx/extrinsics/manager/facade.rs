@@ -5,7 +5,7 @@ use sp_core::H256;
 use crate::tx::extrinsics::prelude::{NotificationMessage, TransactionId};
 
 use super::super::{
-    callback_executor::executor::CallbackExecutor,
+    callback_executor::Executor,
     extrinsic_reporting::ExtrinsicReportStorage,
     extrinsics_tracker::{enums::ExtrinsicStatus, tracker::ExtrinsicWatcher},
     prelude::{submitter::ExtrinsicSubmitter, GenericError},
@@ -16,7 +16,7 @@ use super::super::{
 type Task = tokio::task::JoinHandle<()>;
 
 pub type TransactionWatcherInstance = ExtrinsicWatcher;
-pub type CallbackExecutorInstance = CallbackExecutor;
+pub type CallbackExecutorInstance = Executor;
 
 // temporary callback body
 #[doc(hidden)]
@@ -43,7 +43,7 @@ impl ExtrinsicFacade {
     pub fn new(client: BlockchainClient) -> Self {
         let (tx_sender_channel, tx_receiver_channel) = Self::create_channel();
 
-        let callback_executor = CallbackExecutor::new();
+        let callback_executor = Executor::new();
 
         let tx_watcher = ExtrinsicWatcher::new(client, tx_sender_channel.clone());
 
