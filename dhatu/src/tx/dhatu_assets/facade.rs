@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{registrar::key_manager::prelude::{SecretKey, PublicKey}, MandalaClient};
+use crate::{registrar::key_manager::prelude::{PrivateKey, PublicAddress}, MandalaClient};
 use futures::{future, FutureExt};
 
 
@@ -38,8 +38,8 @@ impl DhatuAssetsFacade {
     pub fn migrate(
         &self,
         assets: Vec<impl Asset>,
-        from: SecretKey,
-        to: PublicKey,
+        from: PrivateKey,
+        to: PublicAddress,
         reserve: &FundsReserve,
         notifier: MigrationTransactionResultNotifier,
     ) {

@@ -11,15 +11,15 @@ use super::prelude::Password;
 pub struct Keypair {
     password_hash: Password,
     phrase: MnemonicPhrase,
-    pub_key: PublicKey,
+    pub_key: PublicAddress,
     keypair: Pair,
 }
 
 impl Keypair {
-    pub fn new(
+    pub(crate) fn new(
         password_hash: Password,
         phrase: MnemonicPhrase,
-        pub_key: PublicKey,
+        pub_key: PublicAddress,
         keypair: Pair,
     ) -> Self {
         Self {
@@ -38,7 +38,7 @@ impl Keypair {
         &self.phrase
     }
 
-    pub fn pub_key(&self) -> &PublicKey {
+    pub fn pub_key(&self) -> &PublicAddress {
         &self.pub_key
     }
 
@@ -49,41 +49,48 @@ impl Keypair {
 #[derive(thiserror::Error, Debug)]
 pub enum KeypairGenerationError {
     #[error("{0}")]
-    Pubkey(String),
+    PublicAddress(String),
 
     #[error("fail to generate mnemonic phrase with {0}")]
     MnemonicPhrase(String),
 
     #[error("{0}")]
-    SecretKey(String),
+    PrivateKey(String),
 
     #[error("{0}")]
     Recover(String),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PublicKey(pub(crate) String);
+pub struct PublicAddress(pub(crate) String);
 
-impl FromStr for PublicKey {
+impl FromStr for PublicAddress {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         subxt::utils::AccountId32::from_str(s)
-            .map(|v| PublicKey(v.to_string()))
-            .map_err(|e| KeypairGenerationError::Pubkey(e.to_string()).into())
+            .map(|v| Self(v.to_string()))
+            .map_err(|e| KeypairGenerationError::PublicAddress(e.to_string()).into())
     }
 }
 
-impl From<Keypair> for PublicKey {
+impl From<Keypair> for PublicAddress {
     fn from(value: Keypair) -> Self {
         value.pub_key().clone()
     }
 }
 
-impl From<Pair> for PublicKey {
+impl From<Pair> for PublicAddress {
     fn from(value: Pair) -> Self {
         let value = value.public().to_ss58check();
-        PublicKey(value)
+        Self(value)
+    }
+}
+
+impl From<PrivateKey> for PublicAddress {
+    fn from(value: PrivateKey) -> Self {
+        let address = value.0.public().to_ss58check();
+        Self(address)
     }
 }
 
@@ -105,32 +112,38 @@ impl MnemonicPhrase {
 }
 
 #[derive(Clone)]
-pub struct SecretKey(pub(crate) Pair);
+pub struct PrivateKey(pub(crate) Pair);
 
-impl FromStr for SecretKey {
+impl PrivateKey {
+    pub fn public_key(&self) -> PublicAddress {
+        self.clone().into()
+    }
+}
+
+impl FromStr for PrivateKey {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         schnorrkel::Keypair::from_bytes(s.as_bytes())
-            .map(|v| SecretKey(Pair::from(v)))
-            .map_err(|e| KeypairGenerationError::SecretKey(e.to_string()).into())
+            .map(|v| PrivateKey(Pair::from(v)))
+            .map_err(|e| KeypairGenerationError::PrivateKey(e.to_string()).into())
     }
 }
 
-impl From<Keypair> for SecretKey {
+impl From<Keypair> for PrivateKey {
     fn from(value: Keypair) -> Self {
-        SecretKey(value.keypair().clone())
+        PrivateKey(value.keypair().clone())
     }
 }
 
-impl From<SecretKey> for Pair {
-    fn from(val: SecretKey) -> Self {
+impl From<PrivateKey> for Pair {
+    fn from(val: PrivateKey) -> Self {
         val.0
     }
 }
 
-impl From<Pair> for SecretKey {
+impl From<Pair> for PrivateKey {
     fn from(value: Pair) -> Self {
-        SecretKey(value)
+        PrivateKey(value)
     }
 }
