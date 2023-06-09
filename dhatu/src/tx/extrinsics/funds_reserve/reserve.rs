@@ -1,6 +1,7 @@
 use sp_core::Pair as PairTraits;
 use std::{pin::Pin, str::FromStr};
 
+use crate::error::Error;
 use crate::registrar::key_manager::prelude::PublicAddress;
 use crate::tx::extrinsics::prelude::{
     enums::ExtrinsicStatus, extrinsics::Transaction,
@@ -8,112 +9,139 @@ use crate::tx::extrinsics::prelude::{
 };
 use futures::Future;
 use sp_core::sr25519::Pair;
-use subxt::dynamic::At;
+use subxt::dynamic::{At, DecodedValueThunk};
 use subxt::{tx::PairSigner, utils::AccountId32};
 
-use crate::{
-    registrar::key_manager::prelude::PrivateKey, tx::extrinsics::prelude::BlockchainClient,
-    MandalaClient,
-};
+use crate::{registrar::key_manager::prelude::PrivateKey, MandalaClient};
 
 use super::traits::{FundsReserveAtributes, FundsReserveTask, FundsReserveTraits};
 
+#[derive(thiserror::Error, Debug)]
+pub enum FundsReserveError {
+    #[error("{0}")]
+    RpcError(#[from] subxt::error::Error),
+
+    #[error("account does not exist!")]
+    NonExistentAccount,
+}
+
 #[derive(Clone)]
 pub struct FundsReserve {
-    reserve: sp_core::sr25519::Pair,
-    client: BlockchainClient,
+    reserve: PrivateKey,
+    client: MandalaClient,
 }
 
 impl FundsReserve {
     pub fn new(reserve_key: PrivateKey, client: MandalaClient) -> Self {
         Self {
-            reserve: reserve_key.into(),
-            client: client.inner().to_owned(),
+            reserve: reserve_key,
+            client,
         }
     }
 }
 
 impl FundsReserve {
-    pub fn reserve_signer(&self) -> &sp_core::sr25519::Pair {
+    pub fn reserve_signer(&self) -> &PrivateKey {
         &self.reserve
     }
 
-    pub fn reserve_adress(&self) -> String {
-        self.reserve.public().to_string()
+    pub fn reserve_address(&self) -> PublicAddress {
+        self.reserve.public_key()
     }
 
-    pub fn client(&self) -> &BlockchainClient {
+    pub fn client(&self) -> &MandalaClient {
         &self.client
     }
 
-    pub fn change_signer(&mut self, pair: sp_core::sr25519::Pair) {
-        self.reserve = pair;
+    pub fn set_signer(&mut self, signer: PrivateKey) {
+        self.reserve = signer;
     }
 }
 
 impl FundsReserve {
-    pub async fn check_funds(&self, account: PublicAddress, value: u128) -> Result<bool, GenericError> {
-        // we need this outside of the async block to avoid lifetime's issues`
-        let client = self.client().clone();
-        let account = String::from(account);
+    const SYSTEM_PALLET: &'static str = "System";
+    const SYSTEM_PALLET_ACCOUNT_STORAGE_ENTRY: &'static str = "Account";
 
-        let account = AccountId32::from_str(&account)?;
-        let account = subxt::dynamic::Value::from_bytes(account);
+    pub async fn check_funds(&self, account: PublicAddress, value: u128) -> Result<bool, Error> {
+        let client = self.client().inner();
 
-        let address = subxt::dynamic::storage("System", "Account", vec![account]);
-        let result = client.storage().at_latest().await?.fetch(&address).await?;
+        let address = subxt::dynamic::storage(
+            Self::SYSTEM_PALLET,
+            Self::SYSTEM_PALLET_ACCOUNT_STORAGE_ENTRY,
+            vec![subxt::dynamic::Value::from(account)],
+        );
 
-        let account = result.unwrap().to_value()?;
-        let account_balance = account.at("data").at("free").unwrap().to_owned();
-        let account_balance = account_balance.as_u128().unwrap();
+        let result = client
+            .storage()
+            .at_latest()
+            .await
+            .map_err(|e:subxt::Error| FundsReserveError::RpcError(e))?
+            .fetch(&address)
+            .await
+            .map_err(|e: subxt::Error| FundsReserveError::RpcError(e))?;
+
+        let account_balance = Self::infer_balance(result)?;
 
         match account_balance.cmp(&value) {
             std::cmp::Ordering::Less => Ok(false),
             _ => Ok(true),
         }
     }
-}
 
-impl FundsReserve {
-    pub async fn transfer_funds(
-        &self,
-        account: String,
-        value: u128,
-    ) -> Result<ExtrinsicStatus, GenericError> {
-        // we need this outside of the async block to avoid lifetime's issues
-        let client = self.client().clone();
-        let signer = PairSigner::new(self.reserve_signer().to_owned());
-
-        let payload = BalanceTransfer::construct(&account, value)?;
-
-        let tx = client
-            .tx()
-            .sign_and_submit_then_watch_default(&payload, &signer)
-            .await?;
-
-        let status = Transaction::wait(tx).await;
-
-        Ok(status)
+    fn infer_balance(result: Option<DecodedValueThunk>) -> Result<u128, Error> {
+        result
+            .ok_or(FundsReserveError::NonExistentAccount.into())
+            .map(|v| v.to_value().expect("subxt dynamic values are valid"))
+            .map(|acc| {
+                acc.at("data")
+                    .at("free")
+                    .expect("subxt dynamic values are valid")
+                    .to_owned()
+            })
+            .map(|balance| balance.as_u128().expect("subxt dynamic values are valid"))
     }
 }
 
-impl FundsReserve {
-    // threshold should be the account balance quotas to compare against,
-    // value should be what the transaction will cost
-    pub async fn check_and_transfer(
-        &self,
-        account: String,
-        threshold: u128,
-        value: u128,
-    ) -> Result<Option<ExtrinsicStatus>, GenericError> {
-        let check_balance = self.check_funds(&account, threshold);
-        let transfer = self.transfer_funds(account, value);
+// impl FundsReserve {
+//     pub async fn transfer_funds(
+//         &self,
+//         account: String,
+//         value: u128,
+//     ) -> Result<ExtrinsicStatus, Error> {
+//         // we need this outside of the async block to avoid lifetime's issues
+//         let client = self.client().clone();
+//         let signer = PairSigner::new(self.reserve_signer().to_owned());
 
-        let balance_result = check_balance.await?;
+//         let payload = BalanceTransfer::construct(&account, value)?;
 
-        match balance_result {
-            true => Ok(Some(transfer.await?)),
-            false => Ok(None),
-        }
-    }
-}
+//         let tx = client
+//             .tx()
+//             .sign_and_submit_then_watch_default(&payload, &signer)
+//             .await?;
+
+//         let status = Transaction::wait(tx).await;
+
+//         Ok(status)
+//     }
+// }
+
+// impl FundsReserve {
+//     // threshold should be the account balance quotas to compare against,
+//     // value should be what the transaction will cost
+//     pub async fn check_and_transfer(
+//         &self,
+//         account: String,
+//         threshold: u128,
+//         value: u128,
+//     ) -> Result<Option<ExtrinsicStatus>, Error> {
+//         let check_balance = self.check_funds(&account, threshold);
+//         let transfer = self.transfer_funds(account, value);
+
+//         let balance_result = check_balance.await?;
+
+//         match balance_result {
+//             true => Ok(Some(transfer.await?)),
+//             false => Ok(None),
+//         }
+//     }
+// }

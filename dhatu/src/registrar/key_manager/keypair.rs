@@ -2,6 +2,7 @@ use crate::error::Error;
 use futures::FutureExt;
 use sp_core::{crypto::Ss58Codec, sr25519::Pair, Pair as PairTraits};
 use std::str::FromStr;
+use subxt::utils::AccountId32;
 
 use super::prelude::Password;
 
@@ -68,9 +69,22 @@ impl FromStr for PublicAddress {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        subxt::utils::AccountId32::from_str(s)
+        AccountId32::from_str(s)
             .map(|v| Self(v.to_string()))
             .map_err(|e| KeypairGenerationError::PublicAddress(e.to_string()).into())
+    }
+}
+
+impl From<PublicAddress> for AccountId32 {
+    fn from(value: PublicAddress) -> Self {
+        Self::from_str(&value.0).expect("converstion from valid public address shouldn't fail!")
+    }
+}
+
+impl From<PublicAddress> for subxt::dynamic::Value {
+    fn from(value: PublicAddress) -> Self {
+        let acc = AccountId32::from(value);
+        Self::from_bytes(acc)
     }
 }
 
