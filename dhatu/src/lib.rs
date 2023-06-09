@@ -1,24 +1,32 @@
 use subxt::{tx::SubmittableExtrinsic, OnlineClient, PolkadotConfig};
+use types::{MandalaConfig, NodeClient, Extrinsic};
 
 pub mod error;
 pub(crate) mod private;
 pub mod registrar;
 pub mod tx;
+pub mod types;
 
-pub type MandalaConfig = PolkadotConfig;
-pub(crate) type NodeClient = OnlineClient<MandalaConfig>;
- 
-pub struct MandalaExtrinsics(pub(crate) SubmittableExtrinsic<NodeClient,MandalaConfig>);
+
+pub struct MandalaExtrinsics(pub(crate) SubmittableExtrinsic<MandalaConfig, NodeClient>);
 
 impl MandalaExtrinsics {
-    pub(crate) fn new(tx: SubmittableExtrinsic<NodeClient, MandalaConfig>) -> Self {
+    pub(crate) fn new(tx: SubmittableExtrinsic<MandalaConfig, NodeClient>) -> Self {
         Self(tx)
     }
 
-    pub(crate) fn into_inner(self) -> SubmittableExtrinsic<NodeClient,MandalaConfig>{
+    pub(crate) fn into_inner(self) -> SubmittableExtrinsic<MandalaConfig, NodeClient> {
         self.0
     }
 }
+
+impl  From<Extrinsic> for MandalaExtrinsics {
+    fn from(value: Extrinsic) -> Self {
+        Self(value)
+    }
+}
+
+
 #[derive(Clone)]
 pub struct MandalaClient(pub(crate) OnlineClient<MandalaConfig>);
 

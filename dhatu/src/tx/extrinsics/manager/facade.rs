@@ -86,7 +86,7 @@ impl ExtrinsicFacade {
         tx: Extrinsic,
         callback: Option<String>,
     ) -> Result<TransactionId, GenericError> {
-        let (tx, _id) = ExtrinsicSubmitter::submit(tx).await?;
+        let (tx, _id) = ExtrinsicSubmitter::submit(tx.into()).await?;
         let tx = self.transaction_watcher.watch(tx, callback).await;
 
         Ok(tx)
