@@ -2,11 +2,54 @@ use subxt::{
     tx::{SubmittableExtrinsic, TxProgress},
     OnlineClient, PolkadotConfig,
 };
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 pub(crate) type MandalaConfig = PolkadotConfig;
 pub(crate) type NodeClient = OnlineClient<MandalaConfig>;
 pub(crate) type Extrinsic = SubmittableExtrinsic<MandalaConfig, NodeClient>;
 pub(crate) type TransactionProgress = TxProgress<MandalaConfig, NodeClient>;
+
+pub(crate) type ReceiverChannel<Message> = UnboundedReceiver<Message>;
+pub(crate) type SenderChannel<Message> = UnboundedSender<Message>;
+
+pub(crate) struct InternalChannels<Message> {
+    // we're using unbounded channels for for practical reasons
+    // will consider using buffered channels in the future.
+    receiver: Option<ReceiverChannel<Message>>,
+    sender: SenderChannel<Message>,
+}
+
+impl<Message> Default for InternalChannels<Message> {
+    fn default() -> Self {
+        let (receiver, sender) = tokio::sync::mpsc::unbounded_channel::<Message>();
+        Self {
+            receiver: Some(receiver),
+            sender,
+        }
+    }
+}
+
+impl<Message> InternalChannels<Message> {
+    pub(crate) fn new() -> Self {
+        Default::default()
+    }
+
+    /// must be called only once, will panic if called twice
+    pub(crate) fn get_receiver(&mut self) -> ReceiverChannel<Message> {
+        self.receiver
+            .take()
+            .expect("internal function. should be called only once")
+    }
+
+    #[must_use]
+    pub(crate) fn is_receiver_taken(&self) -> bool {
+        self.receiver.is_none()
+    }
+
+    pub(crate) fn sender(&self) -> &SenderChannel<Message> {
+        &self.sender
+    }
+}
 
 pub struct MandalaExtrinsics(pub(crate) Extrinsic);
 

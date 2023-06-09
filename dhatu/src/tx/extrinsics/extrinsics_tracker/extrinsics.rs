@@ -7,18 +7,15 @@ use tokio::sync::{
     Mutex,
 };
 
-use crate::tx::extrinsics::{
+use crate::{tx::extrinsics::{
     prelude::{NotificationMessage, TransactionId},
     types::ExtrinsicTracker,
-};
+}, types::MandalaTransactionProgress};
 
 use super::enums::ExtrinsicStatus;
 
-pub type InnerTask = tokio::task::JoinHandle<()>;
-
 pub struct Transaction {
     id: H256,
-    tx: InnerTask,
     status_watcher: InnerTask,
     status: Arc<Mutex<ExtrinsicStatus>>,
     transaction_notifier: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
@@ -38,20 +35,18 @@ impl Transaction {
 
 impl Transaction {
     pub fn new(
-        tx: ExtrinsicTracker,
+        tx: MandalaTransactionProgress,
         external_notifier: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
         callback: Option<String>,
     ) -> Self {
         let hash = tx.extrinsic_hash();
-        let (task, task_channel) =
-            Self::process_transaction(tx, external_notifier.clone(), callback);
+        let task_channel = Self::process_transaction(tx, external_notifier.clone(), callback);
 
         let (default_status, status_watcher) = Self::watch_transaction_status(task_channel);
 
         Self {
             transaction_notifier: external_notifier,
             id: hash,
-            tx: task,
             status: default_status,
             status_watcher,
         }
@@ -61,7 +56,7 @@ impl Transaction {
         tx: ExtrinsicTracker,
         external_status_notifier: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
         callback: Option<String>,
-    ) -> (InnerTask, Receiver<ExtrinsicStatus>) {
+    ) -> Receiver<ExtrinsicStatus> {
         let (internal_status_notifier, receiver) = Self::create_channel();
 
         let task = async move {
@@ -75,8 +70,8 @@ impl Transaction {
                 .send((hash, status.clone(), callback))
                 .unwrap();
         };
-
-        (tokio::task::spawn(task), receiver)
+        tokio::task::spawn(task);
+        receiver
     }
 
     pub async fn wait(tx: ExtrinsicTracker) -> ExtrinsicStatus {
