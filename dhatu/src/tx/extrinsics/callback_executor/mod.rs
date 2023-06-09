@@ -43,10 +43,14 @@ impl Executor {
         }
     }
 
-    pub fn execute(&self, body: Value, callback: String) {
+    pub fn execute(&self, body: Value, callback: &str) -> Result<(), Error> {
         let client = self.http_connection_pool.clone();
-        let task = client.post(callback).json(&body).send();
+
+        let callback = Url::from_str(callback)?;
+        let task = client.post(callback.0).json(&body).send();
 
         tokio::task::spawn(task);
+
+        Ok(())
     }
 }

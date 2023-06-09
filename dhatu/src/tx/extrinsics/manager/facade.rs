@@ -81,7 +81,7 @@ impl ExtrinsicFacade {
                 if let Some(callback) = callback {
                     // TODO : customize body
                     callback_executor
-                        .execute(serde_json::to_value(Body::new(id)).unwrap(), callback)
+                        .execute(serde_json::to_value(Body::new(id)).unwrap(), &callback);
                 }
             }
         };
