@@ -1,23 +1,35 @@
-use subxt::{tx::SubmittableExtrinsic, OnlineClient, PolkadotConfig};
+use subxt::{
+    tx::{SubmittableExtrinsic, TxProgress},
+    OnlineClient, PolkadotConfig,
+};
 
 pub(crate) type MandalaConfig = PolkadotConfig;
 pub(crate) type NodeClient = OnlineClient<MandalaConfig>;
 pub(crate) type Extrinsic = SubmittableExtrinsic<MandalaConfig, NodeClient>;
+pub(crate) type TransactionProgress = TxProgress<MandalaConfig, NodeClient>;
 
-pub struct MandalaExtrinsics(pub(crate) SubmittableExtrinsic<MandalaConfig, NodeClient>);
+pub struct MandalaExtrinsics(pub(crate) Extrinsic);
 
 impl MandalaExtrinsics {
-    pub(crate) fn new(tx: SubmittableExtrinsic<MandalaConfig, NodeClient>) -> Self {
+    pub(crate) fn new(tx: Extrinsic) -> Self {
         Self(tx)
     }
 
-    pub(crate) fn into_inner(self) -> SubmittableExtrinsic<MandalaConfig, NodeClient> {
+    pub(crate) fn into_inner(self) -> Extrinsic {
         self.0
     }
 }
 
 impl From<Extrinsic> for MandalaExtrinsics {
     fn from(value: Extrinsic) -> Self {
+        Self(value)
+    }
+}
+
+pub struct MandalaTransactionProgress(pub(crate) TransactionProgress);
+
+impl From<TransactionProgress> for MandalaTransactionProgress {
+    fn from(value: TransactionProgress) -> Self {
         Self(value)
     }
 }

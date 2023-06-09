@@ -1,6 +1,7 @@
 use crate::{
     registrar::key_manager::prelude::KeypairGenerationError,
-    tx::extrinsics::prelude::{reserve::FundsReserveError, CallbackExecutorError}, types::MandalaClientErorr, 
+    tx::extrinsics::prelude::{reserve::FundsReserveError, CallbackExecutorError},
+    types::MandalaClientErorr,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -18,5 +19,8 @@ pub enum Error {
     ReserveError(#[from] FundsReserveError),
 
     #[error("callback executor error : ")]
-    CallbackError(#[from] CallbackExecutorError)
+    CallbackError(#[from] CallbackExecutorError),
+
+    #[error("error when submitting transaction : {0}")]
+    TransactionSubmitError(#[from] subxt::Error),
 }
