@@ -3,7 +3,7 @@ use crate::{
         prelude::TransactionId,
         types::{Extrinsic, ExtrinsicTracker, GenericError},
     },
-    MandalaExtrinsics,
+     types::MandalaExtrinsics,
 };
 
 pub struct ExtrinsicSubmitter;
