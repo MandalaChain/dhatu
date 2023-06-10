@@ -45,7 +45,7 @@ impl ExtrinsicWatcher {
     }
 
     pub async fn watch(&self, tx: ExtrinsicTracker, callback: Option<String>) -> TransactionId {
-        let tx = Transaction::new(tx, self.transaction_notifier.clone(), callback);
+        let tx = Transaction::new(tx.into(), self.transaction_notifier.clone(), callback);
         let tx_id = tx.id();
 
         self.watch_tx(tx).await;

@@ -19,6 +19,15 @@ pub(crate) struct InternalChannels<Message> {
     sender: SenderChannel<Message>,
 }
 
+impl<Message> From<SenderChannel<Message>> for InternalChannels<Message> {
+    fn from(value: SenderChannel<Message>) -> Self {
+        Self {
+            receiver: None,
+            sender: value,
+        }
+    }
+}
+
 impl<Message> Default for InternalChannels<Message> {
     fn default() -> Self {
         let (receiver, sender) = tokio::sync::mpsc::unbounded_channel::<Message>();

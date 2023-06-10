@@ -7,16 +7,18 @@ use tokio::sync::{
     Mutex,
 };
 
-use crate::{tx::extrinsics::{
-    prelude::{NotificationMessage, TransactionId},
-    types::ExtrinsicTracker,
-}, types::MandalaTransactionProgress};
+use crate::{
+    tx::extrinsics::{
+        prelude::{NotificationMessage, TransactionId},
+        types::ExtrinsicTracker,
+    },
+    types::MandalaTransactionProgress,
+};
 
 use super::enums::ExtrinsicStatus;
 
 pub struct Transaction {
     id: H256,
-    status_watcher: InnerTask,
     status: Arc<Mutex<ExtrinsicStatus>>,
     transaction_notifier: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
 }
@@ -42,13 +44,12 @@ impl Transaction {
         let hash = tx.extrinsic_hash();
         let task_channel = Self::process_transaction(tx, external_notifier.clone(), callback);
 
-        let (default_status, status_watcher) = Self::watch_transaction_status(task_channel);
+        let default_status = Self::watch_transaction_status(task_channel);
 
         Self {
             transaction_notifier: external_notifier,
             id: hash,
             status: default_status,
-            status_watcher,
         }
     }
 
@@ -78,8 +79,8 @@ impl Transaction {
         let status = tx.wait_for_finalized_success().await;
 
         match status {
-            Ok(tx) => ExtrinsicStatus::Success(tx.extrinsic_hash()),
-            Err(e) => ExtrinsicStatus::Failed(e.to_string()),
+            Ok(tx) => ExtrinsicStatus::Success(tx.extrinsic_hash().into()),
+            Err(e) => ExtrinsicStatus::Failed(e.to_string().into()),
         }
     }
 
@@ -91,7 +92,7 @@ impl Transaction {
 
     fn watch_transaction_status(
         mut task_channel: Receiver<ExtrinsicStatus>,
-    ) -> (Arc<Mutex<ExtrinsicStatus>>, tokio::task::JoinHandle<()>) {
+    ) -> Arc<Mutex<ExtrinsicStatus>> {
         let default_status = Arc::new(Mutex::new(ExtrinsicStatus::default()));
         let status_arc_clone = default_status.clone();
 
@@ -103,8 +104,8 @@ impl Transaction {
             *status = new_status;
         };
 
-        let status_watcher = tokio::task::spawn(watcher);
+        tokio::task::spawn(watcher);
 
-        (default_status, status_watcher)
+        default_status
     }
 }
