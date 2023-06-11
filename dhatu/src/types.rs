@@ -9,11 +9,15 @@ pub(crate) type NodeClient = OnlineClient<MandalaConfig>;
 pub(crate) type Extrinsic = SubmittableExtrinsic<MandalaConfig, NodeClient>;
 pub(crate) type TransactionProgress = TxProgress<MandalaConfig, NodeClient>;
 
-pub(crate) type ReceiverChannel<Message> = UnboundedReceiver<Message>;
-pub(crate) type SenderChannel<Message> = UnboundedSender<Message>;
+#[cfg(feature = "tokio")]
+pub type ReceiverChannel<Message> = UnboundedReceiver<Message>;
 
-pub(crate) struct InternalChannels<Message> {
-    // we're using unbounded channels for for practical reasons
+#[cfg(feature = "tokio")]
+pub type SenderChannel<Message> = UnboundedSender<Message>;
+
+#[cfg(feature = "tokio")]
+pub struct InternalChannels<Message> {
+    // we're using unbounded channels for practical reasons
     // will consider using buffered channels in the future.
     receiver: Option<ReceiverChannel<Message>>,
     sender: SenderChannel<Message>,
@@ -39,23 +43,23 @@ impl<Message> Default for InternalChannels<Message> {
 }
 
 impl<Message> InternalChannels<Message> {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Default::default()
     }
 
     /// must be called only once, will panic if called twice
-    pub(crate) fn get_receiver(&mut self) -> ReceiverChannel<Message> {
+    pub fn get_receiver(&mut self) -> ReceiverChannel<Message> {
         self.receiver
             .take()
-            .expect("internal function. should be called only once")
+            .expect("should be called only once")
     }
 
     #[must_use]
-    pub(crate) fn is_receiver_taken(&self) -> bool {
+    pub fn is_receiver_taken(&self) -> bool {
         self.receiver.is_none()
     }
 
-    pub(crate) fn sender(&self) -> &SenderChannel<Message> {
+    pub fn sender(&self) -> &SenderChannel<Message> {
         &self.sender
     }
 }
@@ -96,11 +100,11 @@ pub enum MandalaClientErorr {
 }
 
 impl MandalaClient {
-    pub(crate) fn inner(&self) -> &OnlineClient<PolkadotConfig> {
+    pub(crate) fn inner(&self) -> &OnlineClient<MandalaConfig> {
         &self.0
     }
 
-    pub async fn new(node_url: String) -> Result<Self, crate::error::Error> {
+    pub async fn new(node_url: &str) -> Result<Self, crate::error::Error> {
         let client = OnlineClient::<PolkadotConfig>::from_url(node_url)
             .await
             .map_err(MandalaClientErorr::from)?;

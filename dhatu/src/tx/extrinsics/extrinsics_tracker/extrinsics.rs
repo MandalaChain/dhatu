@@ -17,6 +17,7 @@ use crate::{
 
 use super::enums::ExtrinsicStatus;
 
+#[cfg(feature = "tokio")]
 pub struct Transaction {
     id: H256,
     status: Arc<Mutex<ExtrinsicStatus>>,
@@ -75,7 +76,7 @@ impl Transaction {
         receiver
     }
 
-    pub async fn wait(tx: ExtrinsicTracker) -> ExtrinsicStatus {
+    async fn wait(tx: ExtrinsicTracker) -> ExtrinsicStatus {
         let status = tx.wait_for_finalized_success().await;
 
         match status {

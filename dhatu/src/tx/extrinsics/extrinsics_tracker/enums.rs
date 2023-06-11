@@ -9,6 +9,12 @@ impl Reason {
     }
 }
 
+impl ToString for Reason {
+    fn to_string(&self) -> String {
+        self.0.clone()
+    }
+}
+
 impl From<String> for Reason {
     fn from(value: String) -> Self {
         Self(value)
@@ -20,6 +26,12 @@ pub struct Hash(String);
 impl From<H256> for Hash {
     fn from(value: H256) -> Self {
         Self(value.to_string())
+    }
+}
+
+impl ToString for Hash {
+    fn to_string(&self) -> String {
+        self.0.clone()
     }
 }
 

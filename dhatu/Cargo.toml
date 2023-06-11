@@ -31,3 +31,9 @@ thiserror = "1.0.40"
 [dev-dependencies]
 # testing
 mockall = "0.11.4"
+
+[features]
+default = ["tokio", "serde"]
+tokio = []
+serde = []
+unstable_sp_core = []
