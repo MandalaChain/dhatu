@@ -1,4 +1,9 @@
+use std::sync::Arc;
+
 use sp_core::H256;
+use subxt::blocks::ExtrinsicEvents;
+
+use crate::types::MandalaConfig;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Reason(String);
@@ -20,8 +25,41 @@ impl From<String> for Reason {
         Self(value)
     }
 }
+
+#[derive(Debug)]
+pub struct ExtrinsicResult(Arc<ExtrinsicEvents<MandalaConfig>>);
+
+impl Clone for ExtrinsicResult {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+}
+
+impl ExtrinsicResult {
+    pub fn hash(&self) -> Hash {
+        self.0.extrinsic_hash().into()
+    }
+
+    #[cfg(feature = "unstable_sp_core")]
+    pub fn inner(&self) -> &ExtrinsicEvents<MandalaConfig> {
+        &self.0
+    }
+}
+
+impl From<ExtrinsicEvents<MandalaConfig>> for ExtrinsicResult {
+    fn from(value: ExtrinsicEvents<MandalaConfig>) -> Self {
+        Self(value)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Hash(String);
+
+impl From<ExtrinsicResult> for Hash {
+    fn from(value: ExtrinsicResult) -> Self {
+        Self(value.hash().to_string())
+    }
+}
 
 impl From<H256> for Hash {
     fn from(value: H256) -> Self {
@@ -50,12 +88,11 @@ impl Hash {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub enum ExtrinsicStatus {
     Pending,
     Failed(Reason),
-    Success(Hash),
+    Success(ExtrinsicResult),
 }
 
 impl Default for ExtrinsicStatus {

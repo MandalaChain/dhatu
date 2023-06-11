@@ -4,7 +4,7 @@ use sp_core::H256;
 
 use tokio::sync::{
     mpsc::{Receiver, Sender},
-    Mutex,
+    Mutex, RwLock,
 };
 
 use crate::{
@@ -15,22 +15,22 @@ use crate::{
     types::MandalaTransactionProgress,
 };
 
-use super::enums::ExtrinsicStatus;
+use super::enums::{ExtrinsicStatus, Hash};
 
 #[cfg(feature = "tokio")]
 pub struct Transaction {
     id: H256,
-    status: Arc<Mutex<ExtrinsicStatus>>,
+    status: Arc<RwLock<ExtrinsicStatus>>,
     transaction_notifier: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
 }
 
 impl Transaction {
-    pub fn id(&self) -> TransactionId {
-        self.id
+    pub fn id(&self) -> Hash {
+        self.id.into()
     }
 
     pub async fn status(&self) -> ExtrinsicStatus {
-        let status = self.status.lock().await;
+        let status = self.status.read().await;
 
         status.clone()
     }
@@ -42,7 +42,7 @@ impl Transaction {
         external_notifier: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
         callback: Option<String>,
     ) -> Self {
-        let hash = tx.extrinsic_hash();
+        let hash = tx.0.extrinsic_hash();
         let task_channel = Self::process_transaction(tx, external_notifier.clone(), callback);
 
         let default_status = Self::watch_transaction_status(task_channel);
@@ -66,7 +66,10 @@ impl Transaction {
 
             let status = Self::wait(tx).await;
 
-            internal_status_notifier.send(status.clone()).await.unwrap();
+            internal_status_notifier
+                .send(status.clone())
+                .await
+                .expect("there should be only 1 message sent");
 
             external_status_notifier
                 .send((hash, status.clone(), callback))
@@ -76,11 +79,11 @@ impl Transaction {
         receiver
     }
 
-    async fn wait(tx: ExtrinsicTracker) -> ExtrinsicStatus {
+    pub async fn wait(tx: ExtrinsicTracker) -> ExtrinsicStatus {
         let status = tx.wait_for_finalized_success().await;
 
         match status {
-            Ok(tx) => ExtrinsicStatus::Success(tx.extrinsic_hash().into()),
+            Ok(tx) => ExtrinsicStatus::Success(tx.into()),
             Err(e) => ExtrinsicStatus::Failed(e.to_string().into()),
         }
     }
@@ -93,15 +96,15 @@ impl Transaction {
 
     fn watch_transaction_status(
         mut task_channel: Receiver<ExtrinsicStatus>,
-    ) -> Arc<Mutex<ExtrinsicStatus>> {
-        let default_status = Arc::new(Mutex::new(ExtrinsicStatus::default()));
+    ) -> Arc<RwLock<ExtrinsicStatus>> {
+        let default_status = Arc::new(RwLock::new(ExtrinsicStatus::default()));
         let status_arc_clone = default_status.clone();
 
         let watcher = async move {
             let Some(new_status) = task_channel.recv().await else {
             return ;
         };
-            let mut status = status_arc_clone.lock().await;
+            let mut status = status_arc_clone.write().await;
             *status = new_status;
         };
 
