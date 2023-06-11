@@ -52,7 +52,7 @@ impl From<ExtrinsicEvents<MandalaConfig>> for ExtrinsicResult {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq,Hash)]
 pub struct Hash(String);
 
 impl From<ExtrinsicResult> for Hash {

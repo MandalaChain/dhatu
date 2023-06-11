@@ -12,7 +12,7 @@ use crate::{
         prelude::{NotificationMessage, TransactionId},
         types::ExtrinsicTracker,
     },
-    types::MandalaTransactionProgress,
+    types::{MandalaTransactionProgress, SenderChannel},
 };
 
 use super::enums::{ExtrinsicStatus, Hash};
@@ -21,7 +21,7 @@ use super::enums::{ExtrinsicStatus, Hash};
 pub struct Transaction {
     id: H256,
     status: Arc<RwLock<ExtrinsicStatus>>,
-    transaction_notifier: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
+    transaction_notifier: SenderChannel<ExtrinsicStatus>,
 }
 
 impl Transaction {
@@ -39,7 +39,7 @@ impl Transaction {
 impl Transaction {
     pub fn new(
         tx: MandalaTransactionProgress,
-        external_notifier: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
+        external_notifier: SenderChannel<ExtrinsicStatus>,
         callback: Option<String>,
     ) -> Self {
         let hash = tx.0.extrinsic_hash();
@@ -55,14 +55,13 @@ impl Transaction {
     }
 
     fn process_transaction(
-        tx: ExtrinsicTracker,
-        external_status_notifier: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
+        tx: MandalaTransactionProgress,
+        external_status_notifier: SenderChannel<ExtrinsicStatus>,
         callback: Option<String>,
     ) -> Receiver<ExtrinsicStatus> {
         let (internal_status_notifier, receiver) = Self::create_channel();
 
         let task = async move {
-            let hash = tx.extrinsic_hash();
 
             let status = Self::wait(tx).await;
 
@@ -72,15 +71,15 @@ impl Transaction {
                 .expect("there should be only 1 message sent");
 
             external_status_notifier
-                .send((hash, status.clone(), callback))
+                .send(status)
                 .unwrap();
         };
         tokio::task::spawn(task);
         receiver
     }
 
-    pub async fn wait(tx: ExtrinsicTracker) -> ExtrinsicStatus {
-        let status = tx.wait_for_finalized_success().await;
+    pub async fn wait(tx: MandalaTransactionProgress) -> ExtrinsicStatus {
+        let status = tx.0.wait_for_finalized_success().await;
 
         match status {
             Ok(tx) => ExtrinsicStatus::Success(tx.into()),
