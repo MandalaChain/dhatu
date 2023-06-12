@@ -36,13 +36,20 @@ impl Clone for ExtrinsicResult {
 }
 
 impl ExtrinsicResult {
-    pub fn hash(&self) -> Hash {
-        self.0.extrinsic_hash().into()
+    #[cfg(feature = "unstable_sp_core")]
+    pub fn into_inner(self) -> ExtrinsicEvents<MandalaConfig> {
+        Arc::try_unwrap(self.0).expect("should be able to unwrap!")
     }
 
     #[cfg(feature = "unstable_sp_core")]
     pub fn inner(&self) -> &ExtrinsicEvents<MandalaConfig> {
         &self.0
+    }
+}
+
+impl ExtrinsicResult {
+    pub fn hash(&self) -> Hash {
+        self.0.extrinsic_hash().into()
     }
 }
 
@@ -52,7 +59,7 @@ impl From<ExtrinsicEvents<MandalaConfig>> for ExtrinsicResult {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq,Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Hash(String);
 
 impl From<ExtrinsicResult> for Hash {
