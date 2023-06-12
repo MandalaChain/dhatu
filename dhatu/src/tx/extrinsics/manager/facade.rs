@@ -5,7 +5,7 @@ use sp_core::H256;
 use crate::{
     tx::extrinsics::{
         extrinsics_tracker::extrinsics::TransactionMessage,
-        prelude::{NotificationMessage, TransactionId, enums::Hash},
+        prelude::{enums::Hash, NotificationMessage, TransactionId},
     },
     types::{MandalaClient, MandalaExtrinsics, ReceiverChannel, SenderChannel},
 };
@@ -16,22 +16,6 @@ use super::super::{
     prelude::{ExtrinsicSubmitter, GenericError},
     types::{BlockchainClient, Extrinsic},
 };
-
-pub type TransactionWatcherInstance = ExtrinsicWatcher;
-pub type CallbackExecutorInstance = Executor;
-
-// temporary callback body
-#[doc(hidden)]
-#[derive(Serialize)]
-pub struct Body {
-    hash: H256,
-}
-
-impl Body {
-    pub fn new(hash: H256) -> Self {
-        Self { hash }
-    }
-}
 
 #[cfg(feature = "tokio")]
 #[cfg(feature = "serde")]
@@ -71,9 +55,8 @@ impl ExtrinsicFacade {
                 tx_watcher.stop_watching(msg.id()).await;
 
                 if let Some(callback) = msg.callback() {
-                    // TODO : customize body
-                    callback_executor
-                        .execute(serde_json::to_value(Body::new(id)).unwrap(), callback);
+                    // will fail silently if if there's an error when executing the callback
+                    callback_executor.execute(msg.status.clone(), &callback);
                 }
             }
         };
@@ -89,7 +72,11 @@ impl ExtrinsicFacade {
         let progress = ExtrinsicSubmitter::submit(tx).await?;
         let tx = self
             .transaction_watcher
-            .watch(progress, Some(self.transaction_sender_channel.clone()), callback)
+            .watch(
+                progress,
+                Some(self.transaction_sender_channel.clone()),
+                callback,
+            )
             .await;
 
         Ok(tx)

@@ -106,7 +106,7 @@ impl MigrationTransaction {
         let progress = ExtrinsicSubmitter::submit(tx.into()).await.unwrap();
         let notifier_channel = self.notifier.clone();
 
-        extrinsics::Transaction::new(progress, notifier_channel, None)
+        extrinsics::Transaction::new(progress, Some(notifier_channel), None)
     }
 }
 

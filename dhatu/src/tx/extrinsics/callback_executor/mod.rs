@@ -1,7 +1,9 @@
 use std::str::FromStr;
 
+use serde::Serialize;
 use serde_json::Value;
 
+use super::prelude::enums::{ExtrinsicStatus, Hash};
 use crate::error::Error;
 
 #[cfg(feature = "tokio")]
@@ -45,14 +47,49 @@ impl Executor {
 
     #[cfg(feature = "tokio")]
     #[cfg(feature = "serde")]
-    pub fn execute(&self, body: Value, callback: &str) -> Result<(), Error> {
+    pub fn execute(&self, status: ExtrinsicStatus, callback_url: &str) -> Result<(), Error> {
         let client = self.http_connection_pool.clone();
 
-        let callback = Url::from_str(callback)?;
+        let body = Self::infer_callback_body(status);
+
+        let callback = Url::from_str(callback_url)?;
         let task = client.post(callback.0).json(&body).send();
 
         tokio::task::spawn(task);
 
         Ok(())
+    }
+
+    fn infer_callback_body(status: ExtrinsicStatus) -> CallBackBody<Hash> {
+        match status {
+            ExtrinsicStatus::Pending => CallBackBody::new(false, String::from("pending"), None),
+            ExtrinsicStatus::Failed(reason) => CallBackBody::new(
+                false,
+                format!("failed with reason : {}", reason.inner()),
+                None,
+            ),
+            ExtrinsicStatus::Success(result) => {
+                CallBackBody::new(true, String::from("success"), Some(result.hash()))
+            }
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[derive(Serialize)]
+pub struct CallBackBody<Data: Serialize> {
+    status: bool,
+    message: String,
+    data: Option<Data>,
+}
+
+#[cfg(feature = "serde")]
+impl<Data: Serialize> CallBackBody<Data> {
+    pub fn new(status: bool, message: String, data: Option<Data>) -> Self {
+        Self {
+            status,
+            message,
+            data,
+        }
     }
 }

@@ -84,7 +84,7 @@ impl Transaction {
         tx: MandalaTransactionProgress,
         external_status_notifier: Option<SenderChannel<TransactionMessage>>,
         callback: Option<String>,
-    ) -> Receiver<TransactionMessage> {
+    ) -> Receiver<ExtrinsicStatus> {
         let (internal_status_notifier, receiver) = Self::create_channel();
 
         let task = async move {
@@ -98,7 +98,7 @@ impl Transaction {
 
             if let Some(external_status_notifier) = external_status_notifier {
                 let msg = TransactionMessage::new(status, callback, id);
-                external_status_notifier.send(msg).await;
+                external_status_notifier.send(msg);
             }
         };
         tokio::task::spawn(task);
