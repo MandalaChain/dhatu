@@ -34,7 +34,7 @@ impl<Message> From<SenderChannel<Message>> for InternalChannels<Message> {
 
 impl<Message> Default for InternalChannels<Message> {
     fn default() -> Self {
-        let (receiver, sender) = tokio::sync::mpsc::unbounded_channel::<Message>();
+        let (sender, receiver) = tokio::sync::mpsc::unbounded_channel::<Message>();
         Self {
             receiver: Some(receiver),
             sender,
@@ -49,9 +49,7 @@ impl<Message> InternalChannels<Message> {
 
     /// must be called only once, will panic if called twice
     pub fn get_receiver(&mut self) -> ReceiverChannel<Message> {
-        self.receiver
-            .take()
-            .expect("should be called only once")
+        self.receiver.take().expect("should be called only once")
     }
 
     #[must_use]

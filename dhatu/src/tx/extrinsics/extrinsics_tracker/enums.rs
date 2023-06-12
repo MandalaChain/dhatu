@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
+use serde::Serialize;
 use sp_core::H256;
 use subxt::blocks::ExtrinsicEvents;
 
 use crate::types::MandalaConfig;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg(feature = "serde")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct Reason(String);
 
 impl Reason {
@@ -55,11 +57,11 @@ impl ExtrinsicResult {
 
 impl From<ExtrinsicEvents<MandalaConfig>> for ExtrinsicResult {
     fn from(value: ExtrinsicEvents<MandalaConfig>) -> Self {
-        Self(value)
+        Self(Arc::new(value))
     }
 }
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg(feature = "serde")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct Hash(String);
 
 impl From<ExtrinsicResult> for Hash {
@@ -88,7 +90,7 @@ impl Hash {
     // we disable this by default because substrate sp_core does not follow semver
     // and we need to have a stable public api!
     #[cfg(feature = "unstable_sp_core")]
-    pub fn hash(&self) -> H256 {
+    pub fn into_inner(&self) -> H256 {
         use std::str::FromStr;
 
         H256::from_str(self.inner_as_str()).expect("internal conversion shouldn't fail!")

@@ -119,7 +119,7 @@ impl FundsReserve {
             .await
             .map_err(FundsReserveError::RpcError)?;
 
-        let status = Transaction::wait(tx).await;
+        let status = Transaction::wait(tx.into()).await;
 
         Ok(status)
     }

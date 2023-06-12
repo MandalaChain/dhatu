@@ -3,25 +3,47 @@ use std::sync::Arc;
 use sp_core::H256;
 
 use tokio::sync::{
-    mpsc::{Receiver, Sender},
-    Mutex, RwLock,
+    mpsc::{Receiver, Sender}, RwLock,
 };
 
 use crate::{
-    tx::extrinsics::{
-        prelude::{NotificationMessage, TransactionId},
-        types::ExtrinsicTracker,
-    },
     types::{MandalaTransactionProgress, SenderChannel},
 };
 
 use super::enums::{ExtrinsicStatus, Hash};
 
+pub struct TransactionMessage {
+    pub(crate) status: ExtrinsicStatus,
+    pub(crate) callback: Option<String>,
+    pub(crate) id: Hash,
+}
+
+impl TransactionMessage {
+    pub fn new(status: ExtrinsicStatus, callback: Option<String>, id: Hash) -> Self {
+        Self {
+            status,
+            callback,
+            id,
+        }
+    }
+
+    pub fn inner_status(&self) -> ExtrinsicStatus {
+        self.status.clone()
+    }
+
+    pub fn callback(&self) -> Option<&String> {
+        self.callback.as_ref()
+    }
+
+    pub fn id(&self) -> &Hash {
+        &self.id
+    }
+}
+
 #[cfg(feature = "tokio")]
 pub struct Transaction {
     id: H256,
     status: Arc<RwLock<ExtrinsicStatus>>,
-    transaction_notifier: SenderChannel<ExtrinsicStatus>,
 }
 
 impl Transaction {
@@ -39,16 +61,15 @@ impl Transaction {
 impl Transaction {
     pub fn new(
         tx: MandalaTransactionProgress,
-        external_notifier: SenderChannel<ExtrinsicStatus>,
+        external_notifier: Option<SenderChannel<TransactionMessage>>,
         callback: Option<String>,
     ) -> Self {
         let hash = tx.0.extrinsic_hash();
-        let task_channel = Self::process_transaction(tx, external_notifier.clone(), callback);
+        let task_channel = Self::process_transaction(tx, external_notifier, callback);
 
         let default_status = Self::watch_transaction_status(task_channel);
 
         Self {
-            transaction_notifier: external_notifier,
             id: hash,
             status: default_status,
         }
@@ -56,13 +77,13 @@ impl Transaction {
 
     fn process_transaction(
         tx: MandalaTransactionProgress,
-        external_status_notifier: SenderChannel<ExtrinsicStatus>,
+        external_status_notifier: Option<SenderChannel<TransactionMessage>>,
         callback: Option<String>,
     ) -> Receiver<ExtrinsicStatus> {
         let (internal_status_notifier, receiver) = Self::create_channel();
 
         let task = async move {
-
+            let id = tx.0.extrinsic_hash().into();
             let status = Self::wait(tx).await;
 
             internal_status_notifier
@@ -70,9 +91,10 @@ impl Transaction {
                 .await
                 .expect("there should be only 1 message sent");
 
-            external_status_notifier
-                .send(status)
-                .unwrap();
+            if let Some(external_status_notifier) = external_status_notifier {
+                let msg = TransactionMessage::new(status, callback, id);
+                external_status_notifier.send(msg);
+            }
         };
         tokio::task::spawn(task);
         receiver

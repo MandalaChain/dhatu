@@ -1,9 +1,5 @@
 use crate::{
     error::Error,
-    tx::extrinsics::{
-        prelude::TransactionId,
-        types::{Extrinsic, ExtrinsicTracker, GenericError},
-    },
     types::{MandalaExtrinsics, MandalaTransactionProgress},
 };
 
@@ -14,7 +10,7 @@ impl ExtrinsicSubmitter {
         let result = tx.into_inner()
             .submit_and_watch()
             .await
-            .map_err(|e| Error::TransactionSubmitError(e))?
+            .map_err(Error::TransactionSubmitError)?
             .into();
 
         Ok(result)
