@@ -1,11 +1,11 @@
-use serde::Serialize;
 
-use sp_core::H256;
+
+
 
 use crate::{
     tx::extrinsics::{
         extrinsics_tracker::extrinsics::TransactionMessage,
-        prelude::{enums::Hash, NotificationMessage, TransactionId},
+        prelude::{enums::Hash},
     },
     types::{MandalaClient, MandalaExtrinsics, ReceiverChannel, SenderChannel},
 };
@@ -14,7 +14,6 @@ use super::super::{
     callback_executor::Executor,
     extrinsics_tracker::tracker::ExtrinsicWatcher,
     prelude::{ExtrinsicSubmitter, GenericError},
-    types::{BlockchainClient, Extrinsic},
 };
 
 #[cfg(feature = "tokio")]
@@ -33,7 +32,7 @@ impl ExtrinsicFacade {
 
         Self::initialize_receive_task(
             tx_watcher.clone(),
-            callback_executor.clone(),
+            callback_executor,
             tx_receiver_channel,
         );
 
@@ -56,7 +55,7 @@ impl ExtrinsicFacade {
 
                 if let Some(callback) = msg.callback() {
                     // will fail silently if if there's an error when executing the callback
-                    callback_executor.execute(msg.status.clone(), &callback);
+                    callback_executor.execute(msg.status.clone(), callback);
                 }
             }
         };

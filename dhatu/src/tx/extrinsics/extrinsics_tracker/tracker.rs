@@ -1,13 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
-use sp_core::H256;
+
 use tokio::sync::RwLock;
 
 use crate::{
-    tx::extrinsics::{
-        prelude::{NotificationMessage, TransactionId},
-        types::{BlockchainClient, ExtrinsicTracker},
-    },
     types::{MandalaClient, MandalaTransactionProgress, SenderChannel},
 };
 
@@ -32,7 +28,7 @@ impl Clone for ExtrinsicWatcher {
 }
 
 impl ExtrinsicWatcher {
-    pub fn new(client: MandalaClient) -> Self {
+    pub fn new(_client: MandalaClient) -> Self {
         let inner = HashMap::new();
         let inner = Arc::new(RwLock::new(inner));
 

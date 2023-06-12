@@ -3,15 +3,10 @@ use std::sync::Arc;
 use sp_core::H256;
 
 use tokio::sync::{
-    mpsc::{Receiver, Sender},
-    Mutex, RwLock,
+    mpsc::{Receiver, Sender}, RwLock,
 };
 
 use crate::{
-    tx::extrinsics::{
-        prelude::{NotificationMessage, TransactionId},
-        types::ExtrinsicTracker,
-    },
     types::{MandalaTransactionProgress, SenderChannel},
 };
 

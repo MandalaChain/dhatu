@@ -1,7 +1,7 @@
 use subxt::{tx::SubmittableExtrinsic, OnlineClient, PolkadotConfig};
 
 use crate::{tx::extrinsics::prelude::{
-    transfer_nft_contract::types::ContractTransactionPayload, NotificationMessage, extrinsics::TransactionMessage,
+    transfer_nft_contract::types::ContractTransactionPayload, extrinsics::TransactionMessage,
 }, types::{SenderChannel, ReceiverChannel}};
 
 pub type MigrationTask<T> = std::pin::Pin<Box<dyn futures::Future<Output = T>>>;
