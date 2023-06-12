@@ -17,11 +17,29 @@ use crate::{
 
 use super::enums::{ExtrinsicStatus, Hash};
 
+pub struct TransactionMessage {
+    pub(crate) status: ExtrinsicStatus,
+    pub(crate) callback: Option<String>,
+}
+
+impl TransactionMessage {
+    pub fn new(status: ExtrinsicStatus, callback: Option<String>) -> Self {
+        Self { status, callback }
+    }
+
+    pub fn inner_status(&self) -> ExtrinsicStatus {
+        self.status.clone()
+    }
+
+    pub fn callback(&self) -> Option<&String> {
+        self.callback.as_ref()
+    }
+}
+
 #[cfg(feature = "tokio")]
 pub struct Transaction {
     id: H256,
     status: Arc<RwLock<ExtrinsicStatus>>,
-    transaction_notifier: SenderChannel<ExtrinsicStatus>,
 }
 
 impl Transaction {
@@ -39,16 +57,15 @@ impl Transaction {
 impl Transaction {
     pub fn new(
         tx: MandalaTransactionProgress,
-        external_notifier: SenderChannel<ExtrinsicStatus>,
+        external_notifier: Option<SenderChannel<TransactionMessage>>,
         callback: Option<String>,
     ) -> Self {
         let hash = tx.0.extrinsic_hash();
-        let task_channel = Self::process_transaction(tx, external_notifier.clone(), callback);
+        let task_channel = Self::process_transaction(tx, external_notifier, callback);
 
         let default_status = Self::watch_transaction_status(task_channel);
 
         Self {
-            transaction_notifier: external_notifier,
             id: hash,
             status: default_status,
         }
@@ -56,13 +73,12 @@ impl Transaction {
 
     fn process_transaction(
         tx: MandalaTransactionProgress,
-        external_status_notifier: SenderChannel<ExtrinsicStatus>,
+        external_status_notifier: Option<SenderChannel<TransactionMessage>>,
         callback: Option<String>,
-    ) -> Receiver<ExtrinsicStatus> {
+    ) -> Receiver<TransactionMessage> {
         let (internal_status_notifier, receiver) = Self::create_channel();
 
         let task = async move {
-
             let status = Self::wait(tx).await;
 
             internal_status_notifier
@@ -70,9 +86,10 @@ impl Transaction {
                 .await
                 .expect("there should be only 1 message sent");
 
-            external_status_notifier
-                .send(status)
-                .unwrap();
+            if let Some(external_status_notifier) = external_status_notifier {
+                let msg = TransactionMessage::new(status, callback);
+                external_status_notifier.send(msg).await;
+            }
         };
         tokio::task::spawn(task);
         receiver

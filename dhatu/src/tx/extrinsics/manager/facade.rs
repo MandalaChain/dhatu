@@ -6,7 +6,7 @@ use crate::tx::extrinsics::prelude::{NotificationMessage, TransactionId};
 
 use super::super::{
     callback_executor::Executor,
-    extrinsics_tracker::{tracker::ExtrinsicWatcher},
+    extrinsics_tracker::tracker::ExtrinsicWatcher,
     prelude::{ExtrinsicSubmitter, GenericError},
     types::{BlockchainClient, Extrinsic},
 };
@@ -32,9 +32,7 @@ impl Body {
 
 pub struct ExtrinsicFacade {
     transaction_watcher: TransactionWatcherInstance,
-    callback_executor: CallbackExecutorInstance,
     transaction_sender_channel: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
-    notif_bus_handle: Task,
 }
 
 impl ExtrinsicFacade {
@@ -43,9 +41,9 @@ impl ExtrinsicFacade {
 
         let callback_executor = Executor::new();
 
-        let tx_watcher = ExtrinsicWatcher::new(client, tx_sender_channel.clone());
+        let tx_watcher = ExtrinsicWatcher::new(client);
 
-        let rcv_handle = Self::initialize_receive_task(
+        Self::initialize_receive_task(
             tx_watcher.clone(),
             callback_executor.clone(),
             tx_receiver_channel,
@@ -53,9 +51,7 @@ impl ExtrinsicFacade {
 
         Self {
             transaction_watcher: tx_watcher,
-            callback_executor,
             transaction_sender_channel: tx_sender_channel,
-            notif_bus_handle: rcv_handle,
         }
     }
 

@@ -5,6 +5,7 @@ use serde_json::Value;
 
 use crate::{error::Error};
 
+#[cfg(feature = "tokio")]
 pub struct Executor {
     http_connection_pool: reqwest::Client,
 }
@@ -43,6 +44,7 @@ impl Executor {
         }
     }
 
+    #[cfg(feature = "tokio", feature = "serde")]
     pub fn execute(&self, body: Value, callback: &str) -> Result<(), Error> {
         let client = self.http_connection_pool.clone();
 
