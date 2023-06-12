@@ -20,11 +20,16 @@ use super::enums::{ExtrinsicStatus, Hash};
 pub struct TransactionMessage {
     pub(crate) status: ExtrinsicStatus,
     pub(crate) callback: Option<String>,
+    pub(crate) id: Hash,
 }
 
 impl TransactionMessage {
-    pub fn new(status: ExtrinsicStatus, callback: Option<String>) -> Self {
-        Self { status, callback }
+    pub fn new(status: ExtrinsicStatus, callback: Option<String>, id: Hash) -> Self {
+        Self {
+            status,
+            callback,
+            id,
+        }
     }
 
     pub fn inner_status(&self) -> ExtrinsicStatus {
@@ -33,6 +38,10 @@ impl TransactionMessage {
 
     pub fn callback(&self) -> Option<&String> {
         self.callback.as_ref()
+    }
+
+    pub fn id(&self) -> &Hash {
+        &self.id
     }
 }
 
@@ -79,6 +88,7 @@ impl Transaction {
         let (internal_status_notifier, receiver) = Self::create_channel();
 
         let task = async move {
+            let id = tx.0.extrinsic_hash().into();
             let status = Self::wait(tx).await;
 
             internal_status_notifier
@@ -87,7 +97,7 @@ impl Transaction {
                 .expect("there should be only 1 message sent");
 
             if let Some(external_status_notifier) = external_status_notifier {
-                let msg = TransactionMessage::new(status, callback);
+                let msg = TransactionMessage::new(status, callback, id);
                 external_status_notifier.send(msg).await;
             }
         };

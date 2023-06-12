@@ -13,7 +13,7 @@ use crate::{
 
 use super::{
     enums::{ExtrinsicStatus, Hash},
-    extrinsics::Transaction,
+    extrinsics::{Transaction, TransactionMessage},
 };
 
 #[doc(hidden)]
@@ -44,7 +44,7 @@ impl ExtrinsicWatcher {
         tx: MandalaTransactionProgress,
         external_notifier: Option<SenderChannel<TransactionMessage>>,
         callback: Option<String>,
-    ) -> TransactionId {
+    ) -> Hash {
         let tx = Transaction::new(tx, external_notifier, callback);
         let tx_id = tx.id();
 

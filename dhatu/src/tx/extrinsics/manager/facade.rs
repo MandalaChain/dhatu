@@ -2,7 +2,13 @@ use serde::Serialize;
 
 use sp_core::H256;
 
-use crate::tx::extrinsics::prelude::{NotificationMessage, TransactionId};
+use crate::{
+    tx::extrinsics::{
+        extrinsics_tracker::extrinsics::TransactionMessage,
+        prelude::{NotificationMessage, TransactionId, enums::Hash},
+    },
+    types::{MandalaClient, MandalaExtrinsics, ReceiverChannel, SenderChannel},
+};
 
 use super::super::{
     callback_executor::Executor,
@@ -10,9 +16,6 @@ use super::super::{
     prelude::{ExtrinsicSubmitter, GenericError},
     types::{BlockchainClient, Extrinsic},
 };
-
-#[doc(hidden)]
-type Task = tokio::task::JoinHandle<()>;
 
 pub type TransactionWatcherInstance = ExtrinsicWatcher;
 pub type CallbackExecutorInstance = Executor;
@@ -30,17 +33,18 @@ impl Body {
     }
 }
 
+#[cfg(feature = "tokio")]
+#[cfg(feature = "serde")]
 pub struct ExtrinsicFacade {
-    transaction_watcher: TransactionWatcherInstance,
-    transaction_sender_channel: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
+    transaction_watcher: ExtrinsicWatcher,
+    transaction_sender_channel: SenderChannel<TransactionMessage>,
 }
 
 impl ExtrinsicFacade {
-    pub fn new(client: BlockchainClient) -> Self {
+    pub fn new(client: MandalaClient) -> Self {
         let (tx_sender_channel, tx_receiver_channel) = Self::create_channel();
 
         let callback_executor = Executor::new();
-
         let tx_watcher = ExtrinsicWatcher::new(client);
 
         Self::initialize_receive_task(
@@ -56,42 +60,45 @@ impl ExtrinsicFacade {
     }
 
     fn initialize_receive_task(
-        tx_watcher: TransactionWatcherInstance,
-        callback_executor: CallbackExecutorInstance,
-        mut tx_receiver_channel: tokio::sync::mpsc::UnboundedReceiver<NotificationMessage>,
-    ) -> Task {
+        tx_watcher: ExtrinsicWatcher,
+        callback_executor: Executor,
+        mut tx_receiver_channel: ReceiverChannel<TransactionMessage>,
+    ) {
         let recv = async move {
             loop {
-                let (id, _status, callback) = tx_receiver_channel.recv().await.unwrap();
+                let msg = tx_receiver_channel.recv().await.unwrap();
 
-                tx_watcher.stop_watching(&id).await;
+                tx_watcher.stop_watching(msg.id()).await;
 
-                if let Some(callback) = callback {
+                if let Some(callback) = msg.callback() {
                     // TODO : customize body
                     callback_executor
-                        .execute(serde_json::to_value(Body::new(id)).unwrap(), &callback);
+                        .execute(serde_json::to_value(Body::new(id)).unwrap(), callback);
                 }
             }
         };
 
-        tokio::task::spawn(recv)
+        tokio::task::spawn(recv);
     }
 
     pub async fn submit(
         &self,
-        tx: Extrinsic,
+        tx: MandalaExtrinsics,
         callback: Option<String>,
-    ) -> Result<TransactionId, GenericError> {
-        let (tx, _id) = ExtrinsicSubmitter::submit(tx.into()).await?;
-        let tx = self.transaction_watcher.watch(tx, callback).await;
+    ) -> Result<Hash, GenericError> {
+        let progress = ExtrinsicSubmitter::submit(tx).await?;
+        let tx = self
+            .transaction_watcher
+            .watch(progress, Some(self.transaction_sender_channel.clone()), callback)
+            .await;
 
         Ok(tx)
     }
 
     pub fn create_channel() -> (
-        tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
-        tokio::sync::mpsc::UnboundedReceiver<NotificationMessage>,
+        SenderChannel<TransactionMessage>,
+        ReceiverChannel<TransactionMessage>,
     ) {
-        tokio::sync::mpsc::unbounded_channel::<NotificationMessage>()
+        tokio::sync::mpsc::unbounded_channel::<TransactionMessage>()
     }
 }

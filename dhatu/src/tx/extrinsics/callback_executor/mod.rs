@@ -1,9 +1,8 @@
-use std::{str::FromStr};
+use std::str::FromStr;
 
 use serde_json::Value;
 
-
-use crate::{error::Error};
+use crate::error::Error;
 
 #[cfg(feature = "tokio")]
 pub struct Executor {
@@ -44,7 +43,8 @@ impl Executor {
         }
     }
 
-    #[cfg(feature = "tokio", feature = "serde")]
+    #[cfg(feature = "tokio")]
+    #[cfg(feature = "serde")]
     pub fn execute(&self, body: Value, callback: &str) -> Result<(), Error> {
         let client = self.http_connection_pool.clone();
 

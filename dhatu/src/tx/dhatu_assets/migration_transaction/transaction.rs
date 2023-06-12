@@ -103,7 +103,7 @@ impl MigrationTransaction {
             .take()
             .expect("inner transaction should have been built");
 
-        let (progress, _) = ExtrinsicSubmitter::submit(tx.into()).await.unwrap();
+        let progress = ExtrinsicSubmitter::submit(tx.into()).await.unwrap();
         let notifier_channel = self.notifier.clone();
 
         extrinsics::Transaction::new(progress, notifier_channel, None)
