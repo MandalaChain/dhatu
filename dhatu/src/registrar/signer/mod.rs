@@ -16,12 +16,18 @@ pub(crate) trait WrappedExtrinsic<T: EncodeAsFields> {
 
 pub(crate) struct TxBuilder;
 
+#[derive(thiserror::Error,Debug)]
+pub enum TxBuilderError{
+    #[error("{0}")]
+    SignErorr(#[from] subxt::Error),
+}
+
 impl TxBuilder {
     /// create a new unsigned transaction from a transaction payload
     pub fn unsigned<T: EncodeAsFields>(
         client: &crate::types::NodeClient,
         payload: impl WrappedExtrinsic<T>,
-    ) -> Result<Extrinsic, Box<dyn std::error::Error>> {
+    ) -> Result<Extrinsic, crate::error::Error> {
         Ok(client.tx().create_unsigned(&payload.into_inner())?)
     }
 
@@ -30,7 +36,7 @@ impl TxBuilder {
         client: &crate::types::NodeClient,
         acc: Pair,
         payload: impl WrappedExtrinsic<T>,
-    ) -> Result<Extrinsic, Box<dyn std::error::Error>> {
+    ) -> Result<Extrinsic, crate::error::Error> {
         let signer = PairSigner::new(acc);
 
         let tx = client
