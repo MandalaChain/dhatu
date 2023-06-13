@@ -1,6 +1,6 @@
 use crate::{
     registrar::key_manager::prelude::KeypairGenerationError,
-    tx::extrinsics::prelude::{reserve::FundsReserveError, CallbackExecutorError},
+    tx::extrinsics::prelude::{reserve::FundsReserveError, CallbackExecutorError, calldata::ToPayloadError},
     types::MandalaClientErorr,
 };
 
@@ -23,4 +23,7 @@ pub enum Error {
 
     #[error("error when submitting transaction : {0}")]
     TransactionSubmitError(#[from] subxt::Error),
+
+    #[error("error when converting to payload : {0}")]
+    PayloadError(#[from] ToPayloadError),
 }

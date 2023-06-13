@@ -7,13 +7,13 @@ use crate::{
         extrinsics_tracker::extrinsics::TransactionMessage,
         prelude::{enums::Hash},
     },
-    types::{MandalaClient, MandalaExtrinsics, ReceiverChannel, SenderChannel},
+    types::{MandalaClient, MandalaExtrinsics, ReceiverChannel, SenderChannel}, error::Error,
 };
 
 use super::super::{
     callback_executor::Executor,
     extrinsics_tracker::tracker::ExtrinsicWatcher,
-    prelude::{ExtrinsicSubmitter, GenericError},
+    prelude::{ExtrinsicSubmitter, },
 };
 
 #[cfg(feature = "tokio")]
@@ -67,7 +67,7 @@ impl ExtrinsicFacade {
         &self,
         tx: MandalaExtrinsics,
         callback: Option<String>,
-    ) -> Result<Hash, GenericError> {
+    ) -> Result<Hash, Error> {
         let progress = ExtrinsicSubmitter::submit(tx).await?;
         let tx = self
             .transaction_watcher

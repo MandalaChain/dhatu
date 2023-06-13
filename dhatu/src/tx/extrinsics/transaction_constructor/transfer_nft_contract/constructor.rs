@@ -4,7 +4,7 @@ use parity_scale_codec::Encode;
 use subxt::utils::AccountId32;
 
 use crate::tx::extrinsics::{
-    prelude::{calldata::CallData, GenericError},
+    prelude::{calldata::{CallData, ToPayloadError}, },
     transaction_constructor::traits::{ScaleEncodeable, ToContractPayload},
 };
 
@@ -42,9 +42,9 @@ impl ContractCallDataEncoder<TransferNFT> for TransferNFT {
         to: &str,
         token_id: i64,
         function_selector: String,
-    ) -> Result<CallData<TransferNFT>, GenericError> {
+    ) -> Result<CallData<TransferNFT>, crate::error::Error> {
         // convert rust types to substrate primitives
-        let to = AccountId32::from_str(to)?;
+        let to = AccountId32::from_str(to).map_err(|e| ToPayloadError::AddressError(e.to_string()))?;
         let id = token_id as u32;
 
         // build call data
@@ -61,7 +61,7 @@ impl NftTransferTransactionConstructor<ContractTransactionPayload> for TransferN
         to: &str,
         token_id: i64,
         function_selector: String,
-    ) -> Result<ContractTransactionPayload, GenericError> {
+    ) -> Result<ContractTransactionPayload, crate::error::Error> {
         Self::encode_calldata(to, token_id, function_selector)?.to_payload(address)
     }
 }

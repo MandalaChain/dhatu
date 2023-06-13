@@ -4,7 +4,6 @@ pub mod extrinsics_tracker;
 pub mod funds_reserve;
 pub mod manager;
 pub mod transaction_constructor;
-pub mod types;
 
 pub mod prelude {
     use super::*;
@@ -15,5 +14,4 @@ pub mod prelude {
     pub use funds_reserve::*;
     pub use manager::*;
     pub use transaction_constructor::*;
-    pub use types::*;
 }

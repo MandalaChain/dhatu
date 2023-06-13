@@ -13,7 +13,7 @@ pub mod prelude {
 
 use prelude::*;
 
-use crate::{error::Error, tx::extrinsics::prelude::GenericError};
+use crate::{error::Error, };
 
 /// represent a keypair manager.
 pub struct KeyManager;
@@ -40,7 +40,7 @@ impl KeyManager {
         Self::construct(password, phrase, keypair)
     }
 
-    fn gen_from_phrase(password: Password, phrase: &str) -> Result<Keypair, GenericError> {
+    fn gen_from_phrase(password: Password, phrase: &str) -> Result<Keypair, Box<dyn std::error::Error>> {
         let password_phrase = password.as_pwd();
 
         let (keys, _) = Keys::from_phrase(phrase, password_phrase)?;

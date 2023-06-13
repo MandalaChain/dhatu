@@ -2,7 +2,7 @@
 
 
 
-use crate::tx::extrinsics::prelude::{GenericError};
+use crate::tx::extrinsics::prelude::{};
 
 use super::{
     calldata::{ContractCall},
@@ -13,7 +13,7 @@ pub trait ToContractPayload<T = ContractCall>: ValidateHash {
     fn to_payload(
         self,
         address: &str,
-    ) -> Result<ContractTransactionPayload<T>, GenericError>;
+    ) -> Result<ContractTransactionPayload<T>, crate::error::Error>;
 }
 
 pub trait ValidateHash {

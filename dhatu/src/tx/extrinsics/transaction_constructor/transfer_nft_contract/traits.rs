@@ -1,6 +1,6 @@
 use subxt::tx::TxPayload;
 
-use crate::tx::extrinsics::prelude::{calldata::CallData, GenericError};
+use crate::tx::extrinsics::prelude::{calldata::CallData, };
 
 pub trait NftTransferTransactionConstructor<T: TxPayload> {
     fn construct(
@@ -8,7 +8,7 @@ pub trait NftTransferTransactionConstructor<T: TxPayload> {
         to: &str,
         token_id: i64,
         function_selector: String,
-    ) -> Result<T, GenericError>;
+    ) -> Result<T, crate::error::Error>;
 }
 
 pub(super) trait ContractCallDataEncoder<T> {
@@ -16,5 +16,5 @@ pub(super) trait ContractCallDataEncoder<T> {
         to: &str,
         token_id: i64,
         function_selector: String,
-    ) -> Result<CallData<T>, GenericError>;
+    ) -> Result<CallData<T>, crate::error::Error>;
 }

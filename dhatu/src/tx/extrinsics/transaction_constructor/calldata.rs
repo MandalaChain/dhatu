@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, str::FromStr};
 use subxt::utils::{AccountId32, MultiAddress};
 
-use crate::tx::extrinsics::prelude::{GenericError};
+use crate::{tx::extrinsics::prelude::{}, error::Error};
 
 use super::{
     traits::{ScaleEncodeable, ToContractPayload, ValidateHash},
@@ -41,9 +41,16 @@ impl From<NftTransferAgrs> for CallData<TransferNFT> {
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum ToPayloadError {
+    #[error("{0}")]
+    AddressError(String),
+}
+
 impl<T> ToContractPayload for CallData<T> {
-    fn to_payload(self, address: &str) -> Result<ContractTransactionPayload, GenericError> {
-        let address = MultiAddress::Id(AccountId32::from_str(address)?);
+    fn to_payload(self, address: &str) -> Result<ContractTransactionPayload, Error> {
+        let address = AccountId32::from_str(address).map_err(|e| ToPayloadError::AddressError(e.to_string()))?;
+        let address = MultiAddress::Id(address);
 
         let args = ContractCall::new_with_arbitrary_args(address, self);
 
