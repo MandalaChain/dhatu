@@ -230,3 +230,65 @@ mod keypair_generation_error_tests {
         assert_eq!(format!("{}", err), "Failed to recover keypair");
     }
 }
+
+#[cfg(test)]
+mod public_address_tests {
+    use sp_core::sr25519;
+
+    use crate::registrar::key_manager::KeyManager;
+
+    use super::*;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_inner() {
+        let address = PublicAddress("test".to_string());
+        assert_eq!(address.inner(), "test");
+    }
+
+    #[test]
+    fn test_from_str_valid() {
+        let address_str = "5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb";
+        let result = PublicAddress::from_str(address_str);
+        assert!(result.is_ok());
+        let address = result.unwrap();
+        assert_eq!(address.inner(), address_str);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_from_str_invalid() {
+        let address_str = "AAAAC3NzaC1lZDI1NTE5AAAAIDmmRndO+3zhA/z6QAgNCR521OuIe5/8ojCkuo3U7ngi"; // ed25519
+        let _result = PublicAddress::from_str(address_str).unwrap();
+    }
+
+    #[test]
+    fn test_account_id32_from_public_address() {
+        let address_str = "5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb";
+        let address = PublicAddress::from_str(address_str).unwrap();
+        let _account_id = AccountId32::from(address);
+    }
+
+    #[test]
+    fn test_from_keypair_to_public_address() {
+        let keypair = KeyManager::new_default();
+        let public_address: PublicAddress = keypair.clone().into();
+        assert_eq!(public_address, keypair.pub_key);
+    }
+    
+    #[test]
+    fn test_from_pair_to_public_address() {
+        let keypair = sr25519::Pair::from_string("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
+        let public_address: PublicAddress = keypair.clone().into();
+        assert_eq!(public_address, PublicAddress::from_str(keypair.public().to_ss58check().as_str()).unwrap());
+    }
+
+    #[test]
+    fn test_from_private_key_to_public_address() {
+        let keypair = sr25519::Pair::from_string("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
+        let private_key = PrivateKey { 0: keypair };
+
+        let public_address: PublicAddress = private_key.clone().into();
+        assert_eq!(public_address, PublicAddress::from_str(private_key.inner().public().to_ss58check().as_str()).unwrap());
+    }
+}
