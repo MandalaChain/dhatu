@@ -292,3 +292,40 @@ mod public_address_tests {
         assert_eq!(public_address, PublicAddress::from_str(private_key.inner().public().to_ss58check().as_str()).unwrap());
     }
 }
+
+#[cfg(test)]
+mod mnemonic_phrase_tests {
+    use super::*;
+
+    #[test]
+    fn test_new_with_valid_phrase() {
+        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        let password = Some(Password::new());
+        let result = MnemonicPhrase::new(phrase, password);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().inner(), phrase);
+    }
+
+    #[test]
+    fn test_new_with_invalid_phrase() {
+        let phrase = "sample tornado pen frog valley library velvet figure guitar powder mirror churn";
+        let password = Some(Password::new());
+        let result = MnemonicPhrase::new(phrase, password);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_new_without_password() {
+        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        let result = MnemonicPhrase::new(phrase, None);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().inner(), phrase);
+    }
+
+    #[test]
+    fn test_inner() {
+        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        let mnemonic = MnemonicPhrase::new(phrase, None).unwrap();
+        assert_eq!(mnemonic.inner(), phrase);
+    }
+}
