@@ -1,4 +1,4 @@
-use crate::{registrar::signer::TxBuilderError, tx::extrinsics::transaction_constructor::calldata::ToPayloadError};
+use crate::registrar::signer::TxBuilderError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -61,4 +61,10 @@ pub enum FundsReserveError {
 pub enum CallbackExecutorError {
     #[error("{0}")]
     InvalidUrl(String),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ToPayloadError {
+    #[error("{0}")]
+    AddressError(String),
 }
