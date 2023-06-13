@@ -1,6 +1,8 @@
 use crate::{
-    registrar::key_manager::prelude::KeypairGenerationError,
-    tx::extrinsics::prelude::{reserve::FundsReserveError, CallbackExecutorError, calldata::ToPayloadError},
+    registrar::{key_manager::prelude::KeypairGenerationError, signer::TxBuilderError},
+    tx::extrinsics::prelude::{
+        calldata::ToPayloadError, reserve::FundsReserveError, CallbackExecutorError,
+    },
     types::MandalaClientErorr,
 };
 
@@ -26,4 +28,7 @@ pub enum Error {
 
     #[error("error when converting to payload : {0}")]
     PayloadError(#[from] ToPayloadError),
+
+    #[error("error when signing transaction : {0}")]
+    SignTransactionError(#[from] TxBuilderError),
 }
