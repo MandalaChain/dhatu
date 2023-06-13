@@ -4,8 +4,7 @@
 /// this enables us to easily treat the payload as a blackbox.
 use sp_core::sr25519::Pair;
 use subxt::{
-    tx::{PairSigner, SubmittableExtrinsic, TxPayload},
-    OnlineClient, PolkadotConfig,
+    tx::{PairSigner, TxPayload},
 };
 
 use crate::types::Extrinsic;

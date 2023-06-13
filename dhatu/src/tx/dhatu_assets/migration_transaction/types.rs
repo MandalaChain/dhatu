@@ -1,4 +1,4 @@
-use subxt::{tx::SubmittableExtrinsic, OnlineClient, PolkadotConfig, SubstrateConfig};
+use subxt::{tx::SubmittableExtrinsic, SubstrateConfig};
 
 use crate::{tx::extrinsics::prelude::{
     transfer_nft_contract::types::ContractTransactionPayload, extrinsics::TransactionMessage,
