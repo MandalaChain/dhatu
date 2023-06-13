@@ -329,3 +329,56 @@ mod mnemonic_phrase_tests {
         assert_eq!(mnemonic.inner(), phrase);
     }
 }
+
+#[cfg(test)]
+mod private_key_tests {
+    use crate::registrar::key_manager::KeyManager;
+    // use schnorrkel::Keypair;
+    // use std::str;
+
+    use super::*;
+
+    #[test]
+    fn test_public_key() {
+        let pair = KeyManager::new_default().keypair;
+        let private_key = PrivateKey(pair.clone());
+        let public_key = private_key.public_key();
+        assert_eq!(public_key, pair.into());
+    }
+
+    #[test]
+    fn test_inner() {
+        let private_key = PrivateKey(KeyManager::new_default().keypair);
+        let inner = private_key.inner();
+        assert_eq!(inner.to_raw_vec(), private_key.0.to_raw_vec());
+    }
+
+    // #[test]
+    // fn test_from_str_valid() {
+    //     let key_bytes = Keypair::generate().to_bytes();
+    //     let valid_key_str = key_bytes.iter().map(|&c| c as char).collect::<String>();
+    //     let result = PrivateKey::from_str(valid_key_str.as_str());
+    //     assert!(result.is_ok());
+    // }
+
+    #[test]
+    fn test_from_str_invalid() {
+        let invalid_private_key_str = "invalid_private_key";
+        let result = PrivateKey::from_str(invalid_private_key_str);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_from_keypair() {
+        let keypair = KeyManager::new_default();
+        let private_key = PrivateKey::from(keypair.clone());
+        assert_eq!(private_key.0.to_raw_vec(), keypair.keypair().to_raw_vec());
+    }
+
+    #[test]
+    fn test_from_pair() {
+        let pair = KeyManager::new_default().keypair;
+        let private_key = PrivateKey::from(pair.clone());
+        assert_eq!(private_key.0.to_raw_vec(), pair.to_raw_vec());
+    }
+}
