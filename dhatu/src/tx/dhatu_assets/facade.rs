@@ -14,23 +14,19 @@ use super::{
         traits::MigrationTransactionBuilder,
         types::{MigrationTransactionResultNotifier, MigrationTransactionResultReceiver},
     },
-    traits::{Asset, AssetManagerAttributes, AssetManagerTrait, MigrationTransactionMap},
+    traits::{Asset, },
 };
 
 
 pub struct DhatuAssetsFacade {
-    txs: MigrationTransactionMap,
     client: MandalaClient,
 }
 
 impl DhatuAssetsFacade {
     pub fn new(mandala_client: MandalaClient) -> Self {
-        let txs = HashMap::new();
-        let txs = Arc::new(RwLock::new(txs));
 
         Self {
             client: mandala_client,
-            txs,
         }
     }
 
@@ -81,10 +77,4 @@ impl DhatuAssetsFacade {
     }
 }
 
-impl AssetManagerAttributes for DhatuAssetsFacade {
-    fn txs(&self) -> &super::traits::MigrationTransactionMap {
-        &self.txs
-    }
-}
 
-impl AssetManagerTrait for DhatuAssetsFacade {}

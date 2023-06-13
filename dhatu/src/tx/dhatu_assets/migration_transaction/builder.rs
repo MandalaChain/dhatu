@@ -1,4 +1,4 @@
-use crate::tx::extrinsics::prelude::{reserve::FundsReserve, BlockchainClient};
+use crate::{tx::extrinsics::prelude::{reserve::FundsReserve}, types::NodeClient};
 
 use super::{traits::MigrationTransactionBuilder, transaction::MigrationTransaction};
 
@@ -6,7 +6,7 @@ pub(crate) struct MigrationTransactionBuilderStruct {
     signer: Option<sp_core::sr25519::Pair>,
     notifier: Option<super::types::MigrationTransactionResultNotifier>,
     reserve: Option<FundsReserve>,
-    client: Option<BlockchainClient>,
+    client: Option<NodeClient>,
 }
 
 impl MigrationTransactionBuilder for MigrationTransactionBuilderStruct {
@@ -42,7 +42,7 @@ impl MigrationTransactionBuilder for MigrationTransactionBuilderStruct {
 
     fn set_client(
         &mut self,
-        client: crate::tx::extrinsics::prelude::BlockchainClient,
+        client: NodeClient,
     ) -> &mut Self {
         self.client = Some(client);
 

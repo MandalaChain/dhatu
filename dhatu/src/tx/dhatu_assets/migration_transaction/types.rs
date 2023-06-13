@@ -1,4 +1,4 @@
-use subxt::{tx::SubmittableExtrinsic, OnlineClient, PolkadotConfig};
+use subxt::{tx::SubmittableExtrinsic, OnlineClient, PolkadotConfig, SubstrateConfig};
 
 use crate::{tx::extrinsics::prelude::{
     transfer_nft_contract::types::ContractTransactionPayload, extrinsics::TransactionMessage,
@@ -10,4 +10,4 @@ pub type MigrationTransactionResultNotifier =
     SenderChannel<TransactionMessage>;
 pub type MigrationTransactionResultReceiver =
     ReceiverChannel<TransactionMessage>;
-pub type MigrationTransaction = SubmittableExtrinsic<PolkadotConfig, OnlineClient<PolkadotConfig>>;
+pub type MigrationTransaction = SubmittableExtrinsic<SubstrateConfig, crate::types::NodeClient>;

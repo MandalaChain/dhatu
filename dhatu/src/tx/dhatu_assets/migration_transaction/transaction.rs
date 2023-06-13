@@ -9,9 +9,9 @@ use crate::{
             transfer_nft_contract::{
                 constructor::TransferNFT, traits::NftTransferTransactionConstructor,
             },
-            BlockchainClient, reserve::FundsReserve,
+             reserve::FundsReserve,
         },
-    },
+    }, types::NodeClient,
 };
 
 use super::{
@@ -28,7 +28,7 @@ pub(crate) struct MigrationTransaction {
     signer: Pair,
     notifier: MigrationTransactionResultNotifier,
     reserve: FundsReserve,
-    client: BlockchainClient,
+    client: NodeClient,
     payload: Option<MigrationTransactionPayload>,
     inner_tx: Option<SubmittableTransaction>,
 }
@@ -38,7 +38,7 @@ impl MigrationTransaction {
         signer: Pair,
         notifier: MigrationTransactionResultNotifier,
         reserve: FundsReserve,
-        client: BlockchainClient,
+        client: NodeClient,
         payload: Option<MigrationTransactionPayload>,
         inner_tx: Option<SubmittableTransaction>,
     ) -> Self {
@@ -125,7 +125,7 @@ impl MigrationTransactionAttributes
         &self.reserve
     }
 
-    fn client(&self) -> &BlockchainClient {
+    fn client(&self) -> &NodeClient {
         &self.client
     }
 

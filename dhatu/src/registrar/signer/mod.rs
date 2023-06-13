@@ -8,30 +8,25 @@ use subxt::{
     OnlineClient, PolkadotConfig,
 };
 
-pub struct TxBuilder;
+use crate::types::Extrinsic;
 
+pub struct TxBuilder;
 
 impl TxBuilder {
     /// create a new unsigned transaction from a transaction payload
     pub fn unsigned(
-        client: &OnlineClient<PolkadotConfig>,
+        client: &crate::types::NodeClient,
         payload: &impl TxPayload,
-    ) -> Result<
-        SubmittableExtrinsic<PolkadotConfig, OnlineClient<PolkadotConfig>>,
-        Box<dyn std::error::Error>,
-    > {
+    ) -> Result<Extrinsic, Box<dyn std::error::Error>> {
         Ok(client.tx().create_unsigned(payload)?)
     }
 
     /// create a new signed transaction given a transaction payload
     pub async fn signed(
-        client: &OnlineClient<PolkadotConfig>,
+        client: &crate::types::NodeClient,
         acc: Pair,
         payload: &impl TxPayload,
-    ) -> Result<
-        SubmittableExtrinsic<PolkadotConfig, OnlineClient<PolkadotConfig>>,
-        Box<dyn std::error::Error>,
-    > {
+    ) -> Result<Extrinsic, Box<dyn std::error::Error>> {
         let signer = PairSigner::new(acc);
 
         let tx = client
@@ -55,12 +50,12 @@ impl TxBuilder {
 
 //     use super::*;
 
-//     async fn mock_client() -> OnlineClient<PolkadotConfig> {
+//     async fn mock_client() -> crate::types::NodeClient {
 //         OnlineClient::<PolkadotConfig>::new().await.unwrap()
 //     }
 
 //     fn mock_payload(
-//         client: &OnlineClient<PolkadotConfig>,
+//         client: &crate::types::NodeClient,
 //     ) -> subxt::tx::StaticTxPayload<runtime_types::api::balances::calls::Transfer> {
 //         let _metadata = client.metadata();
 

@@ -1,10 +1,10 @@
 use subxt::{
     tx::{SubmittableExtrinsic, TxProgress},
-    OnlineClient, PolkadotConfig,
+    OnlineClient, PolkadotConfig, SubstrateConfig,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
-pub(crate) type MandalaConfig = PolkadotConfig;
+pub(crate) type MandalaConfig = SubstrateConfig;
 pub(crate) type NodeClient = OnlineClient<MandalaConfig>;
 pub(crate) type Extrinsic = SubmittableExtrinsic<MandalaConfig, NodeClient>;
 pub(crate) type TransactionProgress = TxProgress<MandalaConfig, NodeClient>;
@@ -103,7 +103,7 @@ impl MandalaClient {
     }
 
     pub async fn new(node_url: &str) -> Result<Self, crate::error::Error> {
-        let client = OnlineClient::<PolkadotConfig>::from_url(node_url)
+        let client = OnlineClient::<MandalaConfig>::from_url(node_url)
             .await
             .map_err(MandalaClientErorr::from)?;
 
@@ -111,7 +111,7 @@ impl MandalaClient {
     }
 
     pub async fn dev() -> Result<Self, crate::error::Error> {
-        let client = OnlineClient::<PolkadotConfig>::new()
+        let client = OnlineClient::<MandalaConfig>::new()
             .await
             .map_err(MandalaClientErorr::from)?;
 
