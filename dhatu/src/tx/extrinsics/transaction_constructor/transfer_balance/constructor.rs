@@ -1,10 +1,8 @@
-
-
 use subxt::utils::{AccountId32, MultiAddress};
 
 use crate::{
     registrar::key_manager::prelude::PublicAddress,
-    tx::extrinsics::{transaction_constructor::traits::ValidateHash},
+    tx::extrinsics::transaction_constructor::traits::ValidateHash,
 };
 
 #[derive(
@@ -17,9 +15,9 @@ use crate::{
 #[codec (crate = :: subxt :: ext :: codec)]
 #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-pub struct BalanceTransferArgs {
-    pub dest: MultiAddress<AccountId32, ()>,
-    pub value: u128,
+pub(crate) struct BalanceTransferArgs {
+    pub(crate) dest: MultiAddress<AccountId32, ()>,
+    pub(crate) value: u128,
 }
 
 impl BalanceTransferArgs {
@@ -31,7 +29,7 @@ impl BalanceTransferArgs {
 pub struct BalanceTransfer;
 
 impl BalanceTransfer {
-    fn generate_payload(args: BalanceTransferArgs) -> BalanceTransferPayload {
+    fn generate_payload(args: BalanceTransferArgs) -> subxt::tx::Payload<BalanceTransferArgs> {
         subxt::tx::Payload::new(Self::pallet_name(), Self::function_name(), args)
     }
 }
@@ -46,13 +44,28 @@ impl ValidateHash for BalanceTransfer {
     }
 }
 
-type BalanceTransferPayload = subxt::tx::Payload<BalanceTransferArgs>;
+pub struct BalanceTransferPayload(subxt::tx::Payload<BalanceTransferArgs>);
+
+impl BalanceTransferPayload {
+    fn new(args: BalanceTransferArgs) -> Self {
+        Self(BalanceTransfer::generate_payload(args))
+    }
+
+    pub(crate) fn into_inner(self) -> subxt::tx::Payload<BalanceTransferArgs> {
+        self.0
+    }
+
+    #[cfg(feature = "unstable_sp_core")]
+    pub fn inner(&self) -> &subxt::tx::Payload<BalanceTransferArgs> {
+        &self.0
+    }
+}
 
 impl BalanceTransfer {
     pub fn construct(to: PublicAddress, value: u128) -> BalanceTransferPayload {
         let dest = subxt::utils::MultiAddress::Id(to.into());
         let args = BalanceTransferArgs::new(dest, value);
         
-        Self::generate_payload(args)
+        BalanceTransferPayload::new(args)
     }
 }

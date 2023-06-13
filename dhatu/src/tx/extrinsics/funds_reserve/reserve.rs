@@ -111,7 +111,7 @@ impl FundsReserve {
 
         let signer = PairSigner::new(self.reserve_signer().inner().to_owned());
 
-        let payload = BalanceTransfer::construct(account, value);
+        let payload = BalanceTransfer::construct(account, value).into_inner();
 
         let tx = client
             .tx()
