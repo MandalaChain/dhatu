@@ -3,11 +3,11 @@
 
 use crate::error::Error;
 use crate::registrar::key_manager::prelude::PublicAddress;
+use crate::registrar::signer::WrappedExtrinsic;
 use crate::tx::extrinsics::prelude::{
     enums::ExtrinsicStatus, extrinsics::Transaction,
     transfer_balance::constructor::BalanceTransfer,
 };
-use crate::tx::extrinsics::transaction_constructor::traits::WrappedExtrinsic;
 use crate::types::MandalaClient;
 
 

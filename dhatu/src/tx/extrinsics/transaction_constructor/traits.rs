@@ -16,10 +16,6 @@ pub(crate) trait ToContractPayload: ValidateHash {
     ) -> Result<subxt::tx::Payload<ContractCall>, crate::error::Error>;
 }
 
-pub(crate) trait WrappedExtrinsic<T>{
-    fn into_inner(self) -> subxt::tx::Payload<T>;
-}
-
 pub trait ValidateHash {
     fn pallet_name() -> &'static str;
 

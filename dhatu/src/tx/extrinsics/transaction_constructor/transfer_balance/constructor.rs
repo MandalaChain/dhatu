@@ -1,8 +1,8 @@
 use subxt::utils::{AccountId32, MultiAddress};
 
 use crate::{
-    registrar::key_manager::prelude::PublicAddress,
-    tx::extrinsics::transaction_constructor::traits::{ValidateHash, WrappedExtrinsic},
+    registrar::{key_manager::prelude::PublicAddress, signer::WrappedExtrinsic},
+    tx::extrinsics::transaction_constructor::traits::{ValidateHash, },
 };
 
 #[derive(

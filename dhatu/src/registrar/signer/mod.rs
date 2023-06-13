@@ -4,33 +4,38 @@
 /// this enables us to easily treat the payload as a blackbox.
 use sp_core::sr25519::Pair;
 use subxt::{
+    ext::scale_encode::EncodeAsFields,
     tx::{PairSigner, TxPayload},
 };
 
 use crate::types::Extrinsic;
 
-pub struct TxBuilder;
+pub(crate) trait WrappedExtrinsic<T: EncodeAsFields> {
+    fn into_inner(self) -> subxt::tx::Payload<T>;
+}
+
+pub(crate) struct TxBuilder;
 
 impl TxBuilder {
     /// create a new unsigned transaction from a transaction payload
-    pub fn unsigned(
+    pub fn unsigned<T: EncodeAsFields>(
         client: &crate::types::NodeClient,
-        payload: &impl TxPayload,
+        payload: impl WrappedExtrinsic<T>,
     ) -> Result<Extrinsic, Box<dyn std::error::Error>> {
-        Ok(client.tx().create_unsigned(payload)?)
+        Ok(client.tx().create_unsigned(&payload.into_inner())?)
     }
 
     /// create a new signed transaction given a transaction payload
-    pub async fn signed(
+    pub async fn signed<T: EncodeAsFields>(
         client: &crate::types::NodeClient,
         acc: Pair,
-        payload: &impl TxPayload,
+        payload: impl WrappedExtrinsic<T>,
     ) -> Result<Extrinsic, Box<dyn std::error::Error>> {
         let signer = PairSigner::new(acc);
 
         let tx = client
             .tx()
-            .create_signed(payload, &signer, Default::default())
+            .create_signed(&payload.into_inner(), &signer, Default::default())
             .await?;
 
         Ok(tx)
