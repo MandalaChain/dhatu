@@ -1,7 +1,7 @@
 use crate::{
     registrar::signer::TxBuilderError,
     tx::extrinsics::prelude::{
-        calldata::ToPayloadError, reserve::FundsReserveError, CallbackExecutorError,
+        calldata::ToPayloadError, CallbackExecutorError,
     },
 };
 
@@ -32,11 +32,6 @@ pub enum Error {
     SignTransactionError(#[from] TxBuilderError),
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum MandalaClientErorr {
-    #[error("connection Error : {0}")]
-    Connection(#[from] subxt::Error),
-}
 
 #[derive(thiserror::Error, Debug)]
 pub enum KeypairGenerationError {
@@ -52,3 +47,20 @@ pub enum KeypairGenerationError {
     #[error("{0}")]
     Recover(String),
 }
+
+
+#[derive(thiserror::Error, Debug)]
+pub enum MandalaClientErorr {
+    #[error("connection Error : {0}")]
+    Connection(#[from] subxt::Error),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum FundsReserveError {
+    #[error("{0}")]
+    RpcError(#[from] subxt::error::Error),
+
+    #[error("account does not exist!")]
+    NonExistentAccount,
+}
+
