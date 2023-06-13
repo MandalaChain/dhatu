@@ -1,10 +1,3 @@
-use crate::{
-    registrar::{key_manager::prelude::KeypairGenerationError, signer::TxBuilderError},
-    tx::extrinsics::prelude::{
-        calldata::ToPayloadError, reserve::FundsReserveError, CallbackExecutorError,
-    },
-    types::MandalaClientErorr,
-};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -31,4 +24,52 @@ pub enum Error {
 
     #[error("error when signing transaction : {0}")]
     SignTransactionError(#[from] TxBuilderError),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum KeypairGenerationError {
+    #[error("{0}")]
+    PublicAddress(String),
+
+    #[error("fail to generate mnemonic phrase with {0}")]
+    MnemonicPhrase(String),
+
+    #[error("{0}")]
+    PrivateKey(String),
+
+    #[error("{0}")]
+    Recover(String),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum MandalaClientErorr {
+    #[error("connection Error : {0}")]
+    Connection(#[from] subxt::Error),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum FundsReserveError {
+    #[error("{0}")]
+    RpcError(#[from] subxt::error::Error),
+
+    #[error("account does not exist!")]
+    NonExistentAccount,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum CallbackExecutorError {
+    #[error("{0}")]
+    InvalidUrl(String),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ToPayloadError {
+    #[error("{0}")]
+    AddressError(String),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum TxBuilderError {
+    #[error("{0}")]
+    SignErorr(#[from] subxt::Error),
 }

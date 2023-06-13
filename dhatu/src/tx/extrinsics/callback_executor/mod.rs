@@ -4,18 +4,13 @@ use serde::Serialize;
 
 
 use super::prelude::enums::{ExtrinsicStatus, Hash};
-use crate::error::Error;
+use crate::error::{Error, CallbackExecutorError};
 
 #[cfg(feature = "tokio")]
 pub struct Executor {
     http_connection_pool: reqwest::Client,
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum CallbackExecutorError {
-    #[error("{0}")]
-    InvalidUrl(String),
-}
 
 pub struct Url(pub(crate) reqwest::Url);
 

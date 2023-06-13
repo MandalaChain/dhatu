@@ -3,6 +3,8 @@ use subxt::utils::{AccountId32, MultiAddress};
 
 
 
+use crate::error::ToPayloadError;
+
 use super::{
     traits::{ScaleEncodeable, ToContractPayload, ValidateHash},
     transfer_nft_contract::{
@@ -40,11 +42,6 @@ impl From<NftTransferAgrs> for CallData<TransferNFT> {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum ToPayloadError {
-    #[error("{0}")]
-    AddressError(String),
-}
 
 impl<T> ToContractPayload for CallData<T> {
     fn to_payload(
