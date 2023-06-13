@@ -1,5 +1,5 @@
 use crate::{
-    registrar::{key_manager::prelude::KeypairGenerationError, signer::TxBuilderError},
+    registrar::{ signer::TxBuilderError},
     tx::extrinsics::prelude::{
         calldata::ToPayloadError, reserve::FundsReserveError, CallbackExecutorError,
     },
@@ -31,4 +31,20 @@ pub enum Error {
 
     #[error("error when signing transaction : {0}")]
     SignTransactionError(#[from] TxBuilderError),
+}
+
+
+#[derive(thiserror::Error, Debug)]
+pub enum KeypairGenerationError {
+    #[error("{0}")]
+    PublicAddress(String),
+
+    #[error("fail to generate mnemonic phrase with {0}")]
+    MnemonicPhrase(String),
+
+    #[error("{0}")]
+    PrivateKey(String),
+
+    #[error("{0}")]
+    Recover(String),
 }

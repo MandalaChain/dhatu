@@ -13,7 +13,7 @@ pub mod prelude {
 
 use prelude::*;
 
-use crate::{error::Error, };
+use crate::{error::{Error, KeypairGenerationError}, };
 
 /// represent a keypair manager.
 pub struct KeyManager;
