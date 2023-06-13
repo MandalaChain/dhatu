@@ -1,9 +1,4 @@
-use crate::{
-    registrar::signer::TxBuilderError,
-    tx::extrinsics::prelude::{
-        calldata::ToPayloadError, CallbackExecutorError,
-    },
-};
+use crate::{registrar::signer::TxBuilderError, tx::extrinsics::transaction_constructor::calldata::ToPayloadError};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -32,7 +27,6 @@ pub enum Error {
     SignTransactionError(#[from] TxBuilderError),
 }
 
-
 #[derive(thiserror::Error, Debug)]
 pub enum KeypairGenerationError {
     #[error("{0}")]
@@ -47,7 +41,6 @@ pub enum KeypairGenerationError {
     #[error("{0}")]
     Recover(String),
 }
-
 
 #[derive(thiserror::Error, Debug)]
 pub enum MandalaClientErorr {
@@ -64,3 +57,8 @@ pub enum FundsReserveError {
     NonExistentAccount,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum CallbackExecutorError {
+    #[error("{0}")]
+    InvalidUrl(String),
+}
