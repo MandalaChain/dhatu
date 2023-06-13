@@ -198,3 +198,35 @@ mod keypair_tests {
         assert_eq!(keypair.keypair().public(), pair.public());
     }
 }
+
+#[cfg(test)]
+mod keypair_generation_error_tests {
+    use super::*;
+
+    #[test]
+    fn test_keypair_generation_error_public_address() {
+        let err = KeypairGenerationError::PublicAddress("Invalid address format".to_string());
+        assert_eq!(format!("{}", err), "Invalid address format");
+    }
+
+    #[test]
+    fn test_keypair_generation_error_mnemonic_phrase() {
+        let err = KeypairGenerationError::MnemonicPhrase("Failed to generate mnemonic".to_string());
+        assert_eq!(
+            format!("{}", err),
+            "fail to generate mnemonic phrase with Failed to generate mnemonic"
+        );
+    }
+
+    #[test]
+    fn test_keypair_generation_error_private_key() {
+        let err = KeypairGenerationError::PrivateKey("Invalid private key".to_string());
+        assert_eq!(format!("{}", err), "Invalid private key");
+    }
+
+    #[test]
+    fn test_keypair_generation_error_recover() {
+        let err = KeypairGenerationError::Recover("Failed to recover keypair".to_string());
+        assert_eq!(format!("{}", err), "Failed to recover keypair");
+    }
+}
