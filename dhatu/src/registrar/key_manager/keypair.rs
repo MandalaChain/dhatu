@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, KeypairGenerationError};
 use futures::FutureExt;
 use sp_core::{crypto::Ss58Codec, sr25519::Pair, Pair as PairTraits};
 use std::str::FromStr;
@@ -46,20 +46,6 @@ impl Keypair {
     pub fn keypair(&self) -> &Pair {
         &self.keypair
     }
-}
-#[derive(thiserror::Error, Debug)]
-pub enum KeypairGenerationError {
-    #[error("{0}")]
-    PublicAddress(String),
-
-    #[error("fail to generate mnemonic phrase with {0}")]
-    MnemonicPhrase(String),
-
-    #[error("{0}")]
-    PrivateKey(String),
-
-    #[error("{0}")]
-    Recover(String),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
