@@ -6,7 +6,6 @@
 
 use super::{
     calldata::{ContractCall},
-    transfer_nft_contract::{},
 };
 
 pub(crate) trait ToContractPayload: ValidateHash {

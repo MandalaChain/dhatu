@@ -5,7 +5,7 @@
 use sp_core::sr25519::Pair;
 use subxt::{
     ext::scale_encode::EncodeAsFields,
-    tx::{PairSigner, TxPayload},
+    tx::{PairSigner},
 };
 
 use crate::types::Extrinsic;

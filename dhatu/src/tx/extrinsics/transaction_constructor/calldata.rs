@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, str::FromStr};
 use subxt::utils::{AccountId32, MultiAddress};
 
-use crate::error::Error;
+
 
 use super::{
     traits::{ScaleEncodeable, ToContractPayload, ValidateHash},
