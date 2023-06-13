@@ -6,14 +6,18 @@
 
 use super::{
     calldata::{ContractCall},
-    transfer_nft_contract::{types::ContractTransactionPayload},
+    transfer_nft_contract::{},
 };
 
-pub trait ToContractPayload<T = ContractCall>: ValidateHash {
+pub(crate) trait ToContractPayload: ValidateHash {
     fn to_payload(
         self,
         address: &str,
-    ) -> Result<ContractTransactionPayload<T>, crate::error::Error>;
+    ) -> Result<subxt::tx::Payload<ContractCall>, crate::error::Error>;
+}
+
+pub(crate) trait WrappedExtrinsic<T>{
+    fn into_inner(self) -> subxt::tx::Payload<T>;
 }
 
 pub trait ValidateHash {

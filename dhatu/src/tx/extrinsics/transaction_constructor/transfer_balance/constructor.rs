@@ -2,7 +2,7 @@ use subxt::utils::{AccountId32, MultiAddress};
 
 use crate::{
     registrar::key_manager::prelude::PublicAddress,
-    tx::extrinsics::transaction_constructor::traits::ValidateHash,
+    tx::extrinsics::transaction_constructor::traits::{ValidateHash, WrappedExtrinsic},
 };
 
 #[derive(
@@ -46,13 +46,15 @@ impl ValidateHash for BalanceTransfer {
 
 pub struct BalanceTransferPayload(subxt::tx::Payload<BalanceTransferArgs>);
 
+impl WrappedExtrinsic<BalanceTransferArgs> for BalanceTransferPayload {
+    fn into_inner(self) -> subxt::tx::Payload<BalanceTransferArgs> {
+        self.0
+    }
+}
+
 impl BalanceTransferPayload {
     fn new(args: BalanceTransferArgs) -> Self {
         Self(BalanceTransfer::generate_payload(args))
-    }
-
-    pub(crate) fn into_inner(self) -> subxt::tx::Payload<BalanceTransferArgs> {
-        self.0
     }
 
     #[cfg(feature = "unstable_sp_core")]
@@ -65,7 +67,7 @@ impl BalanceTransfer {
     pub fn construct(to: PublicAddress, value: u128) -> BalanceTransferPayload {
         let dest = subxt::utils::MultiAddress::Id(to.into());
         let args = BalanceTransferArgs::new(dest, value);
-        
+
         BalanceTransferPayload::new(args)
     }
 }

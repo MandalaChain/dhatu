@@ -4,21 +4,17 @@ use parity_scale_codec::Encode;
 use subxt::utils::AccountId32;
 
 use crate::tx::extrinsics::{
-    prelude::{calldata::{CallData, ToPayloadError}, },
-    transaction_constructor::traits::{ScaleEncodeable, ToContractPayload},
+    prelude::calldata::{CallData, ToPayloadError},
+    transaction_constructor::{
+        calldata::ContractCall,
+        traits::{ScaleEncodeable, ToContractPayload, WrappedExtrinsic},
+    },
 };
 
-use super::{
-    traits::{ContractCallDataEncoder, NftTransferTransactionConstructor},
-    types::ContractTransactionPayload,
-};
-
-pub struct TransferNFT;
-
-pub struct NftTransferAgrs {
-    pub function_selector: String,
-    pub to: AccountId32,
-    pub id: u32,
+pub(crate) struct NftTransferAgrs {
+    function_selector: String,
+    to: AccountId32,
+    id: u32,
 }
 
 impl NftTransferAgrs {
@@ -37,14 +33,17 @@ impl ScaleEncodeable for NftTransferAgrs {
     }
 }
 
-impl ContractCallDataEncoder<TransferNFT> for TransferNFT {
+pub struct TransferNFT;
+
+impl TransferNFT {
     fn encode_calldata(
         to: &str,
         token_id: i64,
         function_selector: String,
     ) -> Result<CallData<TransferNFT>, crate::error::Error> {
         // convert rust types to substrate primitives
-        let to = AccountId32::from_str(to).map_err(|e| ToPayloadError::AddressError(e.to_string()))?;
+        let to =
+            AccountId32::from_str(to).map_err(|e| ToPayloadError::AddressError(e.to_string()))?;
         let id = token_id as u32;
 
         // build call data
@@ -53,15 +52,29 @@ impl ContractCallDataEncoder<TransferNFT> for TransferNFT {
 
         Ok(args.into())
     }
-}
 
-impl NftTransferTransactionConstructor<ContractTransactionPayload> for TransferNFT {
-    fn construct(
+    pub fn construct(
         address: &str,
         to: &str,
         token_id: i64,
         function_selector: String,
-    ) -> Result<ContractTransactionPayload, crate::error::Error> {
-        Self::encode_calldata(to, token_id, function_selector)?.to_payload(address)
+    ) -> Result<NftTransferPayload, crate::error::Error> {
+        Self::encode_calldata(to, token_id, function_selector)?
+            .to_payload(address)
+            .map(|v| v.into())
+    }
+}
+
+pub struct NftTransferPayload(subxt::tx::Payload<ContractCall>);
+
+impl WrappedExtrinsic<ContractCall> for NftTransferPayload {
+    fn into_inner(self) -> subxt::tx::Payload<ContractCall> {
+        self.0
+    }
+}
+
+impl From<subxt::tx::Payload<ContractCall>> for NftTransferPayload {
+    fn from(value: subxt::tx::Payload<ContractCall>) -> Self {
+        Self(value)
     }
 }

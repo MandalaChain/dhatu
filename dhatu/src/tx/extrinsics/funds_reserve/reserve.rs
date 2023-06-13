@@ -7,6 +7,7 @@ use crate::tx::extrinsics::prelude::{
     enums::ExtrinsicStatus, extrinsics::Transaction,
     transfer_balance::constructor::BalanceTransfer,
 };
+use crate::tx::extrinsics::transaction_constructor::traits::WrappedExtrinsic;
 use crate::types::MandalaClient;
 
 

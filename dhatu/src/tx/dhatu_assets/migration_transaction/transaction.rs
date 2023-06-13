@@ -7,10 +7,10 @@ use crate::{
             extrinsics,
             ExtrinsicSubmitter,
             transfer_nft_contract::{
-                constructor::TransferNFT, traits::NftTransferTransactionConstructor,
+                constructor::TransferNFT,
             },
              reserve::FundsReserve,
-        },
+        }, transaction_constructor::traits::WrappedExtrinsic,
     }, types::NodeClient,
 };
 
@@ -75,7 +75,7 @@ impl MigrationTransaction {
             .take()
             .expect("migration payload not constructed");
 
-        let tx = TxBuilder::signed(&client, acc, &payload)
+        let tx = TxBuilder::signed(&client, acc, &payload.into_inner())
             .await
             .expect("should sign transaction");
 

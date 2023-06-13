@@ -1,11 +1,11 @@
 use subxt::{tx::SubmittableExtrinsic, SubstrateConfig};
 
-use crate::{tx::extrinsics::prelude::{
-    transfer_nft_contract::types::ContractTransactionPayload, extrinsics::TransactionMessage,
-}, types::{SenderChannel, ReceiverChannel}};
+use crate::{tx::extrinsics::{prelude::{
+     extrinsics::TransactionMessage,
+}, transaction_constructor::transfer_nft_contract::constructor::NftTransferPayload}, types::{SenderChannel, ReceiverChannel}};
 
 pub type MigrationTask<T> = std::pin::Pin<Box<dyn futures::Future<Output = T>>>;
-pub type MigrationTransactionPayload = ContractTransactionPayload;
+pub type MigrationTransactionPayload = NftTransferPayload;
 pub type MigrationTransactionResultNotifier =
     SenderChannel<TransactionMessage>;
 pub type MigrationTransactionResultReceiver =
