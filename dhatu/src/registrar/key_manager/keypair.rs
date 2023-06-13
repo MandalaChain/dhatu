@@ -175,3 +175,26 @@ impl From<Pair> for PrivateKey {
         PrivateKey(value)
     }
 }
+
+#[cfg(test)]
+mod keypair_tests {
+    use std::str::FromStr;
+
+    use sp_core::{sr25519, Pair};
+    use super::*;
+
+    #[test]
+    fn test_keypair_new() {
+        let password_hash = Password::new();
+        let phrase = MnemonicPhrase::new("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
+        let pub_key = PublicAddress::from_str("5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb").unwrap();
+        let pair = sr25519::Pair::from_string("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
+
+        let keypair = Keypair::new(password_hash.clone(), phrase.clone(), pub_key.clone(), pair.clone());
+
+        assert_eq!(keypair.password_hash().as_str(), password_hash.as_str());
+        assert_eq!(*keypair.phrase(), phrase);
+        assert_eq!(*keypair.pub_key(), pub_key);
+        assert_eq!(keypair.keypair().public(), pair.public());
+    }
+}
