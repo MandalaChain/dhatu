@@ -1,4 +1,3 @@
-use crate::registrar::signer::TxBuilderError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -67,4 +66,10 @@ pub enum CallbackExecutorError {
 pub enum ToPayloadError {
     #[error("{0}")]
     AddressError(String),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum TxBuilderError {
+    #[error("{0}")]
+    SignErorr(#[from] subxt::Error),
 }
