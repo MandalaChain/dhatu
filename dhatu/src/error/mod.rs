@@ -1,9 +1,8 @@
 use crate::{
-    registrar::{ signer::TxBuilderError},
+    registrar::signer::TxBuilderError,
     tx::extrinsics::prelude::{
         calldata::ToPayloadError, reserve::FundsReserveError, CallbackExecutorError,
     },
-    types::MandalaClientErorr,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -33,6 +32,11 @@ pub enum Error {
     SignTransactionError(#[from] TxBuilderError),
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum MandalaClientErorr {
+    #[error("connection Error : {0}")]
+    Connection(#[from] subxt::Error),
+}
 
 #[derive(thiserror::Error, Debug)]
 pub enum KeypairGenerationError {
