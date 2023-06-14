@@ -115,6 +115,12 @@ mod tests {
         let phrase = "sample tornado pen frog valley library velvet figure guitar powder mirror churne";
         let keypair_result = KeyManager::recover(Some(pass), phrase);
         assert!(keypair_result.is_err());
+        if let Err(err) = keypair_result {
+            assert_eq!(
+                format!("{:?}", err),
+                format!("{:?}", Error::Keypair(KeypairGenerationError::Recover("Invalid phrase".to_string())))
+            );
+        }
     }
 
     #[test]
