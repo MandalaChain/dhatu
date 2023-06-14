@@ -9,8 +9,8 @@ use super::prelude::Password;
 /// represent a keypair.
 #[derive(Clone)]
 pub struct Keypair {
-    /// password hash used to generate this keypair.
-    password_hash: Password,
+    /// password hash used to generate this keypair. if any.
+    password_hash: Option<Password>,
     /// mnemonic phrase used to generate this keypair.
     phrase: MnemonicPhrase,
     /// public address of this keypair.
@@ -23,7 +23,7 @@ impl Keypair {
     /// create a new keypair. it should not be exposed to user.
     /// meant to be used only to create and recover keypair.
     pub(crate) fn new(
-        password_hash: Password,
+        password_hash: Option<Password>,
         phrase: MnemonicPhrase,
         pub_key: PublicAddress,
         keypair: Pair,
@@ -37,8 +37,8 @@ impl Keypair {
     }
 
     /// get the password hash used to generate this keypair.
-    pub fn password_hash(&self) -> &Password {
-        &self.password_hash
+    pub fn password_hash(&self) -> Option<&Password> {
+        self.password_hash.as_ref()
     }
 
     /// get the mnemonic phrase used to generate this keypair.
@@ -178,7 +178,7 @@ impl ToString for MnemonicPhrase {
 pub struct PrivateKey(pub(crate) Pair);
 
 impl PrivateKey {
-    /// sign a message using this private key. 
+    /// sign a message using this private key.
     /// note that this returns a raw bytes array.
     pub fn sign(&self, message: &[u8]) -> [u8; 64] {
         self.0.sign(message).0
@@ -199,10 +199,10 @@ impl PrivateKey {
 impl FromStr for PrivateKey {
     type Err = Error;
 
+    /// can only be interpreted from 64 bytes secret seed hex string. see [here](sp_core::Pair::from_string_with_seed) for more details.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        schnorrkel::Keypair::from_bytes(s.as_bytes())
-            .map(|v| PrivateKey(Pair::from(v)))
-            .map_err(|e| KeypairGenerationError::PrivateKey(e.to_string()).into())
+        let pair = Pair::from_string(s, None).map_err(|e| KeypairGenerationError::PrivateKey(e))?;
+        Ok(Self(pair))
     }
 }
 
