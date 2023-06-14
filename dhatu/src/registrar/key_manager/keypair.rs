@@ -199,6 +199,7 @@ impl PrivateKey {
 impl FromStr for PrivateKey {
     type Err = Error;
 
+    /// can only be interpreted from 64 bytes secret seed hex string. see [here](sp_core::Pair::from_string_with_seed) for more details.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let pair = Pair::from_string(s, None).map_err(|e| KeypairGenerationError::PrivateKey(e))?;
         Ok(Self(pair))
