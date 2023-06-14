@@ -1,4 +1,6 @@
+/// keypair modules contains stuff related to keypair manipulation, use, etc. 
 pub mod keypair;
+/// password modules used to generate keypair.
 pub mod password;
 
 use std::str::FromStr;

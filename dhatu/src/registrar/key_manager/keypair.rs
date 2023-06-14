@@ -59,6 +59,7 @@ impl Keypair {
     }
 }
 
+/// public address representation of some keypair.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PublicAddress(pub(crate) String);
 

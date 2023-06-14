@@ -7,6 +7,7 @@ use rand::{thread_rng, Rng};
 
 use crate::error::{Error, PasswordGenerationError};
 
+/// default password length used to generate password.
 pub const DEFAULT_PASSWORD_LENGTH: usize = 32;
 
 /// represents a password hash used to securely generate and recover user keypair.
