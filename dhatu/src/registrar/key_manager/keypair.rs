@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, KeypairGenerationError};
 use futures::FutureExt;
 use sp_core::{crypto::Ss58Codec, sr25519::Pair, Pair as PairTraits};
 use std::str::FromStr;
@@ -43,23 +43,10 @@ impl Keypair {
         &self.pub_key
     }
 
+    #[cfg(feature = "unstable_sp_core")]
     pub fn keypair(&self) -> &Pair {
         &self.keypair
     }
-}
-#[derive(thiserror::Error, Debug)]
-pub enum KeypairGenerationError {
-    #[error("{0}")]
-    PublicAddress(String),
-
-    #[error("fail to generate mnemonic phrase with {0}")]
-    MnemonicPhrase(String),
-
-    #[error("{0}")]
-    PrivateKey(String),
-
-    #[error("{0}")]
-    Recover(String),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -130,7 +117,7 @@ impl MnemonicPhrase {
         }
     }
 
-    pub fn inner(&self) -> &str{
+    pub fn inner(&self) -> &str {
         self.0.as_str()
     }
 }
@@ -143,7 +130,7 @@ impl PrivateKey {
         self.clone().into()
     }
 
-    pub fn inner(&self) -> &Pair{
+    pub fn inner(&self) -> &Pair {
         &self.0
     }
 }
@@ -160,7 +147,7 @@ impl FromStr for PrivateKey {
 
 impl From<Keypair> for PrivateKey {
     fn from(value: Keypair) -> Self {
-        PrivateKey(value.keypair().clone())
+        PrivateKey(value.keypair.clone())
     }
 }
 

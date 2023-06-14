@@ -1,2 +1,1 @@
-# dhatu-identity-registrar
- dhatu core libraries
+# **Dhatu Core Libraries**

@@ -1,7 +1,7 @@
 
 
 
-use crate::error::Error;
+use crate::error::{Error, FundsReserveError};
 use crate::registrar::key_manager::prelude::PublicAddress;
 use crate::registrar::signer::WrappedExtrinsic;
 use crate::tx::extrinsics::prelude::{
@@ -16,14 +16,6 @@ use subxt::{tx::PairSigner};
 
 use crate::{registrar::key_manager::prelude::PrivateKey};
 
-#[derive(thiserror::Error, Debug)]
-pub enum FundsReserveError {
-    #[error("{0}")]
-    RpcError(#[from] subxt::error::Error),
-
-    #[error("account does not exist!")]
-    NonExistentAccount,
-}
 
 #[derive(Clone)]
 pub struct FundsReserve {
