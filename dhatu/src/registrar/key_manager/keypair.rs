@@ -147,7 +147,7 @@ impl FromStr for PrivateKey {
 
 impl From<Keypair> for PrivateKey {
     fn from(value: Keypair) -> Self {
-        PrivateKey(value.keypair().clone())
+        PrivateKey(value.keypair.clone())
     }
 }
 

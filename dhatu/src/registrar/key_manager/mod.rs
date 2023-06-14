@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 use sp_core::{sr25519::Pair as Keys, Pair};
 
-pub mod prelude {
+pub(crate) mod prelude {
     pub use super::keypair::*;
     pub use super::password::*;
 }
