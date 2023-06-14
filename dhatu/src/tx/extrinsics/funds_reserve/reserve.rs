@@ -38,7 +38,7 @@ impl FundsReserve {
     }
 
     pub fn reserve_address(&self) -> PublicAddress {
-        self.reserve.public_key()
+        self.reserve.public_address()
     }
 
     pub fn client(&self) -> &MandalaClient {
@@ -102,7 +102,7 @@ impl FundsReserve {
     ) -> Result<ExtrinsicStatus, Error> {
         let client = self.client().inner();
 
-        let signer = PairSigner::new(self.reserve_signer().inner().to_owned());
+        let signer = PairSigner::new(self.reserve_signer().0.to_owned());
 
         let payload = BalanceTransfer::construct(account, value).into_inner();
 

@@ -6,17 +6,22 @@ use subxt::utils::AccountId32;
 
 use super::prelude::Password;
 
-/// represent a user keypair and its infos.
+/// represent a keypair.
 #[derive(Clone)]
-
 pub struct Keypair {
+    /// password hash used to generate this keypair.
     password_hash: Password,
+    /// mnemonic phrase used to generate this keypair.
     phrase: MnemonicPhrase,
+    /// public address of this keypair.
     pub_key: PublicAddress,
+    /// the actual keypair.
     keypair: Pair,
 }
 
 impl Keypair {
+    /// create a new keypair. it should not be exposed to user.
+    /// meant to be used only to create and recover keypair.
     pub(crate) fn new(
         password_hash: Password,
         phrase: MnemonicPhrase,
@@ -31,30 +36,54 @@ impl Keypair {
         }
     }
 
+    /// get the password hash used to generate this keypair.
     pub fn password_hash(&self) -> &Password {
         &self.password_hash
     }
 
+    /// get the mnemonic phrase used to generate this keypair.
     pub fn phrase(&self) -> &MnemonicPhrase {
         &self.phrase
     }
 
+    /// get the public address of this keypair.
     pub fn pub_key(&self) -> &PublicAddress {
         &self.pub_key
     }
 
     #[cfg(feature = "unstable_sp_core")]
+    /// get the actual keypair. this is only enabled on `unstable_sp_core` feature.
+    /// due to the unstable nature of the `sp_core` crate.
     pub fn keypair(&self) -> &Pair {
         &self.keypair
     }
 }
 
+/// public address representation of some keypair.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PublicAddress(pub(crate) String);
 
 impl PublicAddress {
+    /// get the string representation of this public address.
     pub fn inner(&self) -> &str {
         self.0.as_str()
+    }
+
+    #[cfg(feature = "subxt")]
+    /// convert this public address to subxt `AccountId32`.
+    /// only available if `subxt` or `unstable` feature flag is enabled.
+    pub fn inner_as_subxt_account_id(&self) -> AccountId32 {
+        AccountId32::from_str(self.inner())
+            .expect("converstion from valid public address shouldn't fail!")
+    }
+
+    #[cfg(feature = "subxt")]
+    #[cfg(feature = "unstable_sp_core")]
+    /// convert this public address to sp_core `AccountId32`.
+    /// only available if `unstable` feature flag is enabled.
+    pub fn inner_as_sp_core_acoount_id(&self) -> sp_core::crypto::AccountId32 {
+        sp_core::crypto::AccountId32::from_str(self.inner())
+            .expect("converstion from valid public address shouldn't fail!")
     }
 }
 
@@ -101,11 +130,20 @@ impl From<PrivateKey> for PublicAddress {
     }
 }
 
+impl ToString for PublicAddress {
+    fn to_string(&self) -> String {
+        self.0.clone()
+    }
+}
+
+/// mnemonic phrase representation for used to recover a keypair.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MnemonicPhrase(pub(crate) String);
 
 impl MnemonicPhrase {
-    pub fn new(phrase: &str, password: Option<Password>) -> Result<Self, Error> {
+    /// internal function. should not be exposed to user.
+    /// meant to be used only to create and recover keypair.
+    pub(crate) fn new(phrase: &str, password: Option<Password>) -> Result<Self, Error> {
         let vrf = match password {
             Some(password) => Pair::from_phrase(phrase, Some(password.as_str())),
             None => Pair::from_phrase(phrase, None),
@@ -117,19 +155,42 @@ impl MnemonicPhrase {
         }
     }
 
+    /// get the string representation of this mnemonic phrase.
     pub fn inner(&self) -> &str {
         self.0.as_str()
     }
 }
 
+impl From<Keypair> for MnemonicPhrase {
+    fn from(value: Keypair) -> Self {
+        value.phrase
+    }
+}
+
+impl ToString for MnemonicPhrase {
+    fn to_string(&self) -> String {
+        self.0.clone()
+    }
+}
+
+/// private or secret key representation of some keypair.
 #[derive(Clone)]
 pub struct PrivateKey(pub(crate) Pair);
 
 impl PrivateKey {
-    pub fn public_key(&self) -> PublicAddress {
+    /// sign a message using this private key. 
+    /// note that this returns a raw bytes array.
+    pub fn sign(&self, message: &[u8]) -> [u8; 64] {
+        self.0.sign(message).0
+    }
+
+    /// get the public address of this private key.
+    pub fn public_address(&self) -> PublicAddress {
         self.clone().into()
     }
 
+    #[cfg(feature = "unstable_sp_core")]
+    /// get the actual keypair. this is only enabled on `unstable_sp_core` feature.
     pub fn inner(&self) -> &Pair {
         &self.0
     }

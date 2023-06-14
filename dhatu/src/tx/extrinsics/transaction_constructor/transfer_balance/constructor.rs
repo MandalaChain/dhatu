@@ -2,9 +2,10 @@ use subxt::utils::{AccountId32, MultiAddress};
 
 use crate::{
     registrar::{key_manager::prelude::PublicAddress, signer::WrappedExtrinsic},
-    tx::extrinsics::transaction_constructor::traits::{ValidateHash, },
+    tx::extrinsics::transaction_constructor::traits::ValidateHash,
 };
 
+#[doc(hidden)]
 #[derive(
     :: subxt :: ext :: codec :: Decode,
     :: subxt :: ext :: codec :: Encode,
@@ -15,7 +16,7 @@ use crate::{
 #[codec (crate = :: subxt :: ext :: codec)]
 #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-pub(crate) struct BalanceTransferArgs {
+pub struct BalanceTransferArgs {
     pub(crate) dest: MultiAddress<AccountId32, ()>,
     pub(crate) value: u128,
 }
