@@ -3,11 +3,11 @@
 pub enum Error {
     /// error when generating password for keypair phrase.
     #[error("password generation error : {0}")]
-    PasswordGenError(String),
+    Password(#[from] PasswordGenerationError),
 
     /// error when generating keypair.
     #[error("keypair generation error : ")]
-    KeypairGenError(#[from] KeypairGenerationError),
+    Keypair(#[from] KeypairGenerationError),
 
     /// error associated with the underlying blockchain rpc client.
     #[error("mandala client error :")]
@@ -15,23 +15,30 @@ pub enum Error {
 
     /// error associated with reserve funds transactions.
     #[error("reserve error : ")]
-    ReserveError(#[from] FundsReserveError),
+    Reserve(#[from] FundsReserveError),
 
     /// error when executing transaction http callback.
     #[error("callback executor error : ")]
-    CallbackError(#[from] CallbackExecutorError),
+    Callback(#[from] CallbackExecutorError),
 
-    /// error when submitting transaction to rpc client.
+    /// transaction related error.
     #[error("error when submitting transaction : {0}")]
-    TransactionSubmitError(#[from] subxt::Error),
+    Transaction(#[from] subxt::Error),
 
     /// error when encoding calldata to contract pallet payload.
     #[error("error when converting to payload : {0}")]
-    PayloadError(#[from] ToPayloadError),
+    Payload(#[from] ToPayloadError),
 
     /// error when signing transaction.
     #[error("error when signing transaction : {0}")]
-    SignTransactionError(#[from] TxBuilderError),
+    Sign(#[from] TxBuilderError),
+}
+
+/// error related to keypair password generation.
+#[derive(thiserror::Error, Debug)]
+pub enum PasswordGenerationError {
+    #[error("invalid length. password length must be at least 32 characters long!")]
+    InvalidLength,
 }
 
 /// all error that can happen when generating and parsing keypair related stuff.
@@ -47,7 +54,7 @@ pub enum KeypairGenerationError {
 
     /// error parsing private key.
     #[error("{0}")]
-    PrivateKey(String),
+    PrivateKey(#[from] sp_core::crypto::SecretStringError),
 
     /// error recovering keypair.
     #[error("{0}")]
@@ -57,7 +64,6 @@ pub enum KeypairGenerationError {
 /// error that happens on the underlying blockchain rpc client.
 #[derive(thiserror::Error, Debug)]
 pub enum MandalaClientErorr {
-
     /// error associating with the node connection
     #[error("connection Error : {0}")]
     Connection(#[from] subxt::Error),
@@ -70,7 +76,7 @@ pub enum FundsReserveError {
     #[error("{0}")]
     RpcError(#[from] subxt::error::Error),
 
-    /// account does not exist, happens when trying 
+    /// account does not exist, happens when trying
     /// to transfer funds to an account that does not exist.
     #[error("account does not exist!")]
     NonExistentAccount,

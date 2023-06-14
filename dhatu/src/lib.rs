@@ -20,7 +20,7 @@ pub mod error;
 /// crate private modules
 pub(crate) mod private;
 /// identity registrar, consist of types and modules regarding blockchain identity.
-/// i.e keypair, transaction signing. 
+/// i.e keypair.
 pub mod registrar;
 /// transaction module, consist of extrinsics abstraction. 
 pub mod tx;
