@@ -1,4 +1,4 @@
-/// keypair modules contains stuff related to keypair manipulation, use, etc. 
+/// keypair modules contains stuff related to keypair manipulation, use, etc.
 pub mod keypair;
 /// password modules used to generate keypair.
 pub mod password;
@@ -23,7 +23,11 @@ impl KeyManager {
     /// create a new keypair from a random generated password.
     pub fn new_default() -> Keypair {
         let password = Password::new();
-        Self::gen(password)
+        Self::gen(Some(password))
+    }
+
+    pub fn new_without_password() -> Keypair {
+        Self::gen(None)
     }
 
     /// recover a keypair from a phrase and a password, will fail if the phrase and password is invalid.
@@ -36,10 +40,11 @@ impl KeyManager {
 
 impl KeyManager {
     /// internal function. meant to be used to create a new keypair.
-    fn gen(password: Password) -> Keypair {
-        let password_phrase = password.as_pwd();
-
-        let (keypair, phrase, _) = Keys::generate_with_phrase(password_phrase);
+    fn gen(password: Option<Password>) -> Keypair {
+        let (keypair, phrase, _) = match password.clone() {
+            Some(password) => Keys::generate_with_phrase(password.as_pwd()),
+            None => Keys::generate_with_phrase(None),
+        };
 
         Self::construct(password, phrase, keypair)
     }
@@ -52,15 +57,15 @@ impl KeyManager {
         let password_phrase = password.as_pwd();
 
         let (keys, _) = Keys::from_phrase(phrase, password_phrase)?;
-        let keypair = Self::construct(password, String::from(phrase), keys);
+        let keypair = Self::construct(Some(password), String::from(phrase), keys);
         Ok(keypair)
     }
 
     /// construct a keypair from a password, phrase and a keypair.
     /// internal function. meant to be used to create a new keypair or recover a keypair.
     /// should not be exposed to user.
-    fn construct(password: Password, phrase: String, keypair: Keys) -> Keypair {
-        let phrase = MnemonicPhrase::new(&phrase, Some(password.clone()))
+    fn construct(password: Option<Password>, phrase: String, keypair: Keys) -> Keypair {
+        let phrase = MnemonicPhrase::new(&phrase, password.clone())
             .expect("internal function should not fail!");
         let pub_key = keypair.clone().into();
 

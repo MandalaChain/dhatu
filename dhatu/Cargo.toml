@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 # substrate stuff ( must be synchronized as these modules does not follow semver!)
-sp-core = { version = "21.0.0", features = ["full_crypto"] }
+sp-core = { version = "21.0.0", features = ["full_crypto", "std"] }
 subxt = "0.29"
 schnorrkel = "0.9.1"
 
