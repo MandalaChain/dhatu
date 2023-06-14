@@ -34,6 +34,7 @@ pub enum Error {
     Sign(#[from] TxBuilderError),
 }
 
+/// error related to keypair password generation.
 #[derive(thiserror::Error, Debug)]
 pub enum PasswordGenerationError {
     #[error("invalid length. password length must be at least 32 characters long!")]
