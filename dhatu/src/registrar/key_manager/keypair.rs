@@ -182,7 +182,7 @@ mod keypair_tests {
         assert_eq!(keypair.password_hash().as_str(), password_hash.as_str());
         assert_eq!(*keypair.phrase(), phrase);
         assert_eq!(*keypair.pub_key(), pub_key);
-        assert_eq!(keypair.keypair().public(), pair.public());
+        assert_eq!(keypair.keypair.public(), pair.public());
     }
 }
 
@@ -320,8 +320,10 @@ mod mnemonic_phrase_tests {
 #[cfg(test)]
 mod private_key_tests {
     use crate::registrar::key_manager::KeyManager;
-    // use schnorrkel::Keypair;
-    // use std::str;
+    use schnorrkel::Keypair;
+
+    use std::str;
+    use base64;
 
     use super::*;
 
@@ -340,13 +342,63 @@ mod private_key_tests {
         assert_eq!(inner.to_raw_vec(), private_key.0.to_raw_vec());
     }
 
-    // #[test]
-    // fn test_from_str_valid() {
-    //     let key_bytes = Keypair::generate().to_bytes();
-    //     let valid_key_str = key_bytes.iter().map(|&c| c as char).collect::<String>();
-    //     let result = PrivateKey::from_str(valid_key_str.as_str());
-    //     assert!(result.is_ok());
-    // }
+    #[test]
+    fn test_from_str_valid() {
+        
+        // let mini_secret_key: MiniSecretKey = MiniSecretKey::generate();
+        // let secret_key: SecretKey = mini_secret_key.expand(MiniSecretKey::ED25519_MODE);
+        // let secret_key_bytes: [u8; 64] = secret_key.to_bytes();
+
+        // panic!("secret_key: {:?}", SchnorrkelKeypair::generate().secret);
+
+        // let valid_key_str = key_bytes.to_bytes().iter().map(|&c| c as char).collect::<String>();
+
+        // let valid_key_str = str::from_utf8(&key_bytes).unwrap();
+        // let valid_key_str = String::from_utf8(key_bytes[0..32].to_vec()).unwrap();
+
+        // let valid_key_str = base64::encode(&secret_key_bytes);
+
+        // let keypair_bytes = hex!("28b0ae221c6bb06856b287f60d7ea0d98552ea5a16db16956849aa371db3eb51fd190cce74df356432b410bd64682309d6dedb27c76845daf388557cbac3ca3446ebddef8cd9bb167dc30878d7113b7e168e6f0646beffd77d69d39bad76b47a");
+        // let keypair: Keypair = Keypair::from_bytes(&keypair_bytes[..]).unwrap();
+        
+        let bytes = Keypair::generate().secret.to_bytes();
+        // let vec = bytes.to_vec();
+        // panic!("secret_key: {:?}", );
+
+        // Convert bytes to string
+        let encoded_string = base64::encode(&bytes);
+
+        let as_bytes = encoded_string.as_bytes();
+
+        let str = str::from_utf8(as_bytes).unwrap();
+
+        // Convert string back to bytes
+        let decoded_bytes = base64::decode(&encoded_string).unwrap();
+
+        let sl = decoded_bytes.as_slice();
+
+        // Ensure the decoded bytes match the original bytes
+        assert_eq!(bytes, decoded_bytes.as_slice());
+
+        // panic!("Encoded string: {}", encoded_string);
+        println!("Decoded bytes: {:?}", decoded_bytes);
+
+
+        // println!("valid_key_str: {valid_key_str}");
+
+        let result = PrivateKey::from_str(str).unwrap();
+        // assert!(result.is_ok());
+
+        /*
+        // Generate a new random Schnorrkel keypair
+        let keypair = SchnorrkelKeypair::generate();
+
+        // Extract the private key from the keypair
+        let private_key = keypair.secret.to_bytes().to_vec();
+
+        panic!("Private Key: {:?}", base64::encode(&private_key));
+        */
+    }
 
     #[test]
     fn test_from_str_invalid() {
@@ -359,7 +411,7 @@ mod private_key_tests {
     fn test_from_keypair() {
         let keypair = KeyManager::new_default();
         let private_key = PrivateKey::from(keypair.clone());
-        assert_eq!(private_key.0.to_raw_vec(), keypair.keypair().to_raw_vec());
+        assert_eq!(private_key.0.to_raw_vec(), keypair.keypair.to_raw_vec());
     }
 
     #[test]
