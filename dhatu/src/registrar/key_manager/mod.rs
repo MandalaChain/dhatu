@@ -1,4 +1,3 @@
-//! module responsible for all related task regarding user keypair. e.g creating, recovering, etc.
 pub mod keypair;
 pub mod password;
 
@@ -13,17 +12,19 @@ pub(crate) mod prelude {
 
 use prelude::*;
 
-use crate::{error::{Error, KeypairGenerationError}, };
+use crate::error::{Error, KeypairGenerationError};
 
-/// represent a keypair manager.
+/// represent a keypair manager. used to create a new schnorrkel keypair or recover from a phrase.
 pub struct KeyManager;
 
 impl KeyManager {
+    /// create a new keypair from a random generated password.
     pub fn new_default() -> Keypair {
         let password = Password::new();
         Self::gen(password)
     }
 
+    /// recover a keypair from a phrase and a password, will fail if the phrase and password is invalid.
     pub fn recover(pass: &str, phrase: &str) -> Result<Keypair, Error> {
         let password = Password::from_str(pass)?;
         Self::gen_from_phrase(password, phrase)
@@ -32,6 +33,7 @@ impl KeyManager {
 }
 
 impl KeyManager {
+    /// internal function. meant to be used to create a new keypair.
     fn gen(password: Password) -> Keypair {
         let password_phrase = password.as_pwd();
 
@@ -40,7 +42,11 @@ impl KeyManager {
         Self::construct(password, phrase, keypair)
     }
 
-    fn gen_from_phrase(password: Password, phrase: &str) -> Result<Keypair, Box<dyn std::error::Error>> {
+    /// internal function. meant to be used to recover a keypair from a password and its phrase.
+    fn gen_from_phrase(
+        password: Password,
+        phrase: &str,
+    ) -> Result<Keypair, Box<dyn std::error::Error>> {
         let password_phrase = password.as_pwd();
 
         let (keys, _) = Keys::from_phrase(phrase, password_phrase)?;
@@ -56,4 +62,3 @@ impl KeyManager {
         Keypair::new(password, phrase, pub_key, keypair)
     }
 }
-
