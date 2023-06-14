@@ -26,13 +26,17 @@ impl KeyManager {
         Self::gen(Some(password))
     }
 
+    /// create a new keypair without password.
     pub fn new_without_password() -> Keypair {
         Self::gen(None)
     }
 
     /// recover a keypair from a phrase and a password, will fail if the phrase and password is invalid.
-    pub fn recover(pass: &str, phrase: &str) -> Result<Keypair, Error> {
-        let password = Password::from_str(pass)?;
+    pub fn recover(pass: Option<&str>, phrase: &str) -> Result<Keypair, Error> {
+        let password = match pass {
+            Some(pass) => Some(Password::from_str(pass)?),
+            None => None,
+        };
         Self::gen_from_phrase(password, phrase)
             .map_err(|e| KeypairGenerationError::Recover(e.to_string()).into())
     }
@@ -51,13 +55,15 @@ impl KeyManager {
 
     /// internal function. meant to be used to recover a keypair from a password and its phrase.
     fn gen_from_phrase(
-        password: Password,
+        password: Option<Password>,
         phrase: &str,
     ) -> Result<Keypair, Box<dyn std::error::Error>> {
-        let password_phrase = password.as_pwd();
+        let (keypair, _) = match password.clone() {
+            Some(pass) => Keys::from_phrase(phrase, pass.as_pwd())?,
+            None => Keys::from_phrase(phrase, None)?,
+        };
 
-        let (keys, _) = Keys::from_phrase(phrase, password_phrase)?;
-        let keypair = Self::construct(Some(password), String::from(phrase), keys);
+        let keypair = Self::construct(password, String::from(phrase), keypair);
         Ok(keypair)
     }
 
