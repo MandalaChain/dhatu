@@ -129,6 +129,12 @@ mod tests {
         let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
         let keypair_result = KeyManager::recover(Some(pass), phrase);
         assert!(keypair_result.is_err());
+        if let Err(err) = keypair_result {
+            assert_eq!(
+                format!("{:?}", err),
+                format!("{:?}", Error::Password(InvalidLength))
+            );
+        }
     }
     
     #[test]
