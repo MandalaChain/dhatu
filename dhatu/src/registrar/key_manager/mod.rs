@@ -54,6 +54,9 @@ impl KeyManager {
         Ok(keypair)
     }
 
+    /// construct a keypair from a password, phrase and a keypair.
+    /// internal function. meant to be used to create a new keypair or recover a keypair.
+    /// should not be exposed to user.
     fn construct(password: Password, phrase: String, keypair: Keys) -> Keypair {
         let phrase = MnemonicPhrase::new(&phrase, Some(password.clone()))
             .expect("internal function should not fail!");

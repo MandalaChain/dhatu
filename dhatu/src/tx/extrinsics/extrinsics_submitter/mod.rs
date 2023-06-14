@@ -10,7 +10,7 @@ impl ExtrinsicSubmitter {
         let result = tx.into_inner()
             .submit_and_watch()
             .await
-            .map_err(Error::TransactionSubmitError)?
+            .map_err(Error::Transaction)?
             .into();
 
         Ok(result)
