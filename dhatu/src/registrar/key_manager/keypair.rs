@@ -238,9 +238,9 @@ mod keypair_tests {
         let pub_key = PublicAddress::from_str("5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb").unwrap();
         let pair = sr25519::Pair::from_string("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
 
-        let keypair = Keypair::new(password_hash.clone(), phrase.clone(), pub_key.clone(), pair.clone());
+        let keypair = Keypair::new(Some(password_hash.clone()), phrase.clone(), pub_key.clone(), pair.clone());
 
-        assert_eq!(keypair.password_hash().as_str(), password_hash.as_str());
+        assert_eq!(keypair.password_hash().unwrap().as_str(), password_hash.as_str());
         assert_eq!(*keypair.phrase(), phrase);
         assert_eq!(*keypair.pub_key(), pub_key);
         assert_eq!(keypair.keypair.public(), pair.public());
@@ -337,7 +337,7 @@ mod public_address_tests {
         let private_key = PrivateKey { 0: keypair };
 
         let public_address: PublicAddress = private_key.clone().into();
-        assert_eq!(public_address, PublicAddress::from_str(private_key.inner().public().to_ss58check().as_str()).unwrap());
+        assert_eq!(public_address, PublicAddress::from_str(private_key.0.public().to_ss58check().as_str()).unwrap());
     }
 }
 
@@ -381,26 +381,14 @@ mod mnemonic_phrase_tests {
 #[cfg(test)]
 mod private_key_tests {
     use crate::registrar::key_manager::KeyManager;
-    use schnorrkel::Keypair;
-
-    use std::str;
-    use base64;
-
     use super::*;
 
     #[test]
-    fn test_public_key() {
+    fn test_public_address() {
         let pair = KeyManager::new_default().keypair;
         let private_key = PrivateKey(pair.clone());
-        let public_key = private_key.public_key();
+        let public_key = private_key.public_address();
         assert_eq!(public_key, pair.into());
-    }
-
-    #[test]
-    fn test_inner() {
-        let private_key = PrivateKey(KeyManager::new_default().keypair);
-        let inner = private_key.inner();
-        assert_eq!(inner.to_raw_vec(), private_key.0.to_raw_vec());
     }
 
     #[test]
