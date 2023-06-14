@@ -82,6 +82,19 @@ impl KeyManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::PasswordGenerationError::InvalidLength;
+
+    #[test]
+    fn test_new_default() {
+        let keypair = KeyManager::new_default();
+        assert!(keypair.password_hash().is_some());
+    }
+
+    #[test]
+    fn test_new_without_password() {
+        let keypair = KeyManager::new_without_password();
+        assert!(keypair.password_hash().is_none());
+    }
 
     #[test]
     fn test_recover_valid() {
