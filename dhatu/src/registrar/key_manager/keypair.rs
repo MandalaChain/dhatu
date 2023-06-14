@@ -43,6 +43,7 @@ impl Keypair {
         &self.pub_key
     }
 
+    #[cfg(feature = "unstable_sp_core")]
     pub fn keypair(&self) -> &Pair {
         &self.keypair
     }
@@ -116,7 +117,7 @@ impl MnemonicPhrase {
         }
     }
 
-    pub fn inner(&self) -> &str{
+    pub fn inner(&self) -> &str {
         self.0.as_str()
     }
 }
@@ -129,7 +130,7 @@ impl PrivateKey {
         self.clone().into()
     }
 
-    pub fn inner(&self) -> &Pair{
+    pub fn inner(&self) -> &Pair {
         &self.0
     }
 }
