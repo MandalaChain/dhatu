@@ -5,6 +5,7 @@ use crate::{
     tx::extrinsics::transaction_constructor::traits::ValidateHash,
 };
 
+// pallet balance transfer function arguments
 #[doc(hidden)]
 #[derive(
     :: subxt :: ext :: codec :: Decode,
@@ -27,6 +28,7 @@ impl BalanceTransferArgs {
     }
 }
 
+/// Balance transfer extrinsic constructor.
 pub struct BalanceTransfer;
 
 impl BalanceTransfer {
@@ -45,6 +47,7 @@ impl ValidateHash for BalanceTransfer {
     }
 }
 
+/// Balance transfer extrinsic payload.
 pub struct BalanceTransferPayload(subxt::tx::Payload<BalanceTransferArgs>);
 
 impl WrappedExtrinsic<BalanceTransferArgs> for BalanceTransferPayload {
@@ -54,10 +57,12 @@ impl WrappedExtrinsic<BalanceTransferArgs> for BalanceTransferPayload {
 }
 
 impl BalanceTransferPayload {
+    /// construct a balance transfer extrinsic payload
     fn new(args: BalanceTransferArgs) -> Self {
         Self(BalanceTransfer::generate_payload(args))
     }
 
+    /// get the inner payload
     #[cfg(feature = "unstable_sp_core")]
     pub fn inner(&self) -> &subxt::tx::Payload<BalanceTransferArgs> {
         &self.0
@@ -65,6 +70,7 @@ impl BalanceTransferPayload {
 }
 
 impl BalanceTransfer {
+    /// construct a balance transfer extrinsic payload
     pub fn construct(to: PublicAddress, value: u128) -> BalanceTransferPayload {
         let dest = subxt::utils::MultiAddress::Id(to.into());
         let args = BalanceTransferArgs::new(dest, value);
