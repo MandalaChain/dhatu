@@ -2,6 +2,7 @@ use crate::{tx::extrinsics::prelude::{reserve::FundsReserve}, types::NodeClient}
 
 use super::{traits::MigrationTransactionBuilder, transaction::MigrationTransaction};
 
+/// builder for [MigrationTransaction]
 pub(crate) struct MigrationTransactionBuilderStruct {
     signer: Option<sp_core::sr25519::Pair>,
     notifier: Option<super::types::MigrationTransactionResultNotifier>,
@@ -10,6 +11,7 @@ pub(crate) struct MigrationTransactionBuilderStruct {
 }
 
 impl MigrationTransactionBuilder for MigrationTransactionBuilderStruct {
+    /// create new builder
     fn new() -> Self {
         Self {
             signer: None,
@@ -49,6 +51,7 @@ impl MigrationTransactionBuilder for MigrationTransactionBuilderStruct {
         self
     }
 
+    /// build [MigrationTransaction] from builder
     fn build(&mut self) -> MigrationTransaction {
         let signer = self.signer.take().expect("signer should be set");
         let notifier = self.notifier.take().expect("notifier should be set");
