@@ -2,16 +2,17 @@ use std::str::FromStr;
 
 use serde::Serialize;
 
-
 use super::prelude::enums::{ExtrinsicStatus, Hash};
-use crate::error::{Error, CallbackExecutorError};
+use crate::error::{CallbackExecutorError, Error};
 
+/// http callback executor for extrinsics transaction.
 #[cfg(feature = "tokio")]
 pub struct Executor {
+    /// in-mmeory http connection pool.
     http_connection_pool: reqwest::Client,
 }
 
-
+/// http callback url.
 pub struct Url(pub(crate) reqwest::Url);
 
 impl FromStr for Url {
@@ -40,6 +41,7 @@ impl Executor {
         }
     }
 
+    /// execute http callback given the callback url and the extrinsics status.
     #[cfg(feature = "tokio")]
     #[cfg(feature = "serde")]
     pub fn execute(&self, status: ExtrinsicStatus, callback_url: &str) -> Result<(), Error> {
@@ -55,6 +57,7 @@ impl Executor {
         Ok(())
     }
 
+    /// infer callback body given the extrinsics status.
     fn infer_callback_body(status: ExtrinsicStatus) -> CallBackBody<Hash> {
         match status {
             ExtrinsicStatus::Pending => CallBackBody::new(false, String::from("pending"), None),
@@ -70,6 +73,8 @@ impl Executor {
     }
 }
 
+/// general callback body.
+/// will consider to customize callbackbody in the future.
 #[cfg(feature = "serde")]
 #[derive(Serialize)]
 pub struct CallBackBody<Data: Serialize> {
