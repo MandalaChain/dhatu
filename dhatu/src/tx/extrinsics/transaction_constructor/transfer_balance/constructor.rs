@@ -78,3 +78,28 @@ impl BalanceTransfer {
         BalanceTransferPayload::new(args)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_balance_transfer_args_new() {
+        
+    }
+
+    #[test]
+    fn test_balance_transfer_generate_payload() {
+        
+    }
+
+    #[test]
+    fn test_balance_transfer_payload_new() {
+        
+    }
+
+    #[test]
+    fn test_balance_transfer_construct() {
+        
+    }
+}
