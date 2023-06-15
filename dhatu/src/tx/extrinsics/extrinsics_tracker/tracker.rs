@@ -4,7 +4,7 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::RwLock;
 
 use crate::{
-    types::{MandalaClient, MandalaTransactionProgress, SenderChannel},
+    types::{MandalaClient, MandalaTransactionProgress, SenderChannel}, tx::extrinsics::callback_executor::Url,
 };
 
 use super::{
@@ -39,7 +39,7 @@ impl ExtrinsicWatcher {
         &self,
         tx: MandalaTransactionProgress,
         external_notifier: Option<SenderChannel<TransactionMessage>>,
-        callback: Option<String>,
+        callback: Option<Url>,
     ) -> Hash {
         let tx = Transaction::new(tx, external_notifier, callback);
         let tx_id = tx.id();

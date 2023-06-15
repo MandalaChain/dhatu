@@ -1,19 +1,15 @@
-
-
-
-
 use crate::{
+    error::Error,
     tx::extrinsics::{
-        extrinsics_tracker::extrinsics::TransactionMessage,
-        prelude::{enums::Hash},
+        callback_executor::Url, extrinsics_tracker::extrinsics::TransactionMessage,
+        prelude::enums::Hash,
     },
-    types::{MandalaClient, MandalaExtrinsics, ReceiverChannel, SenderChannel}, error::Error,
+    types::{MandalaClient, MandalaExtrinsics, ReceiverChannel, SenderChannel},
 };
 
 use super::super::{
-    callback_executor::Executor,
-    extrinsics_tracker::tracker::ExtrinsicWatcher,
-    prelude::{ExtrinsicSubmitter, },
+    callback_executor::Executor, extrinsics_tracker::tracker::ExtrinsicWatcher,
+    prelude::ExtrinsicSubmitter,
 };
 
 #[cfg(feature = "tokio")]
@@ -30,11 +26,7 @@ impl ExtrinsicFacade {
         let callback_executor = Executor::new();
         let tx_watcher = ExtrinsicWatcher::new(client);
 
-        Self::initialize_receive_task(
-            tx_watcher.clone(),
-            callback_executor,
-            tx_receiver_channel,
-        );
+        Self::initialize_receive_task(tx_watcher.clone(), callback_executor, tx_receiver_channel);
 
         Self {
             transaction_watcher: tx_watcher,
@@ -55,7 +47,7 @@ impl ExtrinsicFacade {
 
                 if let Some(callback) = msg.callback() {
                     // will fail silently if if there's an error when executing the callback
-                    callback_executor.execute(msg.status.clone(), callback);
+                    callback_executor.execute(msg.status.clone(), callback.to_owned());
                 }
             }
         };
@@ -66,7 +58,7 @@ impl ExtrinsicFacade {
     pub async fn submit(
         &self,
         tx: MandalaExtrinsics,
-        callback: Option<String>,
+        callback: Option<Url>,
     ) -> Result<Hash, Error> {
         let progress = ExtrinsicSubmitter::submit(tx).await?;
         let tx = self

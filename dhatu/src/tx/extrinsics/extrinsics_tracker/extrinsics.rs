@@ -3,23 +3,29 @@ use std::sync::Arc;
 use sp_core::H256;
 
 use tokio::sync::{
-    mpsc::{Receiver, Sender}, RwLock,
+    mpsc::{Receiver, Sender},
+    RwLock,
 };
 
 use crate::{
+    tx::extrinsics::callback_executor::Url,
     types::{MandalaTransactionProgress, SenderChannel},
 };
 
 use super::enums::{ExtrinsicStatus, Hash};
 
+/// transaction message.
+/// this is what will be sent to external notifier after the transaction is completed
 pub struct TransactionMessage {
     pub(crate) status: ExtrinsicStatus,
-    pub(crate) callback: Option<String>,
+    pub(crate) callback: Option<Url>,
     pub(crate) id: Hash,
 }
 
 impl TransactionMessage {
-    pub fn new(status: ExtrinsicStatus, callback: Option<String>, id: Hash) -> Self {
+    /// internal function. should not be exposed to the user.
+    /// create new transaction message.
+    pub(crate) fn new(status: ExtrinsicStatus, callback: Option<Url>, id: Hash) -> Self {
         Self {
             status,
             callback,
@@ -27,14 +33,17 @@ impl TransactionMessage {
         }
     }
 
+    /// get transaction status.
     pub fn inner_status(&self) -> ExtrinsicStatus {
         self.status.clone()
     }
 
-    pub fn callback(&self) -> Option<&String> {
+    /// get callback url.
+    pub fn callback(&self) -> Option<&Url> {
         self.callback.as_ref()
     }
 
+    /// get transaction id.
     pub fn id(&self) -> &Hash {
         &self.id
     }
@@ -62,7 +71,7 @@ impl Transaction {
     pub fn new(
         tx: MandalaTransactionProgress,
         external_notifier: Option<SenderChannel<TransactionMessage>>,
-        callback: Option<String>,
+        callback: Option<Url>,
     ) -> Self {
         let hash = tx.0.extrinsic_hash();
         let task_channel = Self::process_transaction(tx, external_notifier, callback);
@@ -78,7 +87,7 @@ impl Transaction {
     fn process_transaction(
         tx: MandalaTransactionProgress,
         external_status_notifier: Option<SenderChannel<TransactionMessage>>,
-        callback: Option<String>,
+        callback: Option<Url>,
     ) -> Receiver<ExtrinsicStatus> {
         let (internal_status_notifier, receiver) = Self::create_channel();
 
