@@ -33,6 +33,8 @@ thiserror = "1.0.40"
 [dev-dependencies]
 # mock traits and structs
 mockall = "0.11.4"
+# mock http requests
+mockito = "1.0.2" 
 
 [features]
 default = ["tokio", "serde"]
