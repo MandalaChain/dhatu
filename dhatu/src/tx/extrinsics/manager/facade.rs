@@ -12,6 +12,7 @@ use super::super::{
     prelude::ExtrinsicSubmitter,
 };
 
+/// extrinsics facade.
 #[cfg(feature = "tokio")]
 #[cfg(feature = "serde")]
 pub struct ExtrinsicFacade {
@@ -20,6 +21,7 @@ pub struct ExtrinsicFacade {
 }
 
 impl ExtrinsicFacade {
+    /// create new extrinsics facade.
     pub fn new(client: MandalaClient) -> Self {
         let (tx_sender_channel, tx_receiver_channel) = Self::create_channel();
 
@@ -34,6 +36,10 @@ impl ExtrinsicFacade {
         }
     }
 
+    /// internal function. should not be exposed to the user.
+    /// 
+    /// this will stop watching the transaction and execute the callback if there's any.
+    /// this will be executed in a separate tokio task.
     fn initialize_receive_task(
         tx_watcher: ExtrinsicWatcher,
         callback_executor: Executor,
@@ -55,6 +61,7 @@ impl ExtrinsicFacade {
         tokio::task::spawn(recv);
     }
 
+    /// submit a new extrinsics transaction.
     pub async fn submit(
         &self,
         tx: MandalaExtrinsics,
@@ -73,6 +80,7 @@ impl ExtrinsicFacade {
         Ok(tx)
     }
 
+    /// create new channels for message communcation.
     pub fn create_channel() -> (
         SenderChannel<TransactionMessage>,
         ReceiverChannel<TransactionMessage>,
