@@ -49,17 +49,23 @@ impl TransactionMessage {
     }
 }
 
+/// transaction wrapper.
+/// this wrap raw substrate extrinsics transaction and will track the transaction status.
 #[cfg(feature = "tokio")]
 pub struct Transaction {
+    /// transaction id.
     id: H256,
+    /// transaction status.
     status: Arc<RwLock<ExtrinsicStatus>>,
 }
 
 impl Transaction {
+    /// get transaction id.
     pub fn id(&self) -> Hash {
         self.id.into()
     }
 
+    /// get transaction status.
     pub async fn status(&self) -> ExtrinsicStatus {
         let status = self.status.read().await;
 
@@ -68,6 +74,7 @@ impl Transaction {
 }
 
 impl Transaction {
+    /// create new transaction.
     pub fn new(
         tx: MandalaTransactionProgress,
         external_notifier: Option<SenderChannel<TransactionMessage>>,
@@ -84,6 +91,7 @@ impl Transaction {
         }
     }
 
+    /// watch transaction status. and send notification through channel if provided after the transaction is completed.
     fn process_transaction(
         tx: MandalaTransactionProgress,
         external_status_notifier: Option<SenderChannel<TransactionMessage>>,
@@ -109,6 +117,8 @@ impl Transaction {
         receiver
     }
 
+    /// manually wait for transaction to be completed.
+    // we expose this function to user for convenience. this enables manually waiting the transaction to complete.
     pub async fn wait(tx: MandalaTransactionProgress) -> ExtrinsicStatus {
         let status = tx.0.wait_for_finalized_success().await;
 
@@ -117,13 +127,14 @@ impl Transaction {
             Err(e) => ExtrinsicStatus::Failed(e.to_string().into()),
         }
     }
-
+    /// create channel for sending transaction status.
     fn create_channel() -> (Sender<ExtrinsicStatus>, Receiver<ExtrinsicStatus>) {
         // only 1 message will ever be sent so we don't need buffer size more than 1
         let default_buffer_size = 1_usize;
         tokio::sync::mpsc::channel::<ExtrinsicStatus>(default_buffer_size)
     }
 
+    /// watch transaction status.
     fn watch_transaction_status(
         mut task_channel: Receiver<ExtrinsicStatus>,
     ) -> Arc<RwLock<ExtrinsicStatus>> {

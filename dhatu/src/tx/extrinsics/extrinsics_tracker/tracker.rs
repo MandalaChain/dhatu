@@ -15,7 +15,10 @@ use super::{
 #[doc(hidden)]
 type Inner = Arc<RwLock<HashMap<Hash, Transaction>>>;
 
+/// extrinsics tracker.
+/// track extrinsics status on the blockchain runtime.
 pub struct ExtrinsicWatcher {
+    /// inner map for transaction tracking.
     inner: Inner,
 }
 
@@ -28,13 +31,15 @@ impl Clone for ExtrinsicWatcher {
 }
 
 impl ExtrinsicWatcher {
-    pub fn new(_client: MandalaClient) -> Self {
+    /// create new extrinsics tracker.
+    pub fn new() -> Self {
         let inner = HashMap::new();
         let inner = Arc::new(RwLock::new(inner));
 
         Self { inner }
     }
 
+    /// watch extrinsics transaction.
     pub async fn watch(
         &self,
         tx: MandalaTransactionProgress,
@@ -49,6 +54,7 @@ impl ExtrinsicWatcher {
         tx_id
     }
 
+    /// check extrinsics status.
     pub async fn check(&self, tx_id: &Hash) -> Option<ExtrinsicStatus> {
         let inner = self.inner.read().await;
 
@@ -59,11 +65,15 @@ impl ExtrinsicWatcher {
         Some(tx.status().await)
     }
 
+    /// stop watching extrinsics transaction.
+    /// will remove the transaction from the tracker inner map.
     pub async fn stop_watching(&self, tx_id: &Hash) {
         let mut inner = self.inner.write().await;
         inner.remove(tx_id);
     }
 
+    /// watch extrinsics transaction.
+    /// internal function. should not be exposed to the user.
     async fn watch_tx(&self, tx: Transaction) {
         let mut inner = self.inner.write().await;
         inner.insert(tx.id(), tx);

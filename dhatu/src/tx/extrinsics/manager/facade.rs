@@ -24,7 +24,7 @@ impl ExtrinsicFacade {
         let (tx_sender_channel, tx_receiver_channel) = Self::create_channel();
 
         let callback_executor = Executor::new();
-        let tx_watcher = ExtrinsicWatcher::new(client);
+        let tx_watcher = ExtrinsicWatcher::new();
 
         Self::initialize_receive_task(tx_watcher.clone(), callback_executor, tx_receiver_channel);
 
