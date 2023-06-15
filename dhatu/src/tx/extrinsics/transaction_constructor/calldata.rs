@@ -11,14 +11,16 @@ use super::{
 /// pallet contract calldata representation.
 /// you wouldn't typically need to interact with this.
 ///
-///  
+/// used to properly encode arbitrary calldata for a contract call.  
 pub struct CallData<T = ()>(Vec<u8>, PhantomData<T>);
 
 impl CallData {
+    /// get inner calldata bytes
     pub fn get(&self) -> &Vec<u8> {
         self.0.as_ref()
     }
 
+    /// consume self and return inner calldata bytes
     pub fn to_vec(self) -> Vec<u8> {
         self.0
     }
@@ -39,7 +41,11 @@ impl<T> From<CallData<T>> for Vec<u8> {
 impl<T> From<T> for CallData<T>
 where
     T: ScaleEncodeable,
-{
+{   
+    /// encode arbitrary type to calldata,
+    /// this is the main way to create a new calldata object.
+    /// 
+    /// the encoded types must satisfy [ScaleEncodeable] traits.
     fn from(value: T) -> Self {
         CallData(value.encode(), PhantomData)
     }
@@ -104,6 +110,7 @@ impl Default for GasLimit {
     }
 }
 
+/// pallet contract call function arguments.
 #[derive(
     :: subxt :: ext :: codec :: Decode,
     :: subxt :: ext :: codec :: Encode,
