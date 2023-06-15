@@ -11,7 +11,8 @@ use crate::{tx::extrinsics::{
     },
 }, registrar::signer::WrappedExtrinsic, error::ToPayloadError};
 
-pub(crate) struct NftTransferAgrs {
+/// NFT transfer function arguments
+pub struct NftTransferAgrs {
     function_selector: String,
     to: AccountId32,
     id: u32,
@@ -33,14 +34,16 @@ impl ScaleEncodeable for NftTransferAgrs {
     }
 }
 
+/// NFT transfer extrinsic constructor.
 pub struct TransferNFT;
 
 impl TransferNFT {
+    /// encode payload calldata.
     fn encode_calldata(
         to: &str,
         token_id: i64,
         function_selector: String,
-    ) -> Result<CallData<TransferNFT>, crate::error::Error> {
+    ) -> Result<CallData<NftTransferAgrs>, crate::error::Error> {
         // convert rust types to substrate primitives
         let to =
             AccountId32::from_str(to).map_err(|e| ToPayloadError::AddressError(e.to_string()))?;
@@ -53,6 +56,7 @@ impl TransferNFT {
         Ok(args.into())
     }
 
+    /// construct nft transfer extrinsic payload.
     pub fn construct(
         address: &str,
         to: &str,
@@ -65,6 +69,7 @@ impl TransferNFT {
     }
 }
 
+/// NFT transfer extrinsic payload.
 pub struct NftTransferPayload(subxt::tx::Payload<ContractCall>);
 
 impl WrappedExtrinsic<ContractCall> for NftTransferPayload {

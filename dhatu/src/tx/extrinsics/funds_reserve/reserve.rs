@@ -1,22 +1,18 @@
-
-
-
 use crate::error::{Error, FundsReserveError};
 use crate::registrar::key_manager::prelude::PublicAddress;
 use crate::registrar::signer::WrappedExtrinsic;
 use crate::tx::extrinsics::prelude::{
-    enums::ExtrinsicStatus, extrinsics::Transaction,
-    transfer_balance::constructor::BalanceTransfer,
+    enums::ExtrinsicStatus, extrinsics::Transaction, transfer_balance::constructor::BalanceTransfer,
 };
 use crate::types::MandalaClient;
 
-
 use subxt::dynamic::{At, DecodedValueThunk};
-use subxt::{tx::PairSigner};
+use subxt::tx::PairSigner;
 
-use crate::{registrar::key_manager::prelude::PrivateKey};
+use crate::registrar::key_manager::prelude::PrivateKey;
 
-
+/// funds reserve. used to reserve funds for extrinsics gas fees.
+/// intended to use on migration transactions.
 #[derive(Clone)]
 pub struct FundsReserve {
     reserve: PrivateKey,
@@ -24,6 +20,7 @@ pub struct FundsReserve {
 }
 
 impl FundsReserve {
+    /// create a new funds reserve instance
     pub fn new(reserve_key: PrivateKey, client: MandalaClient) -> Self {
         Self {
             reserve: reserve_key,
@@ -33,18 +30,22 @@ impl FundsReserve {
 }
 
 impl FundsReserve {
+    /// get the reserve signer.
     pub fn reserve_signer(&self) -> &PrivateKey {
         &self.reserve
     }
 
+    ///    get the reserve address.
     pub fn reserve_address(&self) -> PublicAddress {
         self.reserve.public_address()
     }
 
+    /// get the client instance.
     pub fn client(&self) -> &MandalaClient {
         &self.client
     }
 
+    /// set a new reserve signer.
     pub fn set_signer(&mut self, signer: PrivateKey) {
         self.reserve = signer;
     }
@@ -54,6 +55,7 @@ impl FundsReserve {
     const SYSTEM_PALLET: &'static str = "System";
     const SYSTEM_PALLET_ACCOUNT_STORAGE_ENTRY: &'static str = "Account";
 
+    ///  check if the account has enough funds to pay for the transaction.
     pub async fn check_funds(&self, account: PublicAddress, value: u128) -> Result<bool, Error> {
         let client = self.client().inner();
 
@@ -80,6 +82,7 @@ impl FundsReserve {
         }
     }
 
+    /// decode the balance from the storage result.
     fn infer_balance(result: Option<DecodedValueThunk>) -> Result<u128, Error> {
         result
             .ok_or(FundsReserveError::NonExistentAccount.into())
@@ -95,6 +98,7 @@ impl FundsReserve {
 }
 
 impl FundsReserve {
+    /// transfer funds to the account.
     pub async fn transfer_funds(
         &self,
         account: PublicAddress,
@@ -121,6 +125,7 @@ impl FundsReserve {
 impl FundsReserve {
     // threshold should be the account balance quotas to compare against,
     // value should be what the transaction will cost
+    /// check if the account has enough funds to pay for the transaction, then transfer the funds if it's not enough.
     pub async fn check_and_transfer(
         &self,
         account: PublicAddress,

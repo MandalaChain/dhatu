@@ -2,17 +2,26 @@ use std::str::FromStr;
 
 use serde::Serialize;
 
-
 use super::prelude::enums::{ExtrinsicStatus, Hash};
-use crate::error::{Error, CallbackExecutorError};
+use crate::error::{CallbackExecutorError, Error};
 
+/// http callback executor for extrinsics transaction.
 #[cfg(feature = "tokio")]
 pub struct Executor {
+    /// in-mmeory http connection pool.
     http_connection_pool: reqwest::Client,
 }
 
-
+/// http callback url.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Url(pub(crate) reqwest::Url);
+
+impl Url {
+    /// create new url from string slice.
+    pub fn new(url: &str) -> Result<Self, Error> {
+        Self::from_str(url)
+    }
+}
 
 impl FromStr for Url {
     type Err = Error;
@@ -40,21 +49,24 @@ impl Executor {
         }
     }
 
+    /// execute http callback given callback url and extrinsics status.
     #[cfg(feature = "tokio")]
     #[cfg(feature = "serde")]
-    pub fn execute(&self, status: ExtrinsicStatus, callback_url: &str) -> Result<(), Error> {
+    pub fn execute(&self, status: ExtrinsicStatus, callback_url: Url) -> Result<(), Error> {
         let client = self.http_connection_pool.clone();
 
         let body = Self::infer_callback_body(status);
 
-        let callback = Url::from_str(callback_url)?;
-        let task = client.post(callback.0).json(&body).send();
+        let task = client.post(callback_url.0).json(&body).send();
 
         tokio::task::spawn(task);
 
         Ok(())
     }
 
+    /// infer callback body given extrinsics status.
+    /// this will generate appropriate callback body based on extrinsics status.
+    /// failed or success.
     fn infer_callback_body(status: ExtrinsicStatus) -> CallBackBody<Hash> {
         match status {
             ExtrinsicStatus::Pending => CallBackBody::new(false, String::from("pending"), None),
@@ -70,6 +82,8 @@ impl Executor {
     }
 }
 
+/// general callback body.
+/// will consider to customize callbackbody in the future.
 #[cfg(feature = "serde")]
 #[derive(Serialize)]
 pub struct CallBackBody<Data: Serialize> {
