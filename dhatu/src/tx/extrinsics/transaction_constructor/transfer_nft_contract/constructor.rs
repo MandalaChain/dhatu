@@ -11,7 +11,7 @@ use crate::{tx::extrinsics::{
     },
 }, registrar::signer::WrappedExtrinsic, error::ToPayloadError};
 
-pub(crate) struct NftTransferAgrs {
+pub struct NftTransferAgrs {
     function_selector: String,
     to: AccountId32,
     id: u32,
@@ -40,7 +40,7 @@ impl TransferNFT {
         to: &str,
         token_id: i64,
         function_selector: String,
-    ) -> Result<CallData<TransferNFT>, crate::error::Error> {
+    ) -> Result<CallData<NftTransferAgrs>, crate::error::Error> {
         // convert rust types to substrate primitives
         let to =
             AccountId32::from_str(to).map_err(|e| ToPayloadError::AddressError(e.to_string()))?;

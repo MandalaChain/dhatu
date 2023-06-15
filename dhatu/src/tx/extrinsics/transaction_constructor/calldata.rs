@@ -1,17 +1,17 @@
 use std::{marker::PhantomData, str::FromStr};
 use subxt::utils::{AccountId32, MultiAddress};
 
-
-
 use crate::error::ToPayloadError;
 
 use super::{
     traits::{ScaleEncodeable, ToContractPayload, ValidateHash},
-    transfer_nft_contract::{
-        constructor::{NftTransferAgrs, TransferNFT},
-    },
+    transfer_nft_contract::constructor::{NftTransferAgrs, TransferNFT},
 };
 
+/// pallet contract calldata representation.
+/// you wouldn't typically need to interact with this.
+///
+///  
 pub struct CallData<T = ()>(Vec<u8>, PhantomData<T>);
 
 impl CallData {
@@ -36,12 +36,14 @@ impl<T> From<CallData<T>> for Vec<u8> {
     }
 }
 
-impl From<NftTransferAgrs> for CallData<TransferNFT> {
-    fn from(value: NftTransferAgrs) -> Self {
+impl<T> From<T> for CallData<T>
+where
+    T: ScaleEncodeable,
+{
+    fn from(value: T) -> Self {
         CallData(value.encode(), PhantomData)
     }
 }
-
 
 impl<T> ToContractPayload for CallData<T> {
     fn to_payload(
@@ -89,8 +91,8 @@ const DEFAULT_DEPOSIT_LIMIT: u128 = 0;
 #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 pub(crate) struct GasLimit {
-     ref_time: u64,
-     proof_size: u64,
+    ref_time: u64,
+    proof_size: u64,
 }
 
 impl Default for GasLimit {
