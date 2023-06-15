@@ -112,6 +112,10 @@ mod tests {
 
     use tokio::time::{sleep, Duration};
 
+    fn mock_url(server_url: String) -> Url {
+        Url::from_str((server_url  + "/callback").as_str()).unwrap()
+    }
+
     #[tokio::test]
     async fn test_execute_pending_status() {
         let mut server = mockito::Server::new();
@@ -124,9 +128,8 @@ mod tests {
 
         let executor = Executor::new();
         let status = ExtrinsicStatus::Pending;
-        let callback_url = server.url() + "/callback";
 
-        let result = executor.execute(status, callback_url.as_str());
+        let result = executor.execute(status, mock_url(server.url()));
         assert!(result.is_ok());
 
         sleep(Duration::from_millis(1000)).await;
