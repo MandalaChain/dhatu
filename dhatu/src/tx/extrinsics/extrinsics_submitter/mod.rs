@@ -62,6 +62,7 @@ fn mock_pair() -> sp_core::sr25519::Pair {
        
     }
  #[tokio::test]   
+ #[should_panic]
  async fn submit_failure_tests() {
     let address = "5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb";
     let newAddress = PublicAddress::from_str(address).unwrap();
