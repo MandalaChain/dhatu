@@ -104,4 +104,91 @@ impl Password {
 
         random_string
     }
+    
 }
+#[cfg(test)]
+mod password_tests {
+    use super::*;
+
+    #[test]
+    fn test_password_new() {
+        let password = Password::new();
+        assert_eq!(password.0.len(), DEFAULT_PASSWORD_LENGTH);
+    }
+
+    #[test]
+    fn test_password_from_str_valid() {
+        let password_str = "2ff7a050bef5dd0b2982f6538287acde";
+        let password = Password::from_str(password_str).unwrap();
+        assert_eq!(password.0, password_str,"valid password");
+    }
+
+    #[test]
+    fn test_password_from_str_invalid() {
+        let password_str = "shortpwd";
+        let result = Password::from_str(password_str);
+        assert!(result.is_err(),"invalid password");
+    }
+     #[test]
+    fn test_gen_hash() {
+        let email = "test@example.com";
+        let password = "password123";
+
+        let hash = Password::gen_hash(email, password);
+
+
+        let expected_hash = Password::gen_hash(email, password);
+
+        // Convert the hash values to strings
+        let hash_str = Password::to_hex(hash);
+        let expected_hash_str = Password::to_hex(expected_hash);
+
+        // Perform assertions on the hash or its properties
+        assert_eq!(hash_str, expected_hash_str,"hash");
+    }
+
+    #[test]
+    fn test_to_hex() {
+        // Create an example Sha3 hash
+        let mut hash = Sha3::v256();
+
+        // Update the hash with some data
+        hash.update(b"test");
+
+        // Clone the hash before finalizing
+        let cloned_hash = hash.clone();
+
+        // Finalize the cloned hash and obtain the result
+        let mut result = [0; 32];
+        cloned_hash.finalize(&mut result);
+
+        // Convert the result to a hex string using the to_hex function
+        let hash_hex = Password::to_hex(hash);
+
+        // Convert the result to a hex string using the hex crate
+        let expected_hex = hex::encode(result);
+
+        // Perform assertion to check if the conversion is correct
+        assert_eq!(hash_hex, expected_hex);
+    }
+
+    #[test]
+
+    fn test_generate_random_string() {
+         // Define the desired length of the random string
+        let length = DEFAULT_PASSWORD_LENGTH;
+
+        // Generate a random string using the generate_random_string function
+        let random_string = Password::generate_random_string(length);
+
+        // Check if the generated string has the correct length
+        assert_eq!(random_string.len(), length);
+
+        // Check if the generated string only contains alphanumeric characters
+        assert!(random_string.chars().all(|c| c.is_ascii_alphanumeric()));
+
+    }
+ 
+}
+
+
