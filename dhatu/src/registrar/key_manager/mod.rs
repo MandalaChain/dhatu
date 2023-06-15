@@ -78,3 +78,75 @@ impl KeyManager {
         Keypair::new(password, phrase, pub_key, keypair)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::PasswordGenerationError::InvalidLength;
+
+    #[test]
+    fn test_new_default() {
+        let keypair = KeyManager::new_default();
+        assert!(keypair.password_hash().is_some());
+    }
+
+    #[test]
+    fn test_new_without_password() {
+        let keypair = KeyManager::new_without_password();
+        assert!(keypair.password_hash().is_none());
+    }
+
+    #[test]
+    fn test_recover_valid() {
+        let pass = "61c510ba04db830da8acd6595caf193d";
+        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        
+        let keypair_result = KeyManager::recover(Some(pass), phrase);
+        assert!(keypair_result.is_ok());
+        
+        let keypair = keypair_result.unwrap();
+        assert_eq!(keypair.password_hash().unwrap().as_str(), pass);
+        assert_eq!(keypair.phrase().inner(), phrase);
+    }
+    
+    #[test]
+    fn test_recover_invalid_phrase() {
+        let pass = "483d968823979f7a937c65793ee91409";
+        let phrase = "sample tornado pen frog valley library velvet figure guitar powder mirror churne";
+        let keypair_result = KeyManager::recover(Some(pass), phrase);
+        assert!(keypair_result.is_err());
+        if let Err(err) = keypair_result {
+            assert_eq!(
+                format!("{:?}", err),
+                format!("{:?}", Error::Keypair(KeypairGenerationError::Recover("Invalid phrase".to_string())))
+            );
+        }
+    }
+
+    #[test]
+    fn test_recover_invalid_pass() {
+        let pass = "61457fa9cd845bb9";
+        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        let keypair_result = KeyManager::recover(Some(pass), phrase);
+        assert!(keypair_result.is_err());
+        if let Err(err) = keypair_result {
+            assert_eq!(
+                format!("{:?}", err),
+                format!("{:?}", Error::Password(InvalidLength))
+            );
+        }
+    }
+    
+    #[test]
+    fn test_gen_from_phrase() {
+        let password = Password::new();
+        let (_, phrase, _) = Keys::generate_with_phrase(password.as_pwd());
+        
+        let keypair_result = KeyManager::gen_from_phrase(Some(password.clone()), phrase.as_str());
+        assert!(keypair_result.is_ok());
+        
+        let keypair = keypair_result.unwrap();
+        assert_eq!(keypair.password_hash().unwrap().as_str(), password.as_str());
+        assert_eq!(keypair.phrase().inner(), phrase);
+    }
+}

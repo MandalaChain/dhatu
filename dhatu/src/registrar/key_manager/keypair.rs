@@ -223,3 +223,167 @@ impl From<Pair> for PrivateKey {
         PrivateKey(value)
     }
 }
+
+#[cfg(test)]
+mod keypair_tests {
+    use std::str::FromStr;
+
+    use sp_core::{sr25519, Pair};
+    use super::*;
+
+    #[test]
+    fn test_keypair_new() {
+        let password_hash = Password::new();
+        let phrase = MnemonicPhrase::new("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
+        let pub_key = PublicAddress::from_str("5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb").unwrap();
+        let pair = sr25519::Pair::from_string("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
+
+        let keypair = Keypair::new(Some(password_hash.clone()), phrase.clone(), pub_key.clone(), pair.clone());
+
+        assert_eq!(keypair.password_hash().unwrap().as_str(), password_hash.as_str());
+        assert_eq!(*keypair.phrase(), phrase);
+        assert_eq!(*keypair.pub_key(), pub_key);
+        assert_eq!(keypair.keypair.public(), pair.public());
+    }
+}
+
+#[cfg(test)]
+mod public_address_tests {
+    use sp_core::sr25519;
+
+    use crate::registrar::key_manager::KeyManager;
+
+    use super::*;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_inner() {
+        let address = PublicAddress("test".to_string());
+        assert_eq!(address.inner(), "test");
+    }
+
+    #[test]
+    fn test_from_str_valid() {
+        let address_str = "5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb";
+        let result = PublicAddress::from_str(address_str);
+        assert!(result.is_ok());
+        let address = result.unwrap();
+        assert_eq!(address.inner(), address_str);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_from_str_invalid() {
+        let address_str = "AAAAC3NzaC1lZDI1NTE5AAAAIDmmRndO+3zhA/z6QAgNCR521OuIe5/8ojCkuo3U7ngi"; // ed25519
+        let _result = PublicAddress::from_str(address_str).unwrap();
+    }
+
+    #[test]
+    fn test_account_id32_from_public_address() {
+        let address_str = "5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb";
+        let address = PublicAddress::from_str(address_str).unwrap();
+        let _account_id = AccountId32::from(address);
+    }
+
+    #[test]
+    fn test_from_keypair_to_public_address() {
+        let keypair = KeyManager::new_default();
+        let public_address: PublicAddress = keypair.clone().into();
+        assert_eq!(public_address, keypair.pub_key);
+    }
+    
+    #[test]
+    fn test_from_pair_to_public_address() {
+        let keypair = sr25519::Pair::from_string("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
+        let public_address: PublicAddress = keypair.clone().into();
+        assert_eq!(public_address, PublicAddress::from_str(keypair.public().to_ss58check().as_str()).unwrap());
+    }
+
+    #[test]
+    fn test_from_private_key_to_public_address() {
+        let keypair = sr25519::Pair::from_string("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
+        let private_key = PrivateKey { 0: keypair };
+
+        let public_address: PublicAddress = private_key.clone().into();
+        assert_eq!(public_address, PublicAddress::from_str(private_key.0.public().to_ss58check().as_str()).unwrap());
+    }
+}
+
+#[cfg(test)]
+mod mnemonic_phrase_tests {
+    use super::*;
+
+    #[test]
+    fn test_new_with_valid_phrase() {
+        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        let password = Some(Password::new());
+        let result = MnemonicPhrase::new(phrase, password);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().inner(), phrase);
+    }
+
+    #[test]
+    fn test_new_with_invalid_phrase() {
+        let phrase = "sample tornado pen frog valley library velvet figure guitar powder mirror churn";
+        let password = Some(Password::new());
+        let result = MnemonicPhrase::new(phrase, password);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_new_without_password() {
+        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        let result = MnemonicPhrase::new(phrase, None);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().inner(), phrase);
+    }
+
+    #[test]
+    fn test_inner() {
+        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        let mnemonic = MnemonicPhrase::new(phrase, None).unwrap();
+        assert_eq!(mnemonic.inner(), phrase);
+    }
+}
+
+#[cfg(test)]
+mod private_key_tests {
+    use crate::registrar::key_manager::KeyManager;
+    use super::*;
+
+    #[test]
+    fn test_public_address() {
+        let pair = KeyManager::new_default().keypair;
+        let private_key = PrivateKey(pair.clone());
+        let public_key = private_key.public_address();
+        assert_eq!(public_key, pair.into());
+    }
+
+    #[test]
+    fn test_from_str_valid() {
+        let mini_secret_key = "0xd5836897dc77e6c87e5cc268abaaa9c661bcf19aea9f0f50a1e149d21ce31eb7";
+        let result = PrivateKey::from_str(mini_secret_key);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_from_str_invalid() {
+        let invalid_private_key_str = "invalid_private_key";
+        let result = PrivateKey::from_str(invalid_private_key_str);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_from_keypair() {
+        let keypair = KeyManager::new_default();
+        let private_key = PrivateKey::from(keypair.clone());
+        assert_eq!(private_key.0.to_raw_vec(), keypair.keypair.to_raw_vec());
+    }
+
+    #[test]
+    fn test_from_pair() {
+        let pair = KeyManager::new_default().keypair;
+        let private_key = PrivateKey::from(pair.clone());
+        assert_eq!(private_key.0.to_raw_vec(), pair.to_raw_vec());
+    }
+}
