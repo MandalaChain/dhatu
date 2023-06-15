@@ -88,3 +88,34 @@ impl<Data: Serialize> CallBackBody<Data> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(test)]
+    use mockito;
+
+    use tokio::time::{sleep, Duration};
+
+    #[tokio::test]
+    async fn test_execute_pending_status() {
+        let mut server = mockito::Server::new();
+
+        let mock = server.mock("POST", "/callback")
+            .match_body(
+                mockito::Matcher::JsonString(r#"{"status":false,"message":"pending","data":null}"#.to_string())
+            )
+            .create();
+
+        let executor = Executor::new();
+        let status = ExtrinsicStatus::Pending;
+        let callback_url = server.url() + "/callback";
+
+        let result = executor.execute(status, callback_url.as_str());
+        assert!(result.is_ok());
+
+        sleep(Duration::from_millis(1000)).await;
+        mock.assert();
+    }
+}
