@@ -3,12 +3,9 @@
 /// with a struct wrapper for each transaction type and payload.
 /// this enables us to easily treat the payload as a blackbox.
 use sp_core::sr25519::Pair;
-use subxt::{
-    ext::scale_encode::EncodeAsFields,
-    tx::{PairSigner},
-};
+use subxt::{ext::scale_encode::EncodeAsFields, tx::PairSigner};
 
-use crate::types::Extrinsic;
+use crate::types::{Extrinsic, MandalaExtrinsics};
 
 pub(crate) trait WrappedExtrinsic<T: EncodeAsFields> {
     fn into_inner(self) -> subxt::tx::Payload<T>;
@@ -21,8 +18,8 @@ impl TxBuilder {
     pub fn unsigned<T: EncodeAsFields>(
         client: &crate::types::NodeClient,
         payload: impl WrappedExtrinsic<T>,
-    ) -> Result<Extrinsic, crate::error::Error> {
-        Ok(client.tx().create_unsigned(&payload.into_inner())?)
+    ) -> Result<MandalaExtrinsics, crate::error::Error> {
+        Ok(client.tx().create_unsigned(&payload.into_inner())?.into())
     }
 
     /// create a new signed transaction given a transaction payload
@@ -30,13 +27,14 @@ impl TxBuilder {
         client: &crate::types::NodeClient,
         acc: Pair,
         payload: impl WrappedExtrinsic<T>,
-    ) -> Result<Extrinsic, crate::error::Error> {
+    ) -> Result<MandalaExtrinsics, crate::error::Error> {
         let signer = PairSigner::new(acc);
 
         let tx = client
             .tx()
             .create_signed(&payload.into_inner(), &signer, Default::default())
-            .await?;
+            .await?
+            .into();
 
         Ok(tx)
     }
@@ -44,14 +42,14 @@ impl TxBuilder {
 
 #[cfg(test)]
 mod tests {
-    use subxt::{PolkadotConfig, SubstrateConfig, error::DispatchError};
-    pub(crate) use subxt::OnlineClient;
     use std::str::FromStr;
+    pub(crate) use subxt::OnlineClient;
+    use subxt::{error::DispatchError, PolkadotConfig, SubstrateConfig};
 
     use sp_core::{crypto::Ss58Codec, Pair};
     use subxt::{
+        rpc::types::DryRunResult,
         utils::{AccountId32, MultiAddress},
-        rpc::types::DryRunResult
     };
 
     use crate::types::MandalaConfig;
@@ -106,9 +104,8 @@ mod tests {
 
         assert!(extrinsic_result.is_ok());
 
-        let extrinsic = extrinsic_result.unwrap();
-
-        let dry_run_result: DryRunResult  = extrinsic.dry_run(None).await.unwrap();
+        let extrinsic = extrinsic_result.unwrap().0;
+        let dry_run_result: DryRunResult = extrinsic.dry_run(None).await.unwrap();
         let actual_result = extrinsic.submit().await;
 
         // should error because the transaction is unsigned and can only be
@@ -135,7 +132,7 @@ mod tests {
         let pair = mock_pair();
         let extrinsic = TxBuilder::signed(&node_client, pair, payload)
             .await
-            .unwrap();
+            .unwrap().0;
 
         let dry_run_result = extrinsic.dry_run(None).await.unwrap();
         let actual_result = extrinsic.submit().await;
