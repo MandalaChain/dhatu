@@ -79,7 +79,7 @@ impl MigrationTransaction {
             .await
             .expect("should sign transaction");
 
-        self.inner_tx = Some(tx);
+        self.inner_tx = Some(tx.0);
 
         self
     }
