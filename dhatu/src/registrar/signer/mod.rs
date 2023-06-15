@@ -141,10 +141,12 @@ mod tests {
         rpc::types::DryRunResult
     };
 
+    use crate::types::MandalaConfig;
+
     use super::*;
 
     async fn mock_client() -> crate::types::NodeClient {
-        OnlineClient::<SubstrateConfig>::new().await.unwrap()
+        OnlineClient::<MandalaConfig>::new().await.unwrap()
     }
 
     // Generate an interface that we can use from the node's metadata.
@@ -167,11 +169,11 @@ mod tests {
 
         let dest = mock_acc();
 
-        MockWrappedExtrinsic(polkadot::tx().balances().transfer(dest, 10_000))
+        MockWrappedExtrinsic(polkadot::tx().balances().transfer(dest, 0))
     }
 
     fn mock_acc() -> MultiAddress<AccountId32, ()> {
-        let (dest, _) = sp_core::sr25519::Pair::generate();
+        let dest = sp_keyring::Sr25519Keyring::Bob.pair();
         let dest = dest.public();
         let dest = AccountId32::from_str(&dest.to_ss58check()).unwrap();
 
@@ -179,9 +181,7 @@ mod tests {
     }
 
     fn mock_pair() -> sp_core::sr25519::Pair {
-        let (pair, _) = sp_core::sr25519::Pair::generate();
-
-        pair
+        sp_keyring::Sr25519Keyring::Alice.pair()
     }
 
     #[tokio::test]
@@ -189,7 +189,11 @@ mod tests {
         let node_client = mock_client().await;
         let payload = mock_payload(&node_client);
 
-        let extrinsic = TxBuilder::unsigned(&node_client, payload).unwrap();
+        let extrinsic_result = TxBuilder::unsigned(&node_client, payload);
+
+        assert!(extrinsic_result.is_ok());
+
+        let extrinsic = extrinsic_result.unwrap();
 
         let dry_run_result: DryRunResult  = extrinsic.dry_run(None).await.unwrap();
         let actual_result = extrinsic.submit().await;
@@ -201,36 +205,39 @@ mod tests {
         if let DryRunResult::DispatchError(err) = dry_run_result {
             assert_eq!(
                 format!("{:?}", err),
-                format!("{:?}", DispatchError::Other)
+                format!("{:?}", DispatchError::BadOrigin)
             );
         }
-
 
         if let Err(actual_result) = actual_result {
             println!("{}", actual_result)
         }
     }
 
-    // #[actix::test]
-    // async fn should_create_signed_tx() {
-    //     let node_client = mock_client().await;
-    //     let payload = mock_payload(&node_client);
+    #[tokio::test]
+    async fn should_create_signed_tx() {
+        let node_client = mock_client().await;
+        let payload = mock_payload(&node_client);
 
-    //     let pair = mock_pair();
-    //     let extrinsic = TxBuilder::signed(&node_client, pair, &payload)
-    //         .await
-    //         .unwrap();
+        let pair = mock_pair();
+        let extrinsic = TxBuilder::signed(&node_client, pair, payload)
+            .await
+            .unwrap();
 
-    //     let dry_run_result = extrinsic.dry_run(None).await.unwrap();
-    //     let actual_result = extrinsic.submit().await;
+        // let dry_run_result = extrinsic.dry_run(None).await.unwrap();
+        let actual = extrinsic.submit().await.unwrap();
 
-    //     // shoould error because the caller does not have enough balance
-    //     if let Err(dry_run_result) = dry_run_result {
-    //         assert_eq!(dry_run_result, DryRunError::TransactionValidityError);
-    //     }
+        // assert!(actual_result.is_ok());
 
-    //     if let Err(actual_result) = actual_result {
-    //         println!("{}", actual_result)
-    //     }
-    // }
+        println!("{:?}", actual);
+
+        // shoould error because the caller does not have enough balance
+        // if let DryRunResult::DispatchError(err) = dry_run_result {
+        //     assert_eq!(err, DispatchError::Other);
+        // }
+
+        // if let Err(actual_result) = actual_result {
+        //     println!("{}", actual_result)
+        // }
+    }
 }
