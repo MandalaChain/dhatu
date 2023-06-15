@@ -1,12 +1,12 @@
 use subxt::{
     tx::{SubmittableExtrinsic, TxProgress},
-    OnlineClient, SubstrateConfig,
+    OnlineClient, SubstrateConfig, PolkadotConfig,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 use crate::error::MandalaClientErorr;
 
-pub(crate) type MandalaConfig = SubstrateConfig;
+pub(crate) type MandalaConfig = PolkadotConfig;
 pub(crate) type NodeClient = OnlineClient<MandalaConfig>;
 pub(crate) type Extrinsic = SubmittableExtrinsic<MandalaConfig, NodeClient>;
 pub(crate) type TransactionProgress = TxProgress<MandalaConfig, NodeClient>;
