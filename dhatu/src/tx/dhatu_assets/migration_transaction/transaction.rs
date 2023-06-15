@@ -22,8 +22,11 @@ use super::{
     },
 };
 
+/// default fees for migration transaction
 const STATIC_NFT_TRANSFER_FEE: u128 = 9_000_000_000; // 9  mili units (9mU)
 
+/// migration transaction. wrap aroung raw substrate extrinsics.
+/// providing method to ensure enough gas, sign and submit the transaction.
 pub(crate) struct MigrationTransaction {
     signer: Pair,
     notifier: MigrationTransactionResultNotifier,
@@ -52,6 +55,8 @@ impl MigrationTransaction {
         }
     }
 
+    /// construct migration transaction payload,
+    /// usuallly called first.
     pub fn construct_payload(
         mut self,
         address: &str,
@@ -67,6 +72,7 @@ impl MigrationTransaction {
         self
     }
 
+    /// sign the constructed migration transaction payload
     pub async fn sign(mut self) -> Self {
         let client = self.client.clone();
         let acc = self.signer.clone();
@@ -84,6 +90,10 @@ impl MigrationTransaction {
         self
     }
 
+    /// ensure enough gas for the transaction.
+    /// currently this automatically transfer funds regardless of quota threshold.
+    /// 
+    /// will send [9mu](STATIC_NFT_TRANSFER_FEE) to the signer.
     pub async fn ensure_enough_gas(self) -> Self {
         let account = self.signer.clone().into();
 
@@ -97,6 +107,7 @@ impl MigrationTransaction {
         self
     }
 
+    /// submit the transaction to the connected rpc node.
     pub async fn submit(mut self) -> crate::tx::extrinsics::prelude::extrinsics::Transaction {
         let tx = self
             .inner_tx
