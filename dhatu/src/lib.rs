@@ -12,7 +12,7 @@
 //! ```
 //! due to the unstable nature of substrate modules, they are not re-exported by default.
 //! if you want to interact with the some of the low level feature of dhatu and use the raw substrate primitive types,
-//! we reccomend you to enable `unstable_sp_core`,`subxt`  or both with `unstable` feature flag to properly interact with the low level modules.
+//! we reccomend you to enable `unstable` feature flag to properly interact with the low level modules.
 //!
 //! see [ext] for more details.
 
