@@ -105,11 +105,14 @@ impl<Data: Serialize> CallBackBody<Data> {
 
 #[cfg(test)]
 mod tests {
+    use crate::{tx::extrinsics::extrinsics_tracker::enums::{ExtrinsicResult, Reason}, types::MandalaConfig};
     use super::*;
 
     #[cfg(test)]
     use mockito;
 
+    use serde_json::json;
+    use subxt::{OnlineClient, blocks::ExtrinsicEvents};
     use tokio::time::{sleep, Duration};
 
     fn mock_url(server_url: String) -> Url {
@@ -134,5 +137,60 @@ mod tests {
 
         sleep(Duration::from_millis(1000)).await;
         mock.assert();
+    }
+
+    #[tokio::test]
+    async fn test_execute_failed_status() {
+        let mut server = mockito::Server::new();
+
+        let mock = server.mock("POST", "/callback")
+            .match_body(
+                mockito::Matcher::JsonString(r#"{"status":false,"message":"failed with reason : NotFound","data":null}"#.to_string())
+            )
+            .create();
+
+        let executor = Executor::new();
+        let status = ExtrinsicStatus::Failed(Reason::from("NotFound".to_string()));
+
+        let result = executor.execute(status, mock_url(server.url()));
+        assert!(result.is_ok());
+
+        sleep(Duration::from_millis(1000)).await;
+        mock.assert();
+    }
+
+    #[tokio::test]
+    async fn test_execute_success_status() {
+        let mut server = mockito::Server::new();
+
+        let events = get_extrinsic_events().await.unwrap();
+        let extrinsic_result = ExtrinsicResult::from(events);
+
+        let mock = server.mock("POST", "/callback")
+            .match_body(
+                mockito::Matcher::Json(json!({"status": true, "message": "success", "data": extrinsic_result.hash().to_string()}))
+            )
+            .create();
+            
+        let executor = Executor::new();
+        let status = ExtrinsicStatus::Success(extrinsic_result);
+
+        let result = executor.execute(status, mock_url(server.url()));
+        assert!(result.is_ok());
+
+        sleep(Duration::from_millis(1000)).await;
+        mock.assert();
+    }
+
+    async fn get_extrinsic_events() -> Result<ExtrinsicEvents<MandalaConfig>, Box<dyn std::error::Error>> {
+        let api = OnlineClient::<MandalaConfig>::new().await.unwrap();
+        let latest_block = api.blocks().at_latest().await?;
+        let body = latest_block.body().await?;
+        for ext in body.extrinsics().iter() {
+            let ext = ext?;
+            let events = ext.events().await?;
+            return Ok(events);
+        }
+        Err("something went south".into())
     }
 }
