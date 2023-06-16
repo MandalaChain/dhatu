@@ -80,7 +80,7 @@ impl Transaction {
         external_notifier: Option<SenderChannel<TransactionMessage>>,
         callback: Option<Url>,
     ) -> Self {
-        let hash = tx.0.extrinsic_hash();
+        let hash: H256 = tx.0.extrinsic_hash();
         let task_channel = Self::process_transaction(tx, external_notifier, callback);
 
         let default_status = Self::watch_transaction_status(task_channel);
@@ -153,4 +153,59 @@ impl Transaction {
 
         default_status
     }
+}
+
+#[cfg(test)]
+mod transaction_tests{
+    use crate::registrar::signer::TxBuilder;
+    use crate::tx::extrinsics::manager::facade::ExtrinsicFacade;
+    use std::str::FromStr;
+    pub(crate) use subxt::OnlineClient;
+    use crate::tx::extrinsics::extrinsics_submitter::ExtrinsicSubmitter;
+    use crate::types::MandalaConfig;
+    use crate::registrar::key_manager::prelude::PublicAddress;
+    use crate::types::MandalaExtrinsics;
+    use super::*;
+    use std::sync::mpsc;
+
+    fn mock_pair() -> sp_core::sr25519::Pair {
+        sp_keyring::Sr25519Keyring::Alice.pair()
+    }
+    async fn mock_client() -> crate::types::NodeClient {
+        OnlineClient::<MandalaConfig>::new().await.unwrap()
+    }
+    // Create a sample MandalaTransactionProgress and other required variables
+    #[tokio::test]
+   async fn new_transaction_tests(){
+        let address= "5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb";
+        let new_address = PublicAddress::from_str(address).unwrap();
+        let pair = mock_pair();
+        let node_client = mock_client().await;
+
+        let value = rand::random();
+        // Create the payload using the `construct` function from `BalanceTransfer`
+        let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(new_address, value);
+        let extrinsic = TxBuilder::signed(&node_client, pair, payload)
+            .await
+            .unwrap().0;
+
+        // Create a mock MandalaExtrinsics object
+        let tx = MandalaExtrinsics::new(extrinsic);
+        let tx_progress = ExtrinsicSubmitter::submit(tx).await.unwrap();
+        let (sender, _receiver) = ExtrinsicFacade::create_channel();
+        let callback = "https://example.net/a/b/c.png";
+        let reqwest_url = reqwest::Url::parse(callback).expect("Failed to parse the callback URL");
+        let url = Url(reqwest_url);
+        let extrinsic_hash = tx_progress.0.extrinsic_hash();
+    
+        let result = Transaction::new(tx_progress, Some(sender), Some(url));
+        
+        
+        assert_eq!(result.id, extrinsic_hash);
+
+     
+        // let tx = MandalaTransactionProgress(tx_progress);
+    }
+    
+
 }
