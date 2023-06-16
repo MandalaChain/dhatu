@@ -42,13 +42,13 @@ fn mock_pair() -> sp_core::sr25519::Pair {
 #[tokio::test]
  async fn submit_successful_tests() {
         let address= "5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb";
-        let newAddress = PublicAddress::from_str(address).unwrap();
+        let new_address = PublicAddress::from_str(address).unwrap();
         let pair = mock_pair();
         let node_client = mock_client().await;
 
         let value = rand::random();
         // Create the payload using the `construct` function from `BalanceTransfer`
-        let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(newAddress, value);
+        let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(new_address, value);
         let extrinsic = TxBuilder::signed(&node_client, pair, payload)
             .await
             .unwrap().0;
@@ -65,7 +65,7 @@ fn mock_pair() -> sp_core::sr25519::Pair {
  #[should_panic]
  async fn submit_failure_tests() {
     let address = "5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb";
-    let newAddress = PublicAddress::from_str(address).unwrap();
+    let new_address = PublicAddress::from_str(address).unwrap();
     let pair = mock_pair();
     let node_client = mock_client().await;
 
@@ -73,7 +73,7 @@ fn mock_pair() -> sp_core::sr25519::Pair {
     let value: u128 = 0;
 
     // Create the payload using the `construct` function from `BalanceTransfer`
-    let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(newAddress, value);
+    let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(new_address, value);
     
     // Introduce a failure by using an invalid client for signing
     let extrinsic = TxBuilder::signed(&node_client, pair, payload)
