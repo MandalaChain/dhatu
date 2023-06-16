@@ -83,23 +83,56 @@ impl BalanceTransfer {
 mod tests {
     use super::*;
 
+    use std::str::FromStr;
+    use sp_core::{Pair, crypto::Ss58Codec};
+    use sp_keyring::sr25519::sr25519;
+
+    fn mock_pair() -> sr25519::Pair {
+        sp_keyring::Sr25519Keyring::Alice.pair()
+    }
+
+    fn mock_id() -> AccountId32 {
+        let pair = mock_pair();
+        let pair_public = pair.public();
+        AccountId32::from_str(&pair_public.to_ss58check()).unwrap()
+    }
+
     #[test]
     fn test_balance_transfer_args_new() {
+        let id = mock_id();
+        let dest = MultiAddress::Id(id.clone());
+        let value = 100;
         
+        let args = BalanceTransferArgs::new(dest, value);
+
+        assert_eq!(args.dest, MultiAddress::Id(id));
+        assert_eq!(args.value, 100);
     }
 
     #[test]
     fn test_balance_transfer_generate_payload() {
-        
-    }
+        let id = mock_id();
+        let dest = MultiAddress::Id(id.clone());
+        let value = 100;
+        let args = BalanceTransferArgs::new(dest.clone(), value);
 
-    #[test]
-    fn test_balance_transfer_payload_new() {
-        
+        let payload = BalanceTransfer::generate_payload(args);
+
+        assert_eq!(payload.call_data().dest, dest);
+        assert_eq!(payload.call_data().value, value);
     }
 
     #[test]
     fn test_balance_transfer_construct() {
+        let to = PublicAddress::from(mock_pair());
+        let value = 100;
+
+        let payload = BalanceTransfer::construct(to, value);
         
+        assert_eq!(
+            payload.0.call_data().dest,
+            MultiAddress::Id(mock_id())
+        );
+        assert_eq!(payload.0.call_data().value, value);
     }
 }
