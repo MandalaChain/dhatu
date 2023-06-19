@@ -45,7 +45,7 @@ mockito = "1.0.2"
 [features]
 default = ["tokio", "serde"]
 sp_keyring = []
-unstable = ["default", "unstable_sp_core", "subxt", "sp_keyring"]
+unstable = ["default", "unstable_sp_core", "subxt", "sp-keyring"]
 tokio = []
 serde = []
 unstable_sp_core = []
