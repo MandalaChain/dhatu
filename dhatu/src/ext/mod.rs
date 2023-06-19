@@ -2,5 +2,5 @@
 pub use sp_core;
 #[cfg(feature = "subxt")]
 pub use subxt;
-#[cfg(feature = "sp_keyring")]
+#[cfg(feature = "sp-keyring")]
 pub use sp_keyring;
