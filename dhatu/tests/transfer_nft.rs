@@ -4,4 +4,6 @@ use dhatu;
 use mandala_node_runner;
 
 #[tokio::test]
-fn should_transfer_nft() {}
+async fn should_transfer_nft() {
+    todo!()
+}
