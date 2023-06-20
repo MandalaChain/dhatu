@@ -1,11 +1,10 @@
 use std::{marker::PhantomData, str::FromStr};
 use subxt::utils::{AccountId32, MultiAddress};
 
-use crate::{error::{SelectorError, ToPayloadError}, registrar::key_manager::prelude::PublicAddress};
+use crate::{error::{SelectorError}, registrar::key_manager::prelude::PublicAddress};
 
 use super::{
     traits::{ScaleEncodeable, ToContractPayload, ValidateHash},
-    transfer_nft_contract::constructor::{NftTransferAgrs, TransferNFT},
 };
 
 /// pallet contract calldata representation.
@@ -124,7 +123,7 @@ mod test {
         let selector = Selector::from_str("0xcfdd9aa2");
 
         match selector {
-            Ok(e) => assert!(true),
+            Ok(_e) => assert!(true),
             Err(e) => panic!("{:?}",e),
         }
     }
@@ -133,7 +132,7 @@ mod test {
     fn test_selector_from_raw() {
         let selector = Selector::from_raw("0xcfdd9aa2");
         match selector {
-            Ok(e) => assert!(true),
+            Ok(_e) => assert!(true),
             Err(e) => panic!("{:?}",e),
         }
     }

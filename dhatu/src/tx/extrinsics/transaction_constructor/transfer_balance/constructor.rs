@@ -112,7 +112,7 @@ mod tests {
     #[test]
     fn test_balance_transfer_generate_payload() {
         let id = mock_id();
-        let dest = MultiAddress::Id(id.clone());
+        let dest = MultiAddress::Id(id);
         let value = 100;
         let args = BalanceTransferArgs::new(dest.clone(), value);
 

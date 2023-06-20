@@ -5,7 +5,7 @@
 use sp_core::sr25519::Pair;
 use subxt::{ext::scale_encode::EncodeAsFields, tx::PairSigner};
 
-use crate::types::{Extrinsic, MandalaExtrinsics};
+use crate::types::{MandalaExtrinsics};
 
 pub trait WrappedExtrinsic<T: EncodeAsFields> {
     fn into_inner(self) -> subxt::tx::Payload<T>;
@@ -44,7 +44,7 @@ impl TxBuilder {
 mod tests {
     use std::str::FromStr;
     pub(crate) use subxt::OnlineClient;
-    use subxt::{error::DispatchError, PolkadotConfig, SubstrateConfig};
+    use subxt::{error::DispatchError};
 
     use sp_core::{crypto::Ss58Codec, Pair};
     use subxt::{
@@ -135,7 +135,7 @@ mod tests {
             .unwrap()
             .0;
 
-        let dry_run_result = extrinsic.dry_run(None).await.unwrap();
+        let _dry_run_result = extrinsic.dry_run(None).await.unwrap();
         let actual_result = extrinsic.submit().await;
         assert!(actual_result.is_ok());
     }
