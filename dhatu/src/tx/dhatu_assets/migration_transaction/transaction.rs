@@ -1,7 +1,7 @@
 use sp_core::{sr25519::Pair};
 
 use crate::{
-    registrar::signer::TxBuilder,
+    registrar::{signer::TxBuilder, key_manager::prelude::PublicAddress},
     tx::extrinsics::{
         prelude::{
             extrinsics,
@@ -10,7 +10,7 @@ use crate::{
                 constructor::TransferNFT,
             },
              reserve::FundsReserve,
-        },
+        }, transaction_constructor::calldata::Selector,
     }, types::NodeClient,
 };
 
@@ -59,13 +59,13 @@ impl MigrationTransaction {
     /// usuallly called first.
     pub fn construct_payload(
         mut self,
-        address: &str,
-        to: &str,
-        token_id: i64,
-        function_selector: &str,
+        address: PublicAddress,
+        to: PublicAddress,
+        token_id: u32,
+        function_selector: Selector,
     ) -> Self {
         let tx =
-            TransferNFT::construct(address, to, token_id, function_selector.to_string()).unwrap();
+            TransferNFT::construct(address, to, token_id, function_selector).unwrap();
 
         self.payload = Some(tx);
 
