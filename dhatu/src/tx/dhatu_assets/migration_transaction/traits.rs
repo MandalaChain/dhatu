@@ -4,9 +4,9 @@
 
 use sp_core::sr25519::Pair;
 
-use crate::tx::extrinsics::{
-    prelude::{extrinsics::Transaction as RunningTransaction, BlockchainClient, reserve::FundsReserve},
-};
+use crate::{tx::extrinsics::{
+    prelude::{extrinsics::Transaction as RunningTransaction, reserve::FundsReserve},
+}, types::NodeClient};
 
 use super::{types::{
     MigrationTask as Task, MigrationTransaction as Transaction, MigrationTransactionPayload,
@@ -42,7 +42,7 @@ pub(crate) trait MigrationTransactionBuilder
 
     fn set_gas_reserve(&mut self, reserve: FundsReserve) -> &mut Self;
 
-    fn set_client(&mut self, client: BlockchainClient) -> &mut Self;
+    fn set_client(&mut self, client: NodeClient) -> &mut Self;
 
     fn build(&mut self) -> transaction::MigrationTransaction;
 }
@@ -54,7 +54,7 @@ pub(crate) trait MigrationTransactionAttributes {
 
     fn reserve(&self) -> &FundsReserve;
 
-    fn client(&self) -> &BlockchainClient;
+    fn client(&self) -> &NodeClient;
 
     fn payload(&self) -> Option<&MigrationTransactionPayload>;
 

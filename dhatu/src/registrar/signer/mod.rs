@@ -3,129 +3,139 @@
 /// with a struct wrapper for each transaction type and payload.
 /// this enables us to easily treat the payload as a blackbox.
 use sp_core::sr25519::Pair;
-use subxt::{
-    tx::{PairSigner, SubmittableExtrinsic, TxPayload},
-    OnlineClient, PolkadotConfig,
-};
+use subxt::{ext::scale_encode::EncodeAsFields, tx::PairSigner};
 
-pub struct TxBuilder;
+use crate::types::{Extrinsic, MandalaExtrinsics};
 
+pub(crate) trait WrappedExtrinsic<T: EncodeAsFields> {
+    fn into_inner(self) -> subxt::tx::Payload<T>;
+}
+
+pub(crate) struct TxBuilder;
 
 impl TxBuilder {
     /// create a new unsigned transaction from a transaction payload
-    pub fn unsigned(
-        client: &OnlineClient<PolkadotConfig>,
-        payload: &impl TxPayload,
-    ) -> Result<
-        SubmittableExtrinsic<PolkadotConfig, OnlineClient<PolkadotConfig>>,
-        Box<dyn std::error::Error>,
-    > {
-        Ok(client.tx().create_unsigned(payload)?)
+    pub fn unsigned<T: EncodeAsFields>(
+        client: &crate::types::NodeClient,
+        payload: impl WrappedExtrinsic<T>,
+    ) -> Result<MandalaExtrinsics, crate::error::Error> {
+        Ok(client.tx().create_unsigned(&payload.into_inner())?.into())
     }
 
     /// create a new signed transaction given a transaction payload
-    pub async fn signed(
-        client: &OnlineClient<PolkadotConfig>,
+    pub async fn signed<T: EncodeAsFields>(
+        client: &crate::types::NodeClient,
         acc: Pair,
-        payload: &impl TxPayload,
-    ) -> Result<
-        SubmittableExtrinsic<PolkadotConfig, OnlineClient<PolkadotConfig>>,
-        Box<dyn std::error::Error>,
-    > {
+        payload: impl WrappedExtrinsic<T>,
+    ) -> Result<MandalaExtrinsics, crate::error::Error> {
         let signer = PairSigner::new(acc);
 
         let tx = client
             .tx()
-            .create_signed(payload, &signer, Default::default())
-            .await?;
+            .create_signed(&payload.into_inner(), &signer, Default::default())
+            .await?
+            .into();
 
         Ok(tx)
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use std::str::FromStr;
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+    pub(crate) use subxt::OnlineClient;
+    use subxt::{error::DispatchError, PolkadotConfig, SubstrateConfig};
 
-//     use sp_core::{crypto::Ss58Codec, Pair};
-//     use subxt::{
-//         rpc::types::DryRunError,
-//         utils::{AccountId32, MultiAddress},
-//     };
+    use sp_core::{crypto::Ss58Codec, Pair};
+    use subxt::{
+        rpc::types::DryRunResult,
+        utils::{AccountId32, MultiAddress},
+    };
 
-//     use super::*;
+    use crate::types::MandalaConfig;
 
-//     async fn mock_client() -> OnlineClient<PolkadotConfig> {
-//         OnlineClient::<PolkadotConfig>::new().await.unwrap()
-//     }
+    use super::*;
 
-//     fn mock_payload(
-//         client: &OnlineClient<PolkadotConfig>,
-//     ) -> subxt::tx::StaticTxPayload<runtime_types::api::balances::calls::Transfer> {
-//         let _metadata = client.metadata();
+    async fn mock_client() -> crate::types::NodeClient {
+        OnlineClient::<MandalaConfig>::new().await.unwrap()
+    }
 
-//         let dest = mock_acc();
+    // Generate an interface that we can use from the node's metadata.
+    #[subxt::subxt(runtime_metadata_path = "./src/registrar/signer/polkadot_metadata_small.scale")]
+    pub mod polkadot {}
 
-//         runtime_types::api::tx().balances().transfer(dest, 0)
-//     }
+    // Mock implementation of `WrappedExtrinsic` for testing
+    struct MockWrappedExtrinsic<T: EncodeAsFields>(subxt::tx::Payload<T>);
 
-//     fn mock_acc() -> MultiAddress<AccountId32, ()> {
-//         let (dest, _) = sp_core::sr25519::Pair::generate();
-//         let dest = dest.public();
-//         let dest = AccountId32::from_str(&dest.to_ss58check()).unwrap();
+    impl<T: EncodeAsFields> WrappedExtrinsic<T> for MockWrappedExtrinsic<T> {
+        fn into_inner(self) -> subxt::tx::Payload<T> {
+            self.0
+        }
+    }
 
-//         subxt::utils::MultiAddress::Id(dest)
-//     }
+    fn mock_payload(
+        client: &crate::types::NodeClient,
+    ) -> MockWrappedExtrinsic<polkadot::balances::calls::types::Transfer> {
+        let _metadata = client.metadata();
 
-//     fn mock_pair() -> sp_core::sr25519::Pair {
-//         let (pair, _) = sp_core::sr25519::Pair::generate();
+        let dest = mock_acc();
 
-//         pair
-//     }
+        MockWrappedExtrinsic(polkadot::tx().balances().transfer(dest, 0))
+    }
 
-//     #[actix::test]
-//     async fn should_create_unsigned_tx() {
-//         let node_client = mock_client().await;
-//         let payload = mock_payload(&node_client);
+    fn mock_acc() -> MultiAddress<AccountId32, ()> {
+        let dest = sp_keyring::Sr25519Keyring::Bob.pair();
+        let dest = dest.public();
+        let dest = AccountId32::from_str(&dest.to_ss58check()).unwrap();
 
-//         let extrinsic = TxBuilder::unsigned(&node_client, &payload).unwrap();
+        subxt::utils::MultiAddress::Id(dest)
+    }
 
-//         let dry_run_result = extrinsic.dry_run(None).await.unwrap();
-//         let actual_result = extrinsic.submit().await;
+    fn mock_pair() -> sp_core::sr25519::Pair {
+        sp_keyring::Sr25519Keyring::Alice.pair()
+    }
 
-//         // should error because the transaction is unsigned and can only be
-//         // submitted through OCW
-//         // but it should be possible to include the transaction in the block.
-//         // that's why instead of validity erorr it's dispatch error
-//         if let Err(dry_run_result) = dry_run_result {
-//             assert_eq!(dry_run_result, DryRunError::DispatchError);
-//         }
+    #[tokio::test]
+    async fn should_create_unsigned_tx() {
+        let node_client = mock_client().await;
+        let payload = mock_payload(&node_client);
 
-//         if let Err(actual_result) = actual_result {
-//             println!("{}", actual_result)
-//         }
-//     }
+        let extrinsic_result = TxBuilder::unsigned(&node_client, payload);
 
-//     #[actix::test]
-//     async fn should_create_signed_tx() {
-//         let node_client = mock_client().await;
-//         let payload = mock_payload(&node_client);
+        assert!(extrinsic_result.is_ok());
 
-//         let pair = mock_pair();
-//         let extrinsic = TxBuilder::signed(&node_client, pair, &payload)
-//             .await
-//             .unwrap();
+        let extrinsic = extrinsic_result.unwrap().0;
+        let dry_run_result: DryRunResult = extrinsic.dry_run(None).await.unwrap();
+        let actual_result = extrinsic.submit().await;
 
-//         let dry_run_result = extrinsic.dry_run(None).await.unwrap();
-//         let actual_result = extrinsic.submit().await;
+        // should error because the transaction is unsigned and can only be
+        // submitted through OCW
+        // but it should be possible to include the transaction in the block.
+        // that's why instead of validity erorr it's dispatch error
+        if let DryRunResult::DispatchError(err) = dry_run_result {
+            assert_eq!(
+                format!("{:?}", err),
+                format!("{:?}", DispatchError::BadOrigin)
+            );
+        }
 
-//         // shoould error because the caller does not have enough balance
-//         if let Err(dry_run_result) = dry_run_result {
-//             assert_eq!(dry_run_result, DryRunError::TransactionValidityError);
-//         }
+        if let Err(actual_result) = actual_result {
+            println!("{}", actual_result)
+        }
+    }
 
-//         if let Err(actual_result) = actual_result {
-//             println!("{}", actual_result)
-//         }
-//     }
-// }
+    #[tokio::test]
+    async fn should_create_signed_tx() {
+        let node_client = mock_client().await;
+        let payload = mock_payload(&node_client);
+
+        let pair = mock_pair();
+        let extrinsic = TxBuilder::signed(&node_client, pair, payload)
+            .await
+            .unwrap().0;
+
+        let dry_run_result = extrinsic.dry_run(None).await.unwrap();
+        let actual_result = extrinsic.submit().await;
+        assert!(actual_result.is_ok());
+    }
+}

@@ -4,112 +4,153 @@ use sp_core::H256;
 
 use tokio::sync::{
     mpsc::{Receiver, Sender},
-    Mutex,
+    RwLock,
 };
 
-use crate::tx::extrinsics::{
-    prelude::{NotificationMessage, TransactionId},
-    types::ExtrinsicTracker,
+use crate::{
+    tx::extrinsics::callback_executor::Url,
+    types::{MandalaTransactionProgress, SenderChannel},
 };
 
-use super::enums::ExtrinsicStatus;
+use super::enums::{ExtrinsicStatus, Hash};
 
-pub type InnerTask = tokio::task::JoinHandle<()>;
+/// transaction message.
+/// this is what will be sent to external notifier after the transaction is completed
+pub struct TransactionMessage {
+    pub(crate) status: ExtrinsicStatus,
+    pub(crate) callback: Option<Url>,
+    pub(crate) id: Hash,
+}
 
+impl TransactionMessage {
+    /// internal function. should not be exposed to the user.
+    /// create new transaction message.
+    pub(crate) fn new(status: ExtrinsicStatus, callback: Option<Url>, id: Hash) -> Self {
+        Self {
+            status,
+            callback,
+            id,
+        }
+    }
+
+    /// get transaction status.
+    pub fn inner_status(&self) -> ExtrinsicStatus {
+        self.status.clone()
+    }
+
+    /// get callback url.
+    pub fn callback(&self) -> Option<&Url> {
+        self.callback.as_ref()
+    }
+
+    /// get transaction id.
+    pub fn id(&self) -> &Hash {
+        &self.id
+    }
+}
+
+/// transaction wrapper.
+/// this wrap raw substrate extrinsics transaction and will track the transaction status.
+#[cfg(feature = "tokio")]
 pub struct Transaction {
+    /// transaction id.
     id: H256,
-    tx: InnerTask,
-    status_watcher: InnerTask,
-    status: Arc<Mutex<ExtrinsicStatus>>,
-    transaction_notifier: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
+    /// transaction status.
+    status: Arc<RwLock<ExtrinsicStatus>>,
 }
 
 impl Transaction {
-    pub fn id(&self) -> TransactionId {
-        self.id
+    /// get transaction id.
+    pub fn id(&self) -> Hash {
+        self.id.into()
     }
 
+    /// get transaction status.
     pub async fn status(&self) -> ExtrinsicStatus {
-        let status = self.status.lock().await;
+        let status = self.status.read().await;
 
         status.clone()
     }
 }
 
 impl Transaction {
+    /// create new transaction.
     pub fn new(
-        tx: ExtrinsicTracker,
-        external_notifier: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
-        callback: Option<String>,
+        tx: MandalaTransactionProgress,
+        external_notifier: Option<SenderChannel<TransactionMessage>>,
+        callback: Option<Url>,
     ) -> Self {
-        let hash = tx.extrinsic_hash();
-        let (task, task_channel) =
-            Self::process_transaction(tx, external_notifier.clone(), callback);
+        let hash = tx.0.extrinsic_hash();
+        let task_channel = Self::process_transaction(tx, external_notifier, callback);
 
-        let (default_status, status_watcher) = Self::watch_transaction_status(task_channel);
+        let default_status = Self::watch_transaction_status(task_channel);
 
         Self {
-            transaction_notifier: external_notifier,
             id: hash,
-            tx: task,
             status: default_status,
-            status_watcher,
         }
     }
 
+    /// watch transaction status. and send notification through channel if provided after the transaction is completed.
     fn process_transaction(
-        tx: ExtrinsicTracker,
-        external_status_notifier: tokio::sync::mpsc::UnboundedSender<NotificationMessage>,
-        callback: Option<String>,
-    ) -> (InnerTask, Receiver<ExtrinsicStatus>) {
+        tx: MandalaTransactionProgress,
+        external_status_notifier: Option<SenderChannel<TransactionMessage>>,
+        callback: Option<Url>,
+    ) -> Receiver<ExtrinsicStatus> {
         let (internal_status_notifier, receiver) = Self::create_channel();
 
         let task = async move {
-            let hash = tx.extrinsic_hash();
-
+            let id = tx.0.extrinsic_hash().into();
             let status = Self::wait(tx).await;
 
-            internal_status_notifier.send(status.clone()).await.unwrap();
+            internal_status_notifier
+                .send(status.clone())
+                .await
+                .expect("there should be only 1 message sent");
 
-            external_status_notifier
-                .send((hash, status.clone(), callback))
-                .unwrap();
+            if let Some(external_status_notifier) = external_status_notifier {
+                let msg = TransactionMessage::new(status, callback, id);
+                external_status_notifier.send(msg);
+            }
         };
-
-        (tokio::task::spawn(task), receiver)
+        tokio::task::spawn(task);
+        receiver
     }
 
-    pub async fn wait(tx: ExtrinsicTracker) -> ExtrinsicStatus {
-        let status = tx.wait_for_finalized_success().await;
+    /// manually wait for transaction to be completed.
+    // we expose this function to user for convenience. this enables manually waiting the transaction to complete.
+    pub async fn wait(tx: MandalaTransactionProgress) -> ExtrinsicStatus {
+        let status = tx.0.wait_for_finalized_success().await;
 
         match status {
-            Ok(tx) => ExtrinsicStatus::Success(tx.extrinsic_hash()),
-            Err(e) => ExtrinsicStatus::Failed(e.to_string()),
+            Ok(tx) => ExtrinsicStatus::Success(tx.into()),
+            Err(e) => ExtrinsicStatus::Failed(e.to_string().into()),
         }
     }
-
+    /// create channel for sending transaction status.
     fn create_channel() -> (Sender<ExtrinsicStatus>, Receiver<ExtrinsicStatus>) {
         // only 1 message will ever be sent so we don't need buffer size more than 1
         let default_buffer_size = 1_usize;
         tokio::sync::mpsc::channel::<ExtrinsicStatus>(default_buffer_size)
     }
 
+    /// watch transaction status.
     fn watch_transaction_status(
         mut task_channel: Receiver<ExtrinsicStatus>,
-    ) -> (Arc<Mutex<ExtrinsicStatus>>, tokio::task::JoinHandle<()>) {
-        let default_status = Arc::new(Mutex::new(ExtrinsicStatus::default()));
+    ) -> Arc<RwLock<ExtrinsicStatus>> {
+        let default_status = Arc::new(RwLock::new(ExtrinsicStatus::default()));
         let status_arc_clone = default_status.clone();
 
         let watcher = async move {
             let Some(new_status) = task_channel.recv().await else {
             return ;
         };
-            let mut status = status_arc_clone.lock().await;
+            let mut status = status_arc_clone.write().await;
             *status = new_status;
         };
 
-        let status_watcher = tokio::task::spawn(watcher);
+        tokio::task::spawn(watcher);
 
-        (default_status, status_watcher)
+        default_status
     }
 }

@@ -1,23 +1,26 @@
 use std::{marker::PhantomData, str::FromStr};
 use subxt::utils::{AccountId32, MultiAddress};
 
-use crate::tx::extrinsics::prelude::{GenericError};
+use crate::error::ToPayloadError;
 
 use super::{
     traits::{ScaleEncodeable, ToContractPayload, ValidateHash},
-    transfer_nft_contract::{
-        constructor::{NftTransferAgrs, TransferNFT},
-        types::ContractTransactionPayload,
-    },
+    transfer_nft_contract::constructor::{NftTransferAgrs, TransferNFT},
 };
 
+/// pallet contract calldata representation.
+/// you wouldn't typically need to interact with this.
+///
+/// used to properly encode arbitrary calldata for a contract call.  
 pub struct CallData<T = ()>(Vec<u8>, PhantomData<T>);
 
 impl CallData {
+    /// get inner calldata bytes
     pub fn get(&self) -> &Vec<u8> {
         self.0.as_ref()
     }
 
+    /// consume self and return inner calldata bytes
     pub fn to_vec(self) -> Vec<u8> {
         self.0
     }
@@ -35,15 +38,27 @@ impl<T> From<CallData<T>> for Vec<u8> {
     }
 }
 
-impl From<NftTransferAgrs> for CallData<TransferNFT> {
-    fn from(value: NftTransferAgrs) -> Self {
+impl<T> From<T> for CallData<T>
+where
+    T: ScaleEncodeable,
+{   
+    /// encode arbitrary type to calldata,
+    /// this is the main way to create a new calldata object.
+    /// 
+    /// the encoded types must satisfy [ScaleEncodeable] traits.
+    fn from(value: T) -> Self {
         CallData(value.encode(), PhantomData)
     }
 }
 
 impl<T> ToContractPayload for CallData<T> {
-    fn to_payload(self, address: &str) -> Result<ContractTransactionPayload, GenericError> {
-        let address = MultiAddress::Id(AccountId32::from_str(address)?);
+    fn to_payload(
+        self,
+        address: &str,
+    ) -> Result<subxt::tx::Payload<ContractCall>, crate::error::Error> {
+        let address = AccountId32::from_str(address)
+            .map_err(|e| ToPayloadError::AddressError(e.to_string()))?;
+        let address = MultiAddress::Id(address);
 
         let args = ContractCall::new_with_arbitrary_args(address, self);
 
@@ -81,9 +96,9 @@ const DEFAULT_DEPOSIT_LIMIT: u128 = 0;
 #[codec (crate = :: subxt :: ext :: codec)]
 #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-pub struct GasLimit {
-    pub ref_time: u64,
-    pub proof_size: u64,
+pub(crate) struct GasLimit {
+    ref_time: u64,
+    proof_size: u64,
 }
 
 impl Default for GasLimit {
@@ -95,6 +110,7 @@ impl Default for GasLimit {
     }
 }
 
+/// pallet contract call function arguments.
 #[derive(
     :: subxt :: ext :: codec :: Decode,
     :: subxt :: ext :: codec :: Encode,
@@ -105,12 +121,12 @@ impl Default for GasLimit {
 #[codec (crate = :: subxt :: ext :: codec)]
 #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-pub struct ContractCall {
-    pub dest: MultiAddress<AccountId32, ()>,
-    pub value: u128,
-    pub gas_limit: GasLimit,
-    pub storage_deposit_limit: Option<u128>,
-    pub data: Vec<u8>,
+pub(crate) struct ContractCall {
+    dest: MultiAddress<AccountId32, ()>,
+    value: u128,
+    gas_limit: GasLimit,
+    storage_deposit_limit: Option<u128>,
+    data: Vec<u8>,
 }
 
 impl ContractCall {

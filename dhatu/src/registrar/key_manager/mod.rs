@@ -1,55 +1,77 @@
-//! module responsible for all related task regarding user keypair. e.g creating, recovering, etc.
+/// keypair modules contains stuff related to keypair manipulation, use, etc.
 pub mod keypair;
+/// password modules used to generate keypair.
 pub mod password;
 
 use std::str::FromStr;
 
 use sp_core::{sr25519::Pair as Keys, Pair};
 
-pub mod prelude {
+pub(crate) mod prelude {
     pub use super::keypair::*;
     pub use super::password::*;
 }
 
 use prelude::*;
 
-use crate::{error::Error, tx::extrinsics::prelude::GenericError};
+use crate::error::{Error, KeypairGenerationError};
 
-/// represent a keypair manager.
+/// represent a keypair manager. used to create a new schnorrkel keypair or recover from a phrase.
 pub struct KeyManager;
 
 impl KeyManager {
+    /// create a new keypair from a random generated password.
     pub fn new_default() -> Keypair {
         let password = Password::new();
-        Self::gen(password)
+        Self::gen(Some(password))
     }
 
-    pub fn recover(pass: &str, phrase: &str) -> Result<Keypair, Error> {
-        let password = Password::from_str(pass)?;
+    /// create a new keypair without password.
+    pub fn new_without_password() -> Keypair {
+        Self::gen(None)
+    }
+
+    /// recover a keypair from a phrase and a password, will fail if the phrase and password is invalid.
+    pub fn recover(pass: Option<&str>, phrase: &str) -> Result<Keypair, Error> {
+        let password = match pass {
+            Some(pass) => Some(Password::from_str(pass)?),
+            None => None,
+        };
         Self::gen_from_phrase(password, phrase)
             .map_err(|e| KeypairGenerationError::Recover(e.to_string()).into())
     }
 }
 
 impl KeyManager {
-    fn gen(password: Password) -> Keypair {
-        let password_phrase = password.as_pwd();
-
-        let (keypair, phrase, _) = Keys::generate_with_phrase(password_phrase);
+    /// internal function. meant to be used to create a new keypair.
+    fn gen(password: Option<Password>) -> Keypair {
+        let (keypair, phrase, _) = match password.clone() {
+            Some(password) => Keys::generate_with_phrase(password.as_pwd()),
+            None => Keys::generate_with_phrase(None),
+        };
 
         Self::construct(password, phrase, keypair)
     }
 
-    fn gen_from_phrase(password: Password, phrase: &str) -> Result<Keypair, GenericError> {
-        let password_phrase = password.as_pwd();
+    /// internal function. meant to be used to recover a keypair from a password and its phrase.
+    fn gen_from_phrase(
+        password: Option<Password>,
+        phrase: &str,
+    ) -> Result<Keypair, Box<dyn std::error::Error>> {
+        let (keypair, _) = match password.clone() {
+            Some(pass) => Keys::from_phrase(phrase, pass.as_pwd())?,
+            None => Keys::from_phrase(phrase, None)?,
+        };
 
-        let (keys, _) = Keys::from_phrase(phrase, password_phrase)?;
-        let keypair = Self::construct(password, String::from(phrase), keys);
+        let keypair = Self::construct(password, String::from(phrase), keypair);
         Ok(keypair)
     }
 
-    fn construct(password: Password, phrase: String, keypair: Keys) -> Keypair {
-        let phrase = MnemonicPhrase::new(&phrase, Some(password.clone()))
+    /// construct a keypair from a password, phrase and a keypair.
+    /// internal function. meant to be used to create a new keypair or recover a keypair.
+    /// should not be exposed to user.
+    fn construct(password: Option<Password>, phrase: String, keypair: Keys) -> Keypair {
+        let phrase = MnemonicPhrase::new(&phrase, password.clone())
             .expect("internal function should not fail!");
         let pub_key = keypair.clone().into();
 
@@ -59,96 +81,72 @@ impl KeyManager {
 
 #[cfg(test)]
 mod tests {
-
-    use mockall::mock;
-
     use super::*;
+    use crate::error::PasswordGenerationError::InvalidLength;
 
-    mock! {
-        VerifiableUser{}
-
-        impl User for VerifiableUser {
-            fn password(&self) -> &str;
-            fn email(&self) -> &str;
-
-        }
-
-        impl Verifiable for VerifiableUser {
-            fn phrase(&self) -> &str;
-        }
-
-        impl VerifiableUser  for VerifiableUser {}
-    }
-
-    mock! {
-        TestUser{}
-
-        impl User for TestUser {
-            fn password(&self) -> &str;
-            fn email(&self) -> &str;
-
-        }
-    }
-
-    fn email() -> String {
-        String::from("test@example.com")
-    }
-
-    fn password() -> String {
-        String::from("some very very secret password")
-    }
-
-    fn create_mock_user() -> MockTestUser {
-        let mut user = MockTestUser::new();
-
-        user.expect_email().return_const(email());
-        user.expect_password().return_const(password());
-
-        user
-    }
-
-    fn create_mock_verifiable_user() -> MockVerifiableUser {
-        let mut user = MockVerifiableUser::new();
-
-        user.expect_email().return_const(email());
-        user.expect_password().return_const(password());
-
-        let keypair = KeyManager::with_user(&user);
-
-        user.expect_phrase()
-            .return_const(keypair.phrase().to_string());
-
-        user
+    #[test]
+    fn test_new_default() {
+        let keypair = KeyManager::new_default();
+        assert!(keypair.password_hash().is_some());
     }
 
     #[test]
-    fn should_produce_consistent_hash() {
-        let email = "test@example.com";
-        let password = "some very very secret password";
-
-        let first_try_pass = Password::new_with_creds(email, password);
-        let second_try_pass = Password::new_with_creds(email, password);
-
-        assert_eq!(first_try_pass.0, second_try_pass.0)
+    fn test_new_without_password() {
+        let keypair = KeyManager::new_without_password();
+        assert!(keypair.password_hash().is_none());
     }
 
     #[test]
-    fn should_recover_keypair() {
-        assert!(std::panic::catch_unwind(should_produce_consistent_hash).is_ok());
-
-        let user = create_mock_verifiable_user();
-
-        let recovered_keypair = KeyManager::recover_with_creds(&user);
-
-        assert!(recovered_keypair.is_ok());
+    fn test_recover_valid() {
+        let pass = "61c510ba04db830da8acd6595caf193d";
+        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        
+        let keypair_result = KeyManager::recover(Some(pass), phrase);
+        assert!(keypair_result.is_ok());
+        
+        let keypair = keypair_result.unwrap();
+        assert_eq!(keypair.password_hash().unwrap().as_str(), pass);
+        assert_eq!(keypair.phrase().inner(), phrase);
+    }
+    
+    #[test]
+    fn test_recover_invalid_phrase() {
+        let pass = "483d968823979f7a937c65793ee91409";
+        let phrase = "sample tornado pen frog valley library velvet figure guitar powder mirror churne";
+        let keypair_result = KeyManager::recover(Some(pass), phrase);
+        assert!(keypair_result.is_err());
+        if let Err(err) = keypair_result {
+            assert_eq!(
+                format!("{:?}", err),
+                format!("{:?}", Error::Keypair(KeypairGenerationError::Recover("Invalid phrase".to_string())))
+            );
+        }
     }
 
     #[test]
-    fn should_consistently_verify_keypair() {
-        assert!(std::panic::catch_unwind(should_produce_consistent_hash).is_ok());
-
-        let user = create_mock_verifiable_user();
-
-        assert!(KeyManager::verify(&user))
+    fn test_recover_invalid_pass() {
+        let pass = "61457fa9cd845bb9";
+        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        let keypair_result = KeyManager::recover(Some(pass), phrase);
+        assert!(keypair_result.is_err());
+        if let Err(err) = keypair_result {
+            assert_eq!(
+                format!("{:?}", err),
+                format!("{:?}", Error::Password(InvalidLength))
+            );
+        }
+    }
+    
+    #[test]
+    fn test_gen_from_phrase() {
+        let password = Password::new();
+        let (_, phrase, _) = Keys::generate_with_phrase(password.as_pwd());
+        
+        let keypair_result = KeyManager::gen_from_phrase(Some(password.clone()), phrase.as_str());
+        assert!(keypair_result.is_ok());
+        
+        let keypair = keypair_result.unwrap();
+        assert_eq!(keypair.password_hash().unwrap().as_str(), password.as_str());
+        assert_eq!(keypair.phrase().inner(), phrase);
     }
 }

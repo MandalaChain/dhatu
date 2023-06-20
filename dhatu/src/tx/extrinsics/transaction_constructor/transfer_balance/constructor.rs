@@ -1,12 +1,12 @@
-
-
 use subxt::utils::{AccountId32, MultiAddress};
 
 use crate::{
-    registrar::key_manager::prelude::PublicAddress,
-    tx::extrinsics::{transaction_constructor::traits::ValidateHash},
+    registrar::{key_manager::prelude::PublicAddress, signer::WrappedExtrinsic},
+    tx::extrinsics::transaction_constructor::traits::ValidateHash,
 };
 
+// pallet balance transfer function arguments
+#[doc(hidden)]
 #[derive(
     :: subxt :: ext :: codec :: Decode,
     :: subxt :: ext :: codec :: Encode,
@@ -18,8 +18,8 @@ use crate::{
 #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 pub struct BalanceTransferArgs {
-    pub dest: MultiAddress<AccountId32, ()>,
-    pub value: u128,
+    pub(crate) dest: MultiAddress<AccountId32, ()>,
+    pub(crate) value: u128,
 }
 
 impl BalanceTransferArgs {
@@ -28,10 +28,11 @@ impl BalanceTransferArgs {
     }
 }
 
+/// Balance transfer extrinsic constructor.
 pub struct BalanceTransfer;
 
 impl BalanceTransfer {
-    fn generate_payload(args: BalanceTransferArgs) -> BalanceTransferPayload {
+    fn generate_payload(args: BalanceTransferArgs) -> subxt::tx::Payload<BalanceTransferArgs> {
         subxt::tx::Payload::new(Self::pallet_name(), Self::function_name(), args)
     }
 }
@@ -46,13 +47,92 @@ impl ValidateHash for BalanceTransfer {
     }
 }
 
-type BalanceTransferPayload = subxt::tx::Payload<BalanceTransferArgs>;
+/// Balance transfer extrinsic payload.
+pub struct BalanceTransferPayload(subxt::tx::Payload<BalanceTransferArgs>);
+
+impl WrappedExtrinsic<BalanceTransferArgs> for BalanceTransferPayload {
+    fn into_inner(self) -> subxt::tx::Payload<BalanceTransferArgs> {
+        self.0
+    }
+}
+
+impl BalanceTransferPayload {
+    /// construct a balance transfer extrinsic payload
+    fn new(args: BalanceTransferArgs) -> Self {
+        Self(BalanceTransfer::generate_payload(args))
+    }
+
+    /// get the inner payload
+    #[cfg(feature = "unstable_sp_core")]
+    pub fn inner(&self) -> &subxt::tx::Payload<BalanceTransferArgs> {
+        &self.0
+    }
+}
 
 impl BalanceTransfer {
+    /// construct a balance transfer extrinsic payload
     pub fn construct(to: PublicAddress, value: u128) -> BalanceTransferPayload {
         let dest = subxt::utils::MultiAddress::Id(to.into());
         let args = BalanceTransferArgs::new(dest, value);
+
+        BalanceTransferPayload::new(args)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::str::FromStr;
+    use sp_core::{Pair, crypto::Ss58Codec};
+    use sp_keyring::sr25519::sr25519;
+
+    fn mock_pair() -> sr25519::Pair {
+        sp_keyring::Sr25519Keyring::Alice.pair()
+    }
+
+    fn mock_id() -> AccountId32 {
+        let pair = mock_pair();
+        let pair_public = pair.public();
+        AccountId32::from_str(&pair_public.to_ss58check()).unwrap()
+    }
+
+    #[test]
+    fn test_balance_transfer_args_new() {
+        let id = mock_id();
+        let dest = MultiAddress::Id(id.clone());
+        let value = 100;
         
-        Self::generate_payload(args)
+        let args = BalanceTransferArgs::new(dest, value);
+
+        assert_eq!(args.dest, MultiAddress::Id(id));
+        assert_eq!(args.value, 100);
+    }
+
+    #[test]
+    fn test_balance_transfer_generate_payload() {
+        let id = mock_id();
+        let dest = MultiAddress::Id(id.clone());
+        let value = 100;
+        let args = BalanceTransferArgs::new(dest.clone(), value);
+
+        let payload = BalanceTransfer::generate_payload(args);
+
+        assert_eq!(payload.call_data().dest, dest);
+        assert_eq!(payload.call_data().value, value);
+    }
+
+    #[test]
+    fn test_balance_transfer_construct() {
+        let to = PublicAddress::from(mock_pair());
+        let value = 100;
+
+        let payload = BalanceTransfer::construct(to, value);
+        
+        assert_eq!(
+            payload.0.call_data().dest,
+            MultiAddress::Id(mock_id())
+        );
+        assert_eq!(payload.0.call_data().value, value);
     }
 }

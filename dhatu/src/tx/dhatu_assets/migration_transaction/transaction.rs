@@ -7,11 +7,11 @@ use crate::{
             extrinsics,
             ExtrinsicSubmitter,
             transfer_nft_contract::{
-                constructor::TransferNFT, traits::NftTransferTransactionConstructor,
+                constructor::TransferNFT,
             },
-            BlockchainClient, reserve::FundsReserve,
+             reserve::FundsReserve,
         },
-    },
+    }, types::NodeClient,
 };
 
 use super::{
@@ -22,13 +22,16 @@ use super::{
     },
 };
 
+/// default fees for migration transaction
 const STATIC_NFT_TRANSFER_FEE: u128 = 9_000_000_000; // 9  mili units (9mU)
 
+/// migration transaction. wrap aroung raw substrate extrinsics.
+/// providing method to ensure enough gas, sign and submit the transaction.
 pub(crate) struct MigrationTransaction {
     signer: Pair,
     notifier: MigrationTransactionResultNotifier,
     reserve: FundsReserve,
-    client: BlockchainClient,
+    client: NodeClient,
     payload: Option<MigrationTransactionPayload>,
     inner_tx: Option<SubmittableTransaction>,
 }
@@ -38,7 +41,7 @@ impl MigrationTransaction {
         signer: Pair,
         notifier: MigrationTransactionResultNotifier,
         reserve: FundsReserve,
-        client: BlockchainClient,
+        client: NodeClient,
         payload: Option<MigrationTransactionPayload>,
         inner_tx: Option<SubmittableTransaction>,
     ) -> Self {
@@ -52,6 +55,8 @@ impl MigrationTransaction {
         }
     }
 
+    /// construct migration transaction payload,
+    /// usuallly called first.
     pub fn construct_payload(
         mut self,
         address: &str,
@@ -67,6 +72,7 @@ impl MigrationTransaction {
         self
     }
 
+    /// sign the constructed migration transaction payload
     pub async fn sign(mut self) -> Self {
         let client = self.client.clone();
         let acc = self.signer.clone();
@@ -75,15 +81,19 @@ impl MigrationTransaction {
             .take()
             .expect("migration payload not constructed");
 
-        let tx = TxBuilder::signed(&client, acc, &payload)
+        let tx = TxBuilder::signed(&client, acc, payload)
             .await
             .expect("should sign transaction");
 
-        self.inner_tx = Some(tx);
+        self.inner_tx = Some(tx.0);
 
         self
     }
 
+    /// ensure enough gas for the transaction.
+    /// currently this automatically transfer funds regardless of quota threshold.
+    /// 
+    /// will send [9mu](STATIC_NFT_TRANSFER_FEE) to the signer.
     pub async fn ensure_enough_gas(self) -> Self {
         let account = self.signer.clone().into();
 
@@ -97,16 +107,17 @@ impl MigrationTransaction {
         self
     }
 
+    /// submit the transaction to the connected rpc node.
     pub async fn submit(mut self) -> crate::tx::extrinsics::prelude::extrinsics::Transaction {
         let tx = self
             .inner_tx
             .take()
             .expect("inner transaction should have been built");
 
-        let (progress, _) = ExtrinsicSubmitter::submit(tx.into()).await.unwrap();
+        let progress = ExtrinsicSubmitter::submit(tx.into()).await.unwrap();
         let notifier_channel = self.notifier.clone();
 
-        extrinsics::Transaction::new(progress, notifier_channel, None)
+        extrinsics::Transaction::new(progress, Some(notifier_channel), None)
     }
 }
 
@@ -125,7 +136,7 @@ impl MigrationTransactionAttributes
         &self.reserve
     }
 
-    fn client(&self) -> &BlockchainClient {
+    fn client(&self) -> &NodeClient {
         &self.client
     }
 

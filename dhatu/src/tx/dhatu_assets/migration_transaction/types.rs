@@ -1,13 +1,14 @@
-use subxt::{tx::SubmittableExtrinsic, OnlineClient, PolkadotConfig};
+use subxt::{tx::SubmittableExtrinsic, SubstrateConfig};
 
-use crate::tx::extrinsics::prelude::{
-    transfer_nft_contract::types::ContractTransactionPayload, NotificationMessage,
-};
+use crate::{tx::extrinsics::{prelude::{
+     extrinsics::TransactionMessage,
+}, transaction_constructor::transfer_nft_contract::constructor::NftTransferPayload}, types::{SenderChannel, ReceiverChannel, MandalaConfig}};
+
 
 pub type MigrationTask<T> = std::pin::Pin<Box<dyn futures::Future<Output = T>>>;
-pub type MigrationTransactionPayload = ContractTransactionPayload;
+pub type MigrationTransactionPayload = NftTransferPayload;
 pub type MigrationTransactionResultNotifier =
-    tokio::sync::mpsc::UnboundedSender<NotificationMessage>;
+    SenderChannel<TransactionMessage>;
 pub type MigrationTransactionResultReceiver =
-    tokio::sync::mpsc::UnboundedReceiver<NotificationMessage>;
-pub type MigrationTransaction = SubmittableExtrinsic<PolkadotConfig, OnlineClient<PolkadotConfig>>;
+    ReceiverChannel<TransactionMessage>;
+pub type MigrationTransaction = SubmittableExtrinsic<MandalaConfig, crate::types::NodeClient>;
