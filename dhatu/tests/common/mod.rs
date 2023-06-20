@@ -20,12 +20,14 @@ pub async fn setup_node_and_client() -> (
     mandala_node_runner::SubstrateNode,
 ) {
     let madya_bin_path = std::env::var("MADYA_BIN_PATH")
+        .or_else(|| "/mnt/c/Users/ASUS/Documents/GitHub/stuff/madya/target/release")
         .expect("madya node binary path (MADYA_BIN_PATH) must be set!");
-    let mut nodeBuilder = mandala_node_runner::SubstrateNodeBuilder::new();
+    
+    let mut node_builder = mandala_node_runner::SubstrateNodeBuilder::new();
 
-    nodeBuilder.binary_path(madya_bin_path);
+    node_builder.binary_path(madya_bin_path);
 
-    let node = nodeBuilder
+    let node = node_builder
         .spawn()
         .expect("should spawn a new development node!");
 
