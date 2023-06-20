@@ -79,7 +79,7 @@ impl DhatuAssetsFacade {
             let tx = tx
                 .construct_payload(
                     asset.contract_address(),
-                    &to.0,
+                    to.clone(),
                     asset.token_id(),
                     asset.function_selector(),
                 )

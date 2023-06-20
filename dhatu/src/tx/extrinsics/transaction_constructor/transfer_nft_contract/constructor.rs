@@ -5,11 +5,11 @@ use subxt::utils::AccountId32;
 
 use crate::{
     error::ToPayloadError,
-    registrar::signer::WrappedExtrinsic,
+    registrar::{key_manager::prelude::PublicAddress, signer::WrappedExtrinsic},
     tx::extrinsics::{
         prelude::calldata::CallData,
         transaction_constructor::{
-            calldata::ContractCall,
+            calldata::{ContractCall, Selector},
             traits::{ScaleEncodeable, ToContractPayload},
         },
     },
@@ -17,13 +17,13 @@ use crate::{
 
 /// NFT transfer function arguments
 pub struct NftTransferAgrs {
-    function_selector: String,
-    to: AccountId32,
+    function_selector: Selector,
+    to: PublicAddress,
     id: u32,
 }
 
 impl NftTransferAgrs {
-    fn new(function_selector: String, to: AccountId32, id: u32) -> Self {
+    fn new(function_selector: Selector, to: PublicAddress, id: u32) -> Self {
         Self {
             function_selector,
             to,
@@ -34,7 +34,10 @@ impl NftTransferAgrs {
 
 impl ScaleEncodeable for NftTransferAgrs {
     fn encode(self) -> Vec<u8> {
-        (self.function_selector, self.to, self.id).encode()
+        let selector = self.function_selector.to_string();
+        let to = AccountId32::from(self.to);
+
+        (selector, to, self.id).encode()
     }
 }
 
@@ -44,28 +47,21 @@ pub struct TransferNFT;
 impl TransferNFT {
     /// encode payload calldata.
     fn encode_calldata(
-        to: &str,
-        token_id: i64,
-        function_selector: String,
+        to: PublicAddress,
+        token_id: u32,
+        function_selector: Selector,
     ) -> Result<CallData<NftTransferAgrs>, crate::error::Error> {
-        // convert rust types to substrate primitives
-        let to =
-            AccountId32::from_str(to).map_err(|e| ToPayloadError::AddressError(e.to_string()))?;
-        let id = token_id as u32;
-
-        // build call data
-        // TODO : make this standardized by using traits
-        let args = NftTransferAgrs::new(function_selector, to, id);
+        let args = NftTransferAgrs::new(function_selector, to, token_id);
 
         Ok(args.into())
     }
 
     /// construct nft transfer extrinsic payload.
     pub fn construct(
-        address: &str,
-        to: &str,
-        token_id: i64,
-        function_selector: String,
+        address: PublicAddress,
+        to: PublicAddress,
+        token_id: u32,
+        function_selector: Selector,
     ) -> Result<NftTransferPayload, crate::error::Error> {
         Self::encode_calldata(to, token_id, function_selector)?
             .to_payload(address)

@@ -54,13 +54,13 @@ impl MigrationTransaction {
     /// usuallly called first.
     pub fn construct_payload(
         mut self,
-        address: &str,
-        to: &str,
-        token_id: i64,
-        function_selector: &str,
+        address: PublicAddress,
+        to: PublicAddress,
+        token_id: u32,
+        function_selector: Selector,
     ) -> Self {
         let tx =
-            TransferNFT::construct(address, to, token_id, function_selector.to_string()).unwrap();
+            TransferNFT::construct(address, to, token_id, function_selector).unwrap();
 
         self.payload = Some(tx);
 

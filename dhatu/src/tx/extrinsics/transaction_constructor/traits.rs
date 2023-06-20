@@ -1,4 +1,13 @@
-use super::calldata::ContractCall;
+use crate::registrar::key_manager::prelude::PublicAddress;
+
+
+
+
+
+
+use super::{
+    calldata::{ContractCall},
+};
 
 /// private traits. should not be exposed to the user.
 ///
@@ -6,7 +15,7 @@ use super::calldata::ContractCall;
 pub(crate) trait ToContractPayload: ValidateHash {
     fn to_payload(
         self,
-        address: &str,
+        address: PublicAddress,
     ) -> Result<subxt::tx::Payload<ContractCall>, crate::error::Error>;
 }
 
