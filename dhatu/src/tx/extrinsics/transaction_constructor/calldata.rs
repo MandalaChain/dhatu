@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, str::FromStr};
 use subxt::utils::{AccountId32, MultiAddress};
 
-use crate::error::{SelectorError, ToPayloadError};
+use crate::{error::{SelectorError, ToPayloadError}, registrar::key_manager::prelude::PublicAddress};
 
 use super::{
     traits::{ScaleEncodeable, ToContractPayload, ValidateHash},
@@ -54,11 +54,9 @@ where
 impl<T> ToContractPayload for CallData<T> {
     fn to_payload(
         self,
-        address: &str,
+        address: PublicAddress,
     ) -> Result<subxt::tx::Payload<ContractCall>, crate::error::Error> {
-        let address = AccountId32::from_str(address)
-            .map_err(|e| ToPayloadError::AddressError(e.to_string()))?;
-        let address = MultiAddress::Id(address);
+        let address = MultiAddress::Id(AccountId32::from(address));
 
         let args = ContractCall::new_with_arbitrary_args(address, self);
 

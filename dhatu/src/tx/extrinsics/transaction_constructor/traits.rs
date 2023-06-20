@@ -4,6 +4,8 @@
 
 
 
+use crate::registrar::key_manager::prelude::PublicAddress;
+
 use super::{
     calldata::{ContractCall},
 };
@@ -14,7 +16,7 @@ use super::{
 pub(crate) trait ToContractPayload: ValidateHash {
     fn to_payload(
         self,
-        address: &str,
+        address: PublicAddress,
     ) -> Result<subxt::tx::Payload<ContractCall>, crate::error::Error>;
 }
 
