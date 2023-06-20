@@ -1,17 +1,12 @@
-use sp_core::{sr25519::Pair};
+use sp_core::sr25519::Pair;
 
 use crate::{
     registrar::signer::TxBuilder,
-    tx::extrinsics::{
-        prelude::{
-            extrinsics,
-            ExtrinsicSubmitter,
-            transfer_nft_contract::{
-                constructor::TransferNFT,
-            },
-             reserve::FundsReserve,
-        },
-    }, types::NodeClient,
+    tx::extrinsics::prelude::{
+        extrinsics, reserve::FundsReserve, transfer_nft_contract::constructor::TransferNFT,
+        ExtrinsicSubmitter,
+    },
+    types::NodeClient,
 };
 
 use super::{
@@ -92,7 +87,7 @@ impl MigrationTransaction {
 
     /// ensure enough gas for the transaction.
     /// currently this automatically transfer funds regardless of quota threshold.
-    /// 
+    ///
     /// will send [9mu](STATIC_NFT_TRANSFER_FEE) to the signer.
     pub async fn ensure_enough_gas(self) -> Self {
         let account = self.signer.clone().into();
@@ -121,9 +116,7 @@ impl MigrationTransaction {
     }
 }
 
-impl MigrationTransactionAttributes
-    for MigrationTransaction
-{
+impl MigrationTransactionAttributes for MigrationTransaction {
     fn signer(&self) -> &Pair {
         &self.signer
     }

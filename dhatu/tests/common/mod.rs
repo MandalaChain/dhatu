@@ -1,5 +1,6 @@
 use dhatu;
 use mandala_node_runner;
+mod test_types;
 
 pub fn setup() -> (
     dhatu::types::MandalaClient,
@@ -15,4 +16,8 @@ pub fn setup() -> (
         .expect("should spawn a new development node!");
 
     let node_url = format!("127.0.0.1:{}", node.ws_port());
+}
+
+pub fn setup_dummy_721_contract() {
+    subxt::tx::Payload::new("Contract", "instantiate_with_code", call_data)
 }

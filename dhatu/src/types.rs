@@ -1,6 +1,6 @@
 use subxt::{
     tx::{SubmittableExtrinsic, TxProgress},
-    OnlineClient, SubstrateConfig, PolkadotConfig,
+    OnlineClient, PolkadotConfig, SubstrateConfig,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
@@ -92,7 +92,6 @@ impl From<TransactionProgress> for MandalaTransactionProgress {
 
 #[derive(Clone)]
 pub struct MandalaClient(pub(crate) OnlineClient<MandalaConfig>);
-
 
 impl MandalaClient {
     pub(crate) fn inner(&self) -> &OnlineClient<MandalaConfig> {

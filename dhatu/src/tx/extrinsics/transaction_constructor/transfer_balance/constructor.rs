@@ -83,9 +83,9 @@ impl BalanceTransfer {
 mod tests {
     use super::*;
 
-    use std::str::FromStr;
-    use sp_core::{Pair, crypto::Ss58Codec};
+    use sp_core::{crypto::Ss58Codec, Pair};
     use sp_keyring::sr25519::sr25519;
+    use std::str::FromStr;
 
     fn mock_pair() -> sr25519::Pair {
         sp_keyring::Sr25519Keyring::Alice.pair()
@@ -102,7 +102,7 @@ mod tests {
         let id = mock_id();
         let dest = MultiAddress::Id(id.clone());
         let value = 100;
-        
+
         let args = BalanceTransferArgs::new(dest, value);
 
         assert_eq!(args.dest, MultiAddress::Id(id));
@@ -128,11 +128,8 @@ mod tests {
         let value = 100;
 
         let payload = BalanceTransfer::construct(to, value);
-        
-        assert_eq!(
-            payload.0.call_data().dest,
-            MultiAddress::Id(mock_id())
-        );
+
+        assert_eq!(payload.0.call_data().dest, MultiAddress::Id(mock_id()));
         assert_eq!(payload.0.call_data().value, value);
     }
 }

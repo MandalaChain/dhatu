@@ -41,10 +41,10 @@ impl<T> From<CallData<T>> for Vec<u8> {
 impl<T> From<T> for CallData<T>
 where
     T: ScaleEncodeable,
-{   
+{
     /// encode arbitrary type to calldata,
     /// this is the main way to create a new calldata object.
-    /// 
+    ///
     /// the encoded types must satisfy [ScaleEncodeable] traits.
     fn from(value: T) -> Self {
         CallData(value.encode(), PhantomData)

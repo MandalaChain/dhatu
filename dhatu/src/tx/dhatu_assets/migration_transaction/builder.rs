@@ -1,4 +1,4 @@
-use crate::{tx::extrinsics::prelude::{reserve::FundsReserve}, types::NodeClient};
+use crate::{tx::extrinsics::prelude::reserve::FundsReserve, types::NodeClient};
 
 use super::{traits::MigrationTransactionBuilder, transaction::MigrationTransaction};
 
@@ -42,10 +42,7 @@ impl MigrationTransactionBuilder for MigrationTransactionBuilderStruct {
         self
     }
 
-    fn set_client(
-        &mut self,
-        client: NodeClient,
-    ) -> &mut Self {
+    fn set_client(&mut self, client: NodeClient) -> &mut Self {
         self.client = Some(client);
 
         self

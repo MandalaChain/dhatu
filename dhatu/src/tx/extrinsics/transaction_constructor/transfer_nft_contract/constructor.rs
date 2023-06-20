@@ -3,13 +3,17 @@ use std::str::FromStr;
 use parity_scale_codec::Encode;
 use subxt::utils::AccountId32;
 
-use crate::{tx::extrinsics::{
-    prelude::calldata::{CallData, },
-    transaction_constructor::{
-        calldata::ContractCall,
-        traits::{ScaleEncodeable, ToContractPayload, },
+use crate::{
+    error::ToPayloadError,
+    registrar::signer::WrappedExtrinsic,
+    tx::extrinsics::{
+        prelude::calldata::CallData,
+        transaction_constructor::{
+            calldata::ContractCall,
+            traits::{ScaleEncodeable, ToContractPayload},
+        },
     },
-}, registrar::signer::WrappedExtrinsic, error::ToPayloadError};
+};
 
 /// NFT transfer function arguments
 pub struct NftTransferAgrs {

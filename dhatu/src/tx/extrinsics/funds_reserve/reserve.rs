@@ -157,7 +157,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_check_funds_enough_balance() {
-        let result = mock_funds_reserve().await.check_funds(mock_address(), 100).await;
+        let result = mock_funds_reserve()
+            .await
+            .check_funds(mock_address(), 100)
+            .await;
 
         assert!(result.is_ok());
         assert!(result.unwrap());
@@ -165,7 +168,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_check_funds_insufficient_balance() {
-        let result = mock_funds_reserve().await.check_funds(mock_address(), std::u128::MAX).await;
+        let result = mock_funds_reserve()
+            .await
+            .check_funds(mock_address(), std::u128::MAX)
+            .await;
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), false)
@@ -173,21 +179,32 @@ mod tests {
 
     #[tokio::test]
     async fn test_transfer_funds_success() {
-        let result = mock_funds_reserve().await.transfer_funds(mock_address(), 100).await.unwrap();
+        let result = mock_funds_reserve()
+            .await
+            .transfer_funds(mock_address(), 100)
+            .await
+            .unwrap();
 
         match &result {
             ExtrinsicStatus::Pending => println!("transaction is pending"),
             ExtrinsicStatus::Failed(_) => panic!(),
             ExtrinsicStatus::Success(res) => {
-                let hash_str = res.hash(); 
-                println!("{:?}", hash_str);    
-            },        
+                let hash_str = res.hash();
+                println!("{:?}", hash_str);
+            }
         }
     }
 
     #[tokio::test]
     async fn test_check_and_transfer_insufficient_balance() {
-        let result = mock_funds_reserve().await.check_and_transfer(mock_address(), 4_500_000_000_000_000_000_000, 5_000_000_000_000_000_000_000).await;
+        let result = mock_funds_reserve()
+            .await
+            .check_and_transfer(
+                mock_address(),
+                4_500_000_000_000_000_000_000,
+                5_000_000_000_000_000_000_000,
+            )
+            .await;
 
         assert!(result.is_ok());
         assert!(result.unwrap().is_none());
@@ -195,7 +212,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_check_and_transfer_success() {
-        let result = mock_funds_reserve().await.check_and_transfer(mock_address(), 25_000, 30_0000).await;
+        let result = mock_funds_reserve()
+            .await
+            .check_and_transfer(mock_address(), 25_000, 30_0000)
+            .await;
 
         assert!(result.is_ok());
         assert!(result.unwrap().is_some());

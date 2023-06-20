@@ -1,15 +1,7 @@
-
-
-
-
-
-
-use super::{
-    calldata::{ContractCall},
-};
+use super::calldata::ContractCall;
 
 /// private traits. should not be exposed to the user.
-/// 
+///
 /// used to encode calldata into a pallet contracts call arguments payload.
 pub(crate) trait ToContractPayload: ValidateHash {
     fn to_payload(
@@ -27,7 +19,7 @@ pub trait ValidateHash {
     fn function_name() -> &'static str;
 }
 
-/// traits used to mark and properly encode rust data structure into 
+/// traits used to mark and properly encode rust data structure into
 /// a scale encoded byte array.
 pub trait ScaleEncodeable {
     fn encode(self) -> Vec<u8>;
