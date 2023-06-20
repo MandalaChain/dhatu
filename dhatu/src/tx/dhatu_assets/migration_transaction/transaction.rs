@@ -1,11 +1,11 @@
 use sp_core::sr25519::Pair;
 
 use crate::{
-    registrar::signer::TxBuilder,
-    tx::extrinsics::prelude::{
+    registrar::{signer::TxBuilder, key_manager::prelude::PublicAddress},
+    tx::extrinsics::{prelude::{
         extrinsics, reserve::FundsReserve, transfer_nft_contract::constructor::TransferNFT,
         ExtrinsicSubmitter,
-    },
+    }, transaction_constructor::calldata::Selector},
     types::NodeClient,
 };
 
