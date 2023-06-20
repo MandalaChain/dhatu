@@ -32,6 +32,10 @@ pub enum Error {
     /// error when signing transaction.
     #[error("error when signing transaction : {0}")]
     Sign(#[from] TxBuilderError),
+
+    /// error when parsing function selector
+    #[error("error when parsing function selector : {0}")]
+    Selector(#[from] SelectorError)
 }
 
 /// error related to keypair password generation.
@@ -103,4 +107,16 @@ pub enum ToPayloadError {
 pub enum TxBuilderError {
     #[error("{0}")]
     SignErorr(#[from] subxt::Error),
+}
+
+
+
+/// error that can happen when parsing function selector.
+#[derive(thiserror::Error, Debug)]
+pub enum SelectorError{
+    #[error("invalid length. selector length must be 4 bytes long!")]
+    InvalidLength,
+
+    #[error("invalid hex. selector must be a valid hex string!")]
+    NotHex
 }

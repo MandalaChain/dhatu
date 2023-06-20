@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, str::FromStr};
 use subxt::utils::{AccountId32, MultiAddress};
 
-use crate::error::ToPayloadError;
+use crate::error::{SelectorError, ToPayloadError};
 
 use super::{
     traits::{ScaleEncodeable, ToContractPayload, ValidateHash},
@@ -41,10 +41,10 @@ impl<T> From<CallData<T>> for Vec<u8> {
 impl<T> From<T> for CallData<T>
 where
     T: ScaleEncodeable,
-{   
+{
     /// encode arbitrary type to calldata,
     /// this is the main way to create a new calldata object.
-    /// 
+    ///
     /// the encoded types must satisfy [ScaleEncodeable] traits.
     fn from(value: T) -> Self {
         CallData(value.encode(), PhantomData)
@@ -75,6 +75,69 @@ impl<T> ValidateHash for CallData<T> {
 
     fn function_name() -> &'static str {
         "call"
+    }
+}
+
+/// contract function selector representation.
+/// typically used when we want to call a contract function.
+///
+/// this is will be the first 4 bytes of the calldata.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Selector(String);
+
+impl ToString for Selector {
+    fn to_string(&self) -> String {
+        self.0.clone()
+    }
+}
+
+impl FromStr for Selector {
+    type Err = crate::error::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::from_raw(s)
+    }
+}
+
+impl Selector {
+    pub fn from_raw(selector: &str) -> Result<Self, crate::error::Error> {
+        // strip prefix if any
+        let selector = selector.trim_start_matches("0x");
+        let bytes = hex::decode(selector).map_err(|_| SelectorError::NotHex)?;
+
+        match bytes.len() {
+            4 => Ok(Self(String::from(selector))),
+            _ => Err(SelectorError::InvalidLength)?,
+        }
+    }
+
+    //  TODO
+    // pub fn new_with_name(name:&str)->Self{
+
+    // }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_selector_from_str() {
+        let selector = Selector::from_str("0xcfdd9aa2");
+
+        match selector {
+            Ok(e) => assert!(true),
+            Err(e) => panic!("{:?}",e),
+        }
+    }
+
+    #[test]
+    fn test_selector_from_raw() {
+        let selector = Selector::from_raw("0xcfdd9aa2");
+        match selector {
+            Ok(e) => assert!(true),
+            Err(e) => panic!("{:?}",e),
+        }
     }
 }
 
