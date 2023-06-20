@@ -5,7 +5,7 @@
 use sp_core::sr25519::Pair;
 use subxt::{ext::scale_encode::EncodeAsFields, tx::PairSigner};
 
-use crate::types::{MandalaExtrinsics};
+use crate::types::{MandalaClient, MandalaExtrinsics};
 
 pub trait WrappedExtrinsic<T: EncodeAsFields> {
     fn into_inner(self) -> subxt::tx::Payload<T>;
@@ -16,21 +16,22 @@ pub struct TxBuilder;
 impl TxBuilder {
     /// create a new unsigned transaction from a transaction payload
     pub fn unsigned<T: EncodeAsFields>(
-        client: &crate::types::NodeClient,
+        client: &MandalaClient,
         payload: impl WrappedExtrinsic<T>,
     ) -> Result<MandalaExtrinsics, crate::error::Error> {
-        Ok(client.tx().create_unsigned(&payload.into_inner())?.into())
+        Ok(client.0.tx().create_unsigned(&payload.into_inner())?.into())
     }
 
     /// create a new signed transaction given a transaction payload
     pub async fn signed<T: EncodeAsFields>(
-        client: &crate::types::NodeClient,
+        client: &MandalaClient,
         acc: Pair,
         payload: impl WrappedExtrinsic<T>,
     ) -> Result<MandalaExtrinsics, crate::error::Error> {
         let signer = PairSigner::new(acc);
 
         let tx = client
+            .0
             .tx()
             .create_signed(&payload.into_inner(), &signer, Default::default())
             .await?
@@ -43,8 +44,8 @@ impl TxBuilder {
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
+    use subxt::error::DispatchError;
     pub(crate) use subxt::OnlineClient;
-    use subxt::{error::DispatchError};
 
     use sp_core::{crypto::Ss58Codec, Pair};
     use subxt::{
@@ -56,8 +57,8 @@ mod tests {
 
     use super::*;
 
-    async fn mock_client() -> crate::types::NodeClient {
-        OnlineClient::<MandalaConfig>::new().await.unwrap()
+    async fn mock_client() -> MandalaClient {
+        MandalaClient::dev().await.expect("node should be running")
     }
 
     // Generate an interface that we can use from the node's metadata.
@@ -73,11 +74,7 @@ mod tests {
         }
     }
 
-    fn mock_payload(
-        client: &crate::types::NodeClient,
-    ) -> MockWrappedExtrinsic<polkadot::balances::calls::types::Transfer> {
-        let _metadata = client.metadata();
-
+    fn mock_payload() -> MockWrappedExtrinsic<polkadot::balances::calls::types::Transfer> {
         let dest = mock_acc();
 
         MockWrappedExtrinsic(polkadot::tx().balances().transfer(dest, 0))
@@ -98,7 +95,7 @@ mod tests {
     #[tokio::test]
     async fn should_create_unsigned_tx() {
         let node_client = mock_client().await;
-        let payload = mock_payload(&node_client);
+        let payload = mock_payload();
 
         let extrinsic_result = TxBuilder::unsigned(&node_client, payload);
 
@@ -127,7 +124,7 @@ mod tests {
     #[tokio::test]
     async fn should_create_signed_tx() {
         let node_client = mock_client().await;
-        let payload = mock_payload(&node_client);
+        let payload = mock_payload();
 
         let pair = mock_pair();
         let extrinsic = TxBuilder::signed(&node_client, pair, payload)

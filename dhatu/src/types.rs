@@ -93,6 +93,12 @@ impl From<TransactionProgress> for MandalaTransactionProgress {
 #[derive(Clone)]
 pub struct MandalaClient(pub(crate) OnlineClient<MandalaConfig>);
 
+impl From<OnlineClient<MandalaConfig>> for MandalaClient{
+    fn from(value: OnlineClient<MandalaConfig>) -> Self {
+        Self(value)
+    }
+}
+
 impl MandalaClient {
     pub(crate) fn inner_internal(&self) -> &OnlineClient<MandalaConfig> {
         &self.0
