@@ -22,7 +22,7 @@ pub struct ExtrinsicFacade {
 
 impl ExtrinsicFacade {
     /// create new extrinsics facade.
-    pub fn new(client: MandalaClient) -> Self {
+    pub fn new(_client: MandalaClient) -> Self {
         let (tx_sender_channel, tx_receiver_channel) = Self::create_channel();
 
         let callback_executor = Executor::new();

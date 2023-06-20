@@ -4,7 +4,7 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::RwLock;
 
 use crate::{
-    types::{MandalaClient, MandalaTransactionProgress, SenderChannel}, tx::extrinsics::callback_executor::Url,
+    types::{MandalaTransactionProgress, SenderChannel}, tx::extrinsics::callback_executor::Url,
 };
 
 use super::{
