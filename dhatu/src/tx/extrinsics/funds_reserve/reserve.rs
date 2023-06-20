@@ -57,7 +57,7 @@ impl FundsReserve {
 
     ///  check if the account has enough funds to pay for the transaction.
     pub async fn check_funds(&self, account: PublicAddress, value: u128) -> Result<bool, Error> {
-        let client = self.client().inner();
+        let client = self.client().inner_internal();
 
         let address = subxt::dynamic::storage(
             Self::SYSTEM_PALLET,
@@ -104,7 +104,7 @@ impl FundsReserve {
         account: PublicAddress,
         value: u128,
     ) -> Result<ExtrinsicStatus, Error> {
-        let client = self.client().inner();
+        let client = self.client().inner_internal();
 
         let signer = PairSigner::new(self.reserve_signer().0.to_owned());
 

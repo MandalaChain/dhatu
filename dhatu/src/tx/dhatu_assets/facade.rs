@@ -66,7 +66,7 @@ impl DhatuAssetsFacade {
     ) {
         // TODO : optimize the migration with queue
         let mut tx_batch = Vec::new();
-        let client = self.client.inner();
+        let client = self.client.inner_internal();
 
         for asset in assets {
             let tx = MigrationTransactionBuilderStruct::new()

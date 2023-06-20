@@ -94,7 +94,12 @@ impl From<TransactionProgress> for MandalaTransactionProgress {
 pub struct MandalaClient(pub(crate) OnlineClient<MandalaConfig>);
 
 impl MandalaClient {
-    pub(crate) fn inner(&self) -> &OnlineClient<MandalaConfig> {
+    pub(crate) fn inner_internal(&self) -> &OnlineClient<MandalaConfig> {
+        &self.0
+    }
+
+    #[cfg(feature = "subxt")]
+    pub fn inner(&self) -> &OnlineClient<MandalaConfig> {
         &self.0
     }
 
