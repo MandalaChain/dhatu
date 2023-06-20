@@ -7,11 +7,11 @@ use subxt::{ext::scale_encode::EncodeAsFields, tx::PairSigner};
 
 use crate::types::{Extrinsic, MandalaExtrinsics};
 
-pub(crate) trait WrappedExtrinsic<T: EncodeAsFields> {
+pub trait WrappedExtrinsic<T: EncodeAsFields> {
     fn into_inner(self) -> subxt::tx::Payload<T>;
 }
 
-pub(crate) struct TxBuilder;
+pub struct TxBuilder;
 
 impl TxBuilder {
     /// create a new unsigned transaction from a transaction payload
