@@ -201,14 +201,14 @@ impl FromStr for PrivateKey {
 
     /// can only be interpreted from 64 bytes secret seed hex string. see [here](sp_core::Pair::from_string_with_seed) for more details.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let pair = Pair::from_string(s, None).map_err(|e| KeypairGenerationError::PrivateKey(e))?;
+        let pair = Pair::from_string(s, None).map_err(KeypairGenerationError::PrivateKey)?;
         Ok(Self(pair))
     }
 }
 
 impl From<Keypair> for PrivateKey {
     fn from(value: Keypair) -> Self {
-        PrivateKey(value.keypair.clone())
+        PrivateKey(value.keypair)
     }
 }
 
@@ -302,7 +302,7 @@ mod public_address_tests {
     #[test]
     fn test_from_private_key_to_public_address() {
         let keypair = sr25519::Pair::from_string("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
-        let private_key = PrivateKey { 0: keypair };
+        let private_key = PrivateKey(keypair);
 
         let public_address: PublicAddress = private_key.clone().into();
         assert_eq!(public_address, PublicAddress::from_str(private_key.0.public().to_ss58check().as_str()).unwrap());

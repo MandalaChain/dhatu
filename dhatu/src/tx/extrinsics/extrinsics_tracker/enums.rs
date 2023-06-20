@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use serde::Serialize;
 use sp_core::H256;
-use subxt::{blocks::ExtrinsicEvents, rpc::types::SubstrateTxStatus};
+use subxt::{blocks::ExtrinsicEvents};
 
 use crate::types::MandalaConfig;
 

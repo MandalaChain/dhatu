@@ -1,4 +1,4 @@
-use subxt::{tx::SubmittableExtrinsic, SubstrateConfig};
+use subxt::{tx::SubmittableExtrinsic};
 
 use crate::{tx::extrinsics::{prelude::{
      extrinsics::TransactionMessage,
