@@ -42,6 +42,7 @@ mockall = "0.11.4"
 sp-keyring = { version = "24.0.0" }
 mockito = "1.0.2"
 mandala-node-runner = { path = "../mandala-node-runner" }
+dhatu  ={ path = "../dhatu" , features = ["unstable"]}
 
 [features]
 default = ["tokio", "serde"]

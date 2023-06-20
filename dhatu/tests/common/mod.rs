@@ -1,8 +1,8 @@
-use dhatu;
+use dhatu::{self, types::MandalaClient};
 use mandala_node_runner;
 mod test_types;
 
-pub fn setup() -> (
+pub fn setup_node_and_client() -> (
     dhatu::types::MandalaClient,
     mandala_node_runner::SubstrateNode,
 ) {
@@ -18,6 +18,17 @@ pub fn setup() -> (
     let node_url = format!("127.0.0.1:{}", node.ws_port());
 }
 
-pub fn setup_dummy_721_contract() {
-    subxt::tx::Payload::new("Contract", "instantiate_with_code", call_data)
+pub async fn setup_dummy_721_contract(client:MandalaClient) {
+    let tx_payload = test_types::api::tx().contracts().instantiate_with_code(
+        value,
+        gas_limit,
+        storage_deposit_limit,
+        code,
+        data,
+        salt,
+    );
+
+    client.
+
+
 }
