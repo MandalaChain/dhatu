@@ -1,5 +1,7 @@
 mod common;
 
+use std::str::FromStr;
+
 use dhatu::{
     self,
     registrar::key_manager::keypair::PublicAddress,
@@ -30,8 +32,12 @@ async fn should_transfer_nft() {
 
     let _ = common::mint(&client, contract_address.clone(), alice.clone()).await;
 
+// TODO : should implement Fron<subxt::utils::AccountId32> for PublicAddress
+    let contract_address =
+        PublicAddress::from_str(&contract_address.to_string()).expect("static values are valid");
+
     let payload = TransferNFT::construct(
-        PublicAddress::from(contract_address),
+        contract_address,
         PublicAddress::from(bob),
         DEFAULT_NFT_TOKEN_ID,
         TRANSFER_FUNCTION_SELECTOR,
