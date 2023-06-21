@@ -38,6 +38,7 @@ pub const STATIC_GAS_LIMIT: Weight = Weight {
 
 const STATIC_MINT_STORAGE_DEPOSIT_LIMIT: Option<Compact<u128>> = Some(Compact(246_000_000_000_000));
 const STATIC_CONRTACT_SALT_LENGTH: u32 = 32;
+const CONSTRUCTOR_SELECTOR: &str = "0x9bae9d5e";
 
 pub async fn setup_node_and_client() -> dhatu::types::MandalaClient {
     let client = MandalaClient::dev()
@@ -63,6 +64,48 @@ fn generate_salt() -> Vec<u8> {
 }
 
 pub async fn setup_dummy_721_contract(client: &MandalaClient) -> subxt::utils::AccountId32 {
+    let contract_code = get_code_hash(client).await;
+    let mut constructor_selector = Selector::from_raw(CONSTRUCTOR_SELECTOR).unwrap();
+    let calldata = encode_calldata(constructor_selector);
+    let salt = generate_salt();
+
+    let instantiate_payload = test_types::api::tx().contracts().instantiate(
+        0,
+        STATIC_GAS_LIMIT,
+        Some(Compact(9000_000_000_000000)),
+        contract_code.code_hash,
+        calldata,
+        salt,
+    );
+
+    let signer = sp_keyring::Sr25519Keyring::Bob.pair();
+    let signer: PairSigner<PolkadotConfig, sp_core::sr25519::Pair> = PairSigner::new(signer);
+
+    let instantiate = client
+        .inner()
+        .tx()
+        .sign_and_submit_then_watch_default(&instantiate_payload, &signer)
+        .await
+        .expect("should instantiate a new dummy contract transaction successfuly! ")
+        .wait_for_finalized_success()
+        .await
+        .expect("should instantiate contract successfully");
+
+    let contract = instantiate
+        .find_first::<Instantiated>()
+        .expect("should emit instantiated event")
+        .expect("should find instantiated event");
+
+    contract.contract
+}
+
+fn encode_calldata(constructor_selector: Selector) -> Vec<u8> {
+    let mut calldata = Vec::new();
+    calldata.append(&mut constructor_selector.encoded());
+    calldata
+}
+
+async fn get_code_hash(client: &MandalaClient) -> CodeStored {
     let contract_code = std::fs::read("tests/common/erc721.wasm").expect("should read wasm file");
 
     let tx_payload =
@@ -98,48 +141,10 @@ pub async fn setup_dummy_721_contract(client: &MandalaClient) -> subxt::utils::A
         .find_first::<contracts::events::CodeStored>()
         .unwrap()
         .unwrap_or(static_code_hash_event);
+    
     println!("contract code hash: {:?}", contract_code.code_hash);
-
-    const CONSTRUCTOR_SELECTOR: &str = "0x9bae9d5e";
-    let mut constructor_selector = Selector::from_raw(CONSTRUCTOR_SELECTOR).unwrap();
-
-    let mut calldata = Vec::new();
-
-    calldata.append(&mut constructor_selector.encoded());
-
-    let salt = generate_salt();
-
-    let instantiate_payload = test_types::api::tx().contracts().instantiate(
-        0,
-        STATIC_GAS_LIMIT,
-        Some(Compact(9000_000_000_000000)),
-        contract_code.code_hash,
-        calldata,
-        salt,
-    );
-
-    let signer = sp_keyring::Sr25519Keyring::Bob.pair();
-    let signer: PairSigner<PolkadotConfig, sp_core::sr25519::Pair> = PairSigner::new(signer);
-
-    let instantiate = client
-        .inner()
-        .tx()
-        .sign_and_submit_then_watch_default(&instantiate_payload, &signer)
-        .await
-        .expect("should instantiate a new dummy contract transaction successfuly! ")
-        .wait_for_finalized_success()
-        .await
-        .expect("should instantiate contract successfully");
-
-    let contract = instantiate
-        .find_first::<Instantiated>()
-        .expect("should emit instantiated event")
-        .expect("should find instantiated event");
-
-    contract.contract
-
-    // AccountId32::from_str("5G6Y6DQHnaZD1c428uxYnkeUAND8Me59KEvB9gXzviA9p29g")
-    //     .expect("static value are valid")
+    
+    contract_code
 }
 
 impl WrappedExtrinsic<contracts::calls::types::Call>
