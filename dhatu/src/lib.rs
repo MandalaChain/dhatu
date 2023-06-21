@@ -30,6 +30,6 @@ pub mod tx;
 /// global crate level types, code inside this modules is meant to be used globally.
 pub mod types;
 
-/// node runtime types, consist of types that are specific to mandala node.
-/// should not be exposed to the end user.
-pub(crate) mod runtime_types;
+/// raw node runtime types, consist of types that are specific to mandala node.
+/// generated using subxt.
+pub mod runtime_types;

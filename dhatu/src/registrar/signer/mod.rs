@@ -69,6 +69,7 @@ mod tests {
     use std::str::FromStr;
     use subxt::error::DispatchError;
     pub(crate) use subxt::OnlineClient;
+    use crate::runtime_types::api as mandala;
 
     use sp_core::{crypto::Ss58Codec, Pair};
     use subxt::{
@@ -85,8 +86,8 @@ mod tests {
     }
 
     // Generate an interface that we can use from the node's metadata.
-    #[subxt::subxt(runtime_metadata_path = "./src/registrar/signer/polkadot_metadata_small.scale")]
-    pub mod polkadot {}
+    // #[subxt::subxt(runtime_metadata_path = "./src/mandala_metadata.scale")]
+    // pub mod mandala {}
 
     // Mock implementation of `WrappedExtrinsic` for testing
     struct MockWrappedExtrinsic<T: EncodeAsFields>(subxt::tx::Payload<T>);
@@ -97,10 +98,10 @@ mod tests {
         }
     }
 
-    fn mock_payload() -> MockWrappedExtrinsic<polkadot::balances::calls::types::Transfer> {
+    fn mock_payload() -> MockWrappedExtrinsic<mandala::balances::calls::types::Transfer> {
         let dest = mock_acc();
 
-        MockWrappedExtrinsic(polkadot::tx().balances().transfer(dest, 0))
+        MockWrappedExtrinsic(mandala::tx().balances().transfer(dest, 0))
     }
 
     fn mock_acc() -> MultiAddress<AccountId32, ()> {
