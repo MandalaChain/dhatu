@@ -39,6 +39,29 @@ impl TxBuilder {
 
         Ok(tx)
     }
+
+    /// create a new signed transaction given a transaction payload and account nonce.
+    ///
+    /// 99.99% of the time, you would want `TxBuilder::signed` instead. it detects the nonce automatically.
+    ///
+    /// this is used to mainly create transaction batch due to it needing different nonce for each transaction,
+    /// but the nonce is not updated until the transaction is submitted.
+    pub fn signed_with_nonce<T: EncodeAsFields>(
+        client: &MandalaClient,
+        acc: Pair,
+        nonce: u32,
+        payload: impl WrappedExtrinsic<T>,
+    ) -> Result<MandalaExtrinsics, crate::error::Error> {
+        let signer = PairSigner::new(acc);
+
+        let tx = client
+            .0
+            .tx()
+            .create_signed_with_nonce(&payload.into_inner(), &signer, nonce, Default::default())?
+            .into();
+
+        Ok(tx)
+    }
 }
 
 #[cfg(test)]
@@ -129,6 +152,31 @@ mod tests {
         let pair = mock_pair();
         let extrinsic = TxBuilder::signed(&node_client, pair, payload)
             .await
+            .unwrap()
+            .0;
+
+        let _dry_run_result = extrinsic.dry_run(None).await.unwrap();
+        let actual_result = extrinsic.submit().await;
+        assert!(actual_result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn should_create_signed_tx_with_nonce() {
+        let node_client = mock_client().await;
+        let payload = mock_payload();
+
+        let pair = mock_pair();
+
+        let query_signer = PairSigner::<MandalaConfig, sp_core::sr25519::Pair>::new(pair.clone());
+        let query_pair = query_signer.account_id();
+        let nonce = node_client
+            .0
+            .rpc()
+            .system_account_next_index(query_pair)
+            .await
+            .unwrap();
+
+        let extrinsic = TxBuilder::signed_with_nonce(&node_client, pair, nonce, payload)
             .unwrap()
             .0;
 

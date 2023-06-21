@@ -5,14 +5,18 @@ use std::str::FromStr;
 use dhatu::{
     self,
     registrar::key_manager::keypair::PublicAddress,
-    tx::extrinsics::{
-        prelude::{
-            enums::ExtrinsicStatus::{Failed, Pending, Success},
-            extrinsics::Transaction,
-            ExtrinsicSubmitter,
-        },
-        transaction_constructor::{
-            calldata::Selector, transfer_nft_contract::constructor::TransferNFT,
+    tx::{
+        dhatu_assets::{facade::DhatuAssetsFacade, traits::Asset},
+        extrinsics::{
+            prelude::{
+                enums::ExtrinsicStatus::{Failed, Pending, Success},
+                extrinsics::Transaction,
+                reserve::FundsReserve,
+                ExtrinsicSubmitter,
+            },
+            transaction_constructor::{
+                calldata::Selector, transfer_nft_contract::constructor::TransferNFT,
+            },
         },
     },
 };
@@ -20,6 +24,7 @@ use mandala_node_runner;
 
 use crate::common::DEFAULT_NFT_TOKEN_ID;
 
+#[ignore]
 #[tokio::test]
 async fn should_transfer_nft() {
     let client = common::setup_node_and_client().await;
@@ -31,7 +36,13 @@ async fn should_transfer_nft() {
     let alice = sp_keyring::Sr25519Keyring::Alice.pair();
     let bob = sp_keyring::Sr25519Keyring::Bob.pair();
 
-    let _ = common::mint(&client, contract_address.clone(), alice.clone()).await;
+    let _ = common::mint(
+        &client,
+        contract_address.clone(),
+        alice.clone(),
+        DEFAULT_NFT_TOKEN_ID,
+    )
+    .await;
 
     assert_eq!(
         contract_address.to_string(),

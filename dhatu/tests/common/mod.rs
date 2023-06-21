@@ -11,7 +11,7 @@ use dhatu::{
         extrinsics::{
             prelude::{extrinsics::Transaction, ExtrinsicSubmitter},
             transaction_constructor::calldata::Selector,
-        },
+        }, dhatu_assets::traits::Asset,
     },
     types::MandalaClient,
 };
@@ -29,7 +29,7 @@ use self::test_types::api::{
 };
 mod test_types;
 
-pub const DEFAULT_NFT_TOKEN_ID: u32 = 11;
+pub const DEFAULT_NFT_TOKEN_ID: u32 = 0;
 
 pub const STATIC_GAS_LIMIT: Weight = Weight {
     ref_time: 500_000_000_000,
@@ -39,6 +39,7 @@ pub const STATIC_GAS_LIMIT: Weight = Weight {
 const STATIC_MINT_STORAGE_DEPOSIT_LIMIT: Option<Compact<u128>> = Some(Compact(246_000_000_000_000));
 const STATIC_CONRTACT_SALT_LENGTH: u32 = 32;
 const CONSTRUCTOR_SELECTOR: &str = "0x9bae9d5e";
+const MINT_FUNCTION_SELECTOR: &str = "cfdd9aa2";
 
 pub async fn setup_node_and_client() -> dhatu::types::MandalaClient {
     let client = MandalaClient::dev()
@@ -141,9 +142,9 @@ async fn get_code_hash(client: &MandalaClient) -> CodeStored {
         .find_first::<contracts::events::CodeStored>()
         .unwrap()
         .unwrap_or(static_code_hash_event);
-    
+
     println!("contract code hash: {:?}", contract_code.code_hash);
-    
+
     contract_code
 }
 
@@ -155,16 +156,13 @@ impl WrappedExtrinsic<contracts::calls::types::Call>
     }
 }
 
-pub async fn mint(client: &MandalaClient, address: PublicAddress, to: Pair) {
-    const MINT_FUNCTION_SELECTOR: &str = "cfdd9aa2";
+pub async fn mint(client: &MandalaClient, address: PublicAddress, to: Pair, token_id: u32) {
     let mut mint_function_selector = Selector::from_raw(MINT_FUNCTION_SELECTOR).unwrap();
 
     let mut calldata = Vec::new();
 
     calldata.append(&mut mint_function_selector.encoded());
-    calldata.append(&mut subxt::ext::codec::Encode::encode(
-        &DEFAULT_NFT_TOKEN_ID,
-    ));
+    calldata.append(&mut subxt::ext::codec::Encode::encode(&token_id));
 
     let payload = test_types::api::tx()
         .contracts()
@@ -186,37 +184,73 @@ pub async fn mint(client: &MandalaClient, address: PublicAddress, to: Pair) {
         tx::extrinsics::prelude::enums::ExtrinsicStatus::Success(v) => v.into_inner(),
         _ => panic!("should mint successfully!"),
     };
+}
 
-    // let tx = client
-    //     .inner()
-    //     .tx()
-    //     .sign_and_submit_then_watch_default(&payload, &signer)
-    //     .await
-    //     .expect("should submit mint transaction successfuly!")
-    //     .wait_for_finalized_success()
-    //     .await;
-    // // .expect("should mint successfully!");
+pub async fn batch_mint(
+    client: &MandalaClient,
+    contract_address: PublicAddress,
+    to: Pair,
+    amount: u32,
+) -> Vec<DummyAsset> {
+    let mut token_id = DEFAULT_NFT_TOKEN_ID;
 
-    // let tx = match tx {
-    //     Ok(v) => v,
-    //     Err(e) => match e {
-    //         subxt::Error::Runtime(e) => match e {
-    //             subxt::error::DispatchError::Other => panic!(" other error "),
-    //             subxt::error::DispatchError::CannotLookup => panic!(" cannot lookup "),
-    //             subxt::error::DispatchError::BadOrigin => panic!(" bad origin "),
-    //             subxt::error::DispatchError::Module(e) => panic!("module error : {e}"),
-    //             subxt::error::DispatchError::ConsumerRemaining => panic!(" consumer remaining "),
-    //             subxt::error::DispatchError::NoProviders => panic!(" no providers "),
-    //             subxt::error::DispatchError::TooManyConsumers => panic!(" too many consumers "),
-    //             subxt::error::DispatchError::Token(_) => panic!(" token error "),
-    //             subxt::error::DispatchError::Arithmetic(_) => panic!(" arithmetic error "),
-    //             subxt::error::DispatchError::Transactional(_) => panic!(" transactional error "),
-    //             subxt::error::DispatchError::Exhausted => panic!(" exhausted "),
-    //             subxt::error::DispatchError::Corruption => panic!(" corruption "),
-    //             subxt::error::DispatchError::Unavailable => panic!(" unavailable "),
-    //             _ => todo!(),
-    //         },
-    //         _ => todo!(),
-    //     },
-    // };
+    // we put the tx in a vector to be executed pararelly later
+    let mut txs = vec![];
+
+    // dummy assets minted
+    let mut assets = vec![];
+
+    for _ in 0..amount {
+        let tx = mint(client, contract_address.clone(), to.clone(), token_id);
+        txs.push(tx);
+
+        let asset = DummyAsset::new(
+            contract_address.clone(),
+            token_id,
+            Selector::from_raw(MINT_FUNCTION_SELECTOR).unwrap(),
+        );
+
+        assets.push(asset);
+
+        token_id += 1;
+    }
+
+    // execute batch tx
+    futures::future::join_all(txs).await;
+
+    assets
+}
+
+pub struct DummyAsset {
+    contract_address: PublicAddress,
+    token_id: u32,
+    function_selector: Selector,
+}
+
+impl DummyAsset {
+    pub fn new(
+        contract_address: PublicAddress,
+        token_id: u32,
+        function_selector: Selector,
+    ) -> Self {
+        Self {
+            contract_address,
+            token_id,
+            function_selector,
+        }
+    }
+}
+
+impl Asset for DummyAsset {
+    fn contract_address(&self) -> PublicAddress {
+        self.contract_address.clone()
+    }
+
+    fn token_id(&self) -> u32 {
+        self.token_id
+    }
+
+    fn function_selector(&self) -> Selector {
+        self.function_selector.clone()
+    }
 }
