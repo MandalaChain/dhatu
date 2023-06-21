@@ -1,6 +1,20 @@
 use std::{any::Any, str::FromStr};
 
-use dhatu::{self, registrar::key_manager::keypair::PublicAddress, tx, types::MandalaClient};
+use dhatu::{
+    self,
+    registrar::{
+        key_manager::keypair::PublicAddress,
+        signer::{TxBuilder, WrappedExtrinsic},
+    },
+    tx::{
+        self,
+        extrinsics::{
+            prelude::{extrinsics::Transaction, ExtrinsicSubmitter},
+            transaction_constructor::calldata::Selector,
+        },
+    },
+    types::MandalaClient,
+};
 use mandala_node_runner;
 use parity_scale_codec::{Compact, Encode};
 use sp_core::sr25519::Pair;
@@ -14,7 +28,7 @@ use self::test_types::api::{
 };
 mod test_types;
 
-pub const DEFAULT_NFT_TOKEN_ID: u32 = 2;
+pub const DEFAULT_NFT_TOKEN_ID: u32 = 11;
 
 pub const STATIC_GAS_LIMIT: Weight = Weight {
     ref_time: 500_000_000_000,
@@ -120,62 +134,80 @@ pub async fn setup_dummy_721_contract(client: &MandalaClient) -> subxt::utils::A
 
     // contract.contract
 
-    AccountId32::from_str("5DC9QH2sXi9yBmr9deRhXmYhb6aWpPdmek7GiZSrp6MSK97N")
+    AccountId32::from_str("5G6Y6DQHnaZD1c428uxYnkeUAND8Me59KEvB9gXzviA9p29g")
         .expect("static value are valid")
 }
 
-pub async fn mint(client: &MandalaClient, address: AccountId32, to: Pair) {
+impl WrappedExtrinsic<contracts::calls::types::Call>
+    for subxt::tx::Payload<contracts::calls::types::Call>
+{
+    fn into_inner(self) -> subxt::tx::Payload<contracts::calls::types::Call> {
+        self
+    }
+}
+
+pub async fn mint(client: &MandalaClient, address: PublicAddress, to: Pair) {
     const MINT_FUNCTION_SELECTOR: &str = "cfdd9aa2";
-    let mut mint_function_selector = hex::decode(MINT_FUNCTION_SELECTOR).expect("valid hex string");
+    let mut mint_function_selector = Selector::from_raw(MINT_FUNCTION_SELECTOR).unwrap();
 
     let mut calldata = Vec::new();
 
-    calldata.append(&mut mint_function_selector);
+    calldata.append(&mut mint_function_selector.encoded());
     calldata.append(&mut subxt::ext::codec::Encode::encode(
         &DEFAULT_NFT_TOKEN_ID,
     ));
 
-    let contract_arguments = (MINT_FUNCTION_SELECTOR, DEFAULT_NFT_TOKEN_ID).encode();
+    let payload = test_types::api::tx()
+        .contracts()
+        .call(
+            subxt::utils::MultiAddress::Id(AccountId32::from(address)),
+            0,                // default value to trf to contract
+            STATIC_GAS_LIMIT, // static gas limit
+            STATIC_MINT_STORAGE_DEPOSIT_LIMIT,
+            calldata,
+        )
+        .unvalidated();
+    // let signer: PairSigner<PolkadotConfig, Pair> = PairSigner::new(to);
 
-    let payload = test_types::api::tx().contracts().call(
-        subxt::utils::MultiAddress::Id(address),
-        0,                // default value to trf to contract
-        STATIC_GAS_LIMIT, // static gas limit
-        STATIC_MINT_STORAGE_DEPOSIT_LIMIT,
-        calldata,
-    ).unvalidated();
-    let signer: PairSigner<PolkadotConfig, Pair> = PairSigner::new(to);
+    let tx = TxBuilder::signed(client, to, payload).await.unwrap();
+    let tx = ExtrinsicSubmitter::submit(tx).await.unwrap();
 
-    let tx = client
-        .inner()
-        .tx()
-        .sign_and_submit_then_watch_default(&payload, &signer)
-        .await
-        .expect("should submit mint transaction successfuly!")
-        .wait_for_finalized_success()
-        .await;
-    // .expect("should mint successfully!");
-
+    let tx = Transaction::wait(tx).await;
     let tx = match tx {
-        Ok(v) => v,
-        Err(e) => match e {
-            subxt::Error::Runtime(e) => match e {
-                subxt::error::DispatchError::Other => panic!(" other error "),
-                subxt::error::DispatchError::CannotLookup => panic!(" cannot lookup "),
-                subxt::error::DispatchError::BadOrigin => panic!(" bad origin "),
-                subxt::error::DispatchError::Module(e) => panic!("module error : {e}"),
-                subxt::error::DispatchError::ConsumerRemaining => panic!(" consumer remaining "),
-                subxt::error::DispatchError::NoProviders => panic!(" no providers "),
-                subxt::error::DispatchError::TooManyConsumers => panic!(" too many consumers "),
-                subxt::error::DispatchError::Token(_) => panic!(" token error "),
-                subxt::error::DispatchError::Arithmetic(_) => panic!(" arithmetic error "),
-                subxt::error::DispatchError::Transactional(_) => panic!(" transactional error "),
-                subxt::error::DispatchError::Exhausted => panic!(" exhausted "),
-                subxt::error::DispatchError::Corruption => panic!(" corruption "),
-                subxt::error::DispatchError::Unavailable => panic!(" unavailable "),
-                _ => todo!(),
-            },
-            _ => todo!(),
-        },
+        tx::extrinsics::prelude::enums::ExtrinsicStatus::Success(v) => v.into_inner(),
+        _ => panic!("should mint successfully!"),
     };
+
+    // let tx = client
+    //     .inner()
+    //     .tx()
+    //     .sign_and_submit_then_watch_default(&payload, &signer)
+    //     .await
+    //     .expect("should submit mint transaction successfuly!")
+    //     .wait_for_finalized_success()
+    //     .await;
+    // // .expect("should mint successfully!");
+
+    // let tx = match tx {
+    //     Ok(v) => v,
+    //     Err(e) => match e {
+    //         subxt::Error::Runtime(e) => match e {
+    //             subxt::error::DispatchError::Other => panic!(" other error "),
+    //             subxt::error::DispatchError::CannotLookup => panic!(" cannot lookup "),
+    //             subxt::error::DispatchError::BadOrigin => panic!(" bad origin "),
+    //             subxt::error::DispatchError::Module(e) => panic!("module error : {e}"),
+    //             subxt::error::DispatchError::ConsumerRemaining => panic!(" consumer remaining "),
+    //             subxt::error::DispatchError::NoProviders => panic!(" no providers "),
+    //             subxt::error::DispatchError::TooManyConsumers => panic!(" too many consumers "),
+    //             subxt::error::DispatchError::Token(_) => panic!(" token error "),
+    //             subxt::error::DispatchError::Arithmetic(_) => panic!(" arithmetic error "),
+    //             subxt::error::DispatchError::Transactional(_) => panic!(" transactional error "),
+    //             subxt::error::DispatchError::Exhausted => panic!(" exhausted "),
+    //             subxt::error::DispatchError::Corruption => panic!(" corruption "),
+    //             subxt::error::DispatchError::Unavailable => panic!(" unavailable "),
+    //             _ => todo!(),
+    //         },
+    //         _ => todo!(),
+    //     },
+    // };
 }

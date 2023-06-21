@@ -35,8 +35,10 @@ impl ScaleEncodeable for NftTransferAgrs {
         let mut calldata = Vec::new();
 
         calldata.append(&mut self.function_selector.encoded());
-        calldata.append(&mut AccountId32::from(self.to).encode());
-        calldata.append(&mut self.id.encode());
+
+        let mut args = subxt::ext::codec::Encode::encode(&(AccountId32::from(self.to), self.id));
+
+        calldata.append(&mut args);
 
         calldata
     }
@@ -59,13 +61,14 @@ const STATIC_GAS_LIMIT: Weight = Weight {
 impl TransferNFT {
     /// encode payload calldata.
     fn encode_calldata(
+        address: PublicAddress,
         to: PublicAddress,
         token_id: u32,
         function_selector: Selector,
     ) -> Result<Payload<Call>, crate::error::Error> {
-        let args = NftTransferAgrs::new(function_selector, to.clone(), token_id);
+        let args = NftTransferAgrs::new(function_selector, to, token_id);
 
-        let dest = MultiAddress::Id(AccountId32::from(to));
+        let dest = MultiAddress::Id(AccountId32::from(address));
 
         // unvalidate the payload because the interface most likely won't change but the runtime version will.
         let payload = runtime_types::api::tx()
@@ -89,8 +92,8 @@ impl TransferNFT {
         token_id: u32,
         function_selector: Selector,
     ) -> Result<NftTransferPayload, crate::error::Error> {
-        let calldata = Self::encode_calldata(to, token_id, function_selector)?;
-        
+        let calldata = Self::encode_calldata(address, to, token_id, function_selector)?;
+
         Ok(calldata.into())
     }
 }
