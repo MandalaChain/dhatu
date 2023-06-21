@@ -43,6 +43,7 @@ sp-keyring = { version = "24.0.0" }
 mockito = "1.0.2"
 mandala-node-runner = { path = "../mandala-node-runner" }
 dhatu  ={ path = "../dhatu" , features = ["unstable"]}
+# wabt = "0.10.0"
 
 [features]
 default = ["tokio", "serde"]

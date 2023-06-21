@@ -20,11 +20,12 @@ use mandala_node_runner;
 
 use crate::common::DEFAULT_NFT_TOKEN_ID;
 
+#[tokio::test]
 async fn should_transfer_nft() {
-    const TRANSFER_FUNCTION_SELECTOR: Selector =
+    let transfer_function_selector: Selector =
         Selector::from_raw("0x84a15da1").expect("static values are valid");
 
-    let (client, _node) = common::setup_node_and_client().await;
+    let client  = common::setup_node_and_client().await;
     let contract_address = common::setup_dummy_721_contract(&client).await;
 
     let alice = sp_keyring::Sr25519Keyring::Alice.pair();
@@ -32,7 +33,7 @@ async fn should_transfer_nft() {
 
     let _ = common::mint(&client, contract_address.clone(), alice.clone()).await;
 
-// TODO : should implement Fron<subxt::utils::AccountId32> for PublicAddress
+    // TODO : should implement Fron<subxt::utils::AccountId32> for PublicAddress
     let contract_address =
         PublicAddress::from_str(&contract_address.to_string()).expect("static values are valid");
 
@@ -40,7 +41,7 @@ async fn should_transfer_nft() {
         contract_address,
         PublicAddress::from(bob),
         DEFAULT_NFT_TOKEN_ID,
-        TRANSFER_FUNCTION_SELECTOR,
+        transfer_function_selector,
     )
     .expect("static values are valid");
 
@@ -56,7 +57,11 @@ async fn should_transfer_nft() {
 
     match progress {
         Pending => panic!("transaction should not be pending"),
-        Failed(reason) => panic!("transaction shouldn't failed: {:?}", reason),
+        Failed(e) => {
+            let reason = &e.inner()[..1000];
+
+            panic!("transaction shouldn't failed: {:?}", reason);
+        }
         Success(_) => assert!(true),
     }
 }
