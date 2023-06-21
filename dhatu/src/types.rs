@@ -1,6 +1,6 @@
 use subxt::{
     tx::{SubmittableExtrinsic, TxProgress},
-    OnlineClient, PolkadotConfig,
+    OnlineClient, PolkadotConfig, SubstrateConfig,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 

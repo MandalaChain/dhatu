@@ -1,17 +1,16 @@
-
-
 use parity_scale_codec::Encode;
-use subxt::utils::AccountId32;
+use subxt::{
+    tx::Payload,
+    utils::{AccountId32, MultiAddress},
+};
 
 use crate::{
     registrar::{key_manager::prelude::PublicAddress, signer::WrappedExtrinsic},
-    tx::extrinsics::{
-        prelude::calldata::CallData,
-        transaction_constructor::{
-            calldata::{ContractCall, Selector},
-            traits::{ScaleEncodeable, ToContractPayload},
-        },
+    runtime_types::{
+        self,
+        api::{contracts::calls::types::Call, runtime_types::sp_weights::weight_v2::Weight},
     },
+    tx::extrinsics::transaction_constructor::{calldata::Selector, traits::ScaleEncodeable},
 };
 
 /// NFT transfer function arguments
@@ -33,26 +32,57 @@ impl NftTransferAgrs {
 
 impl ScaleEncodeable for NftTransferAgrs {
     fn encode(self) -> Vec<u8> {
-        let selector = self.function_selector.to_string();
-        let to = AccountId32::from(self.to);
+        let mut calldata = Vec::new();
 
-        (selector, to, self.id).encode()
+        calldata.append(&mut self.function_selector.encoded());
+
+        let mut args = subxt::ext::codec::Encode::encode(&(AccountId32::from(self.to), self.id));
+
+        calldata.append(&mut args);
+
+        calldata
     }
 }
 
 /// NFT transfer extrinsic constructor.
 pub struct TransferNFT;
 
+const DEFAULT_PROOF_SIZE: u64 = 500_000_000_000;
+const DEFAULT_REF_TIME: u64 = 1_000_000_000;
+
+const DEFAULT_TX_VALUE: u128 = 0;
+const DEFAULT_DEPOSIT_LIMIT: u128 = 0;
+
+const STATIC_GAS_LIMIT: Weight = Weight {
+    ref_time: 500_000_000_000,
+    proof_size: 11111111111,
+};
+
 impl TransferNFT {
     /// encode payload calldata.
     fn encode_calldata(
+        address: PublicAddress,
         to: PublicAddress,
         token_id: u32,
         function_selector: Selector,
-    ) -> Result<CallData<NftTransferAgrs>, crate::error::Error> {
+    ) -> Result<Payload<Call>, crate::error::Error> {
         let args = NftTransferAgrs::new(function_selector, to, token_id);
 
-        Ok(args.into())
+        let dest = MultiAddress::Id(AccountId32::from(address));
+
+        // unvalidate the payload because the interface most likely won't change but the runtime version will.
+        let payload = runtime_types::api::tx()
+            .contracts()
+            .call(
+                dest,
+                DEFAULT_TX_VALUE,
+                STATIC_GAS_LIMIT,
+                None,
+                args.encode(),
+            )
+            .unvalidated();
+
+        Ok(payload)
     }
 
     /// construct nft transfer extrinsic payload.
@@ -62,23 +92,23 @@ impl TransferNFT {
         token_id: u32,
         function_selector: Selector,
     ) -> Result<NftTransferPayload, crate::error::Error> {
-        Self::encode_calldata(to, token_id, function_selector)?
-            .to_payload(address)
-            .map(|v| v.into())
+        let calldata = Self::encode_calldata(address, to, token_id, function_selector)?;
+
+        Ok(calldata.into())
     }
 }
 
 /// NFT transfer extrinsic payload.
-pub struct NftTransferPayload(subxt::tx::Payload<ContractCall>);
+pub struct NftTransferPayload(subxt::tx::Payload<Call>);
 
-impl WrappedExtrinsic<ContractCall> for NftTransferPayload {
-    fn into_inner(self) -> subxt::tx::Payload<ContractCall> {
+impl WrappedExtrinsic<Call> for NftTransferPayload {
+    fn into_inner(self) -> subxt::tx::Payload<Call> {
         self.0
     }
 }
 
-impl From<subxt::tx::Payload<ContractCall>> for NftTransferPayload {
-    fn from(value: subxt::tx::Payload<ContractCall>) -> Self {
+impl From<subxt::tx::Payload<Call>> for NftTransferPayload {
+    fn from(value: subxt::tx::Payload<Call>) -> Self {
         Self(value)
     }
 }

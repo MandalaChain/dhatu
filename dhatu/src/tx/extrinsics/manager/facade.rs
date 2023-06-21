@@ -37,7 +37,7 @@ impl ExtrinsicFacade {
     }
 
     /// internal function. should not be exposed to the user.
-    /// 
+    ///
     /// this will stop watching the transaction and execute the callback if there's any.
     /// this will be executed in a separate tokio task.
     fn initialize_receive_task(

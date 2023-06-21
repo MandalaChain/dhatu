@@ -28,6 +28,8 @@ mod extrinsic_submitter_tests {
     use crate::tx::extrinsics::extrinsics_submitter::ExtrinsicSubmitter;
     use crate::types::MandalaConfig;
     use crate::types::MandalaExtrinsics;
+    use sp_core::crypto::Pair as CryptoPair;
+    use sp_core::sr25519::Pair;
     use std::str::FromStr;
     pub(crate) use subxt::OnlineClient;
 

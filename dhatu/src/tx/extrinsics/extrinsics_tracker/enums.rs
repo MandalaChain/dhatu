@@ -48,14 +48,13 @@ impl From<String> for Reason {
     }
 }
 
-
 /// extrinsic result. contains events associated with the extrinsic.
-/// 
+///
 /// note that for now, to access the raw events, you need to enable `unstable_sp_core` feature flag.
 /// this restriction will be lifted in the future.
-/// 
+///
 /// currently only supports returning the extrinsic hash.
-/// 
+///
 // TODO : provide a way to access the inner events without depending on subxt and sp_core types.
 #[derive(Debug)]
 pub struct ExtrinsicResult(Arc<ExtrinsicEvents<MandalaConfig>>);
