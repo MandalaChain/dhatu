@@ -28,7 +28,7 @@ use self::test_types::api::{
     contracts::{self, events::Instantiated},
     runtime_types::{pallet_contracts::wasm::Determinism, sp_weights::weight_v2::Weight},
 };
-mod test_types;
+use dhatu::runtime_types as test_types;
 
 pub const DEFAULT_NFT_TOKEN_ID: u32 = 0;
 
@@ -149,13 +149,6 @@ async fn get_code_hash(client: &MandalaClient) -> CodeStored {
     contract_code
 }
 
-impl WrappedExtrinsic<contracts::calls::types::Call>
-    for subxt::tx::Payload<contracts::calls::types::Call>
-{
-    fn into_inner(self) -> subxt::tx::Payload<contracts::calls::types::Call> {
-        self
-    }
-}
 
 pub async fn mint(client: &MandalaClient, address: PublicAddress, to: Pair, token_id: u32) {
     let mut mint_function_selector = Selector::from_raw(MINT_FUNCTION_SELECTOR).unwrap();
@@ -175,9 +168,16 @@ pub async fn mint(client: &MandalaClient, address: PublicAddress, to: Pair, toke
             calldata,
         )
         .unvalidated();
-    // let signer: PairSigner<PolkadotConfig, Pair> = PairSigner::new(to);
+    let signer: PairSigner<PolkadotConfig, Pair> = PairSigner::new(to);
 
-    let tx = TxBuilder::signed(client, to, payload).await.unwrap();
+    let tx = client
+        .inner()
+        .tx()
+        .create_signed(&payload, &signer, Default::default())
+        .await
+        .unwrap()
+        .into();
+
     let tx = ExtrinsicSubmitter::submit(tx).await.unwrap();
 
     let tx = Transaction::wait(tx).await;
