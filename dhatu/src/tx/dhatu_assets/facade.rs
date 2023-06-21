@@ -64,7 +64,8 @@ impl DhatuAssetsFacade {
         reserve: &FundsReserve,
         notifier: MigrationTransactionResultNotifier,
     ) {
-        // TODO : optimize the migration with queue
+        // TODO : optimize the migration with batch transaction
+        // using nonce tracker for the funds reserve and asse owner.
         let mut tx_batch = Vec::new();
         let client = self.client.inner_internal();
 
@@ -91,7 +92,11 @@ impl DhatuAssetsFacade {
         }
 
         // TODO : refactor this to executes the futures in pararell
-        let transactions = future::join_all(tx_batch);
+        let transactions = async move {
+            for tx in tx_batch {
+                tx.await;
+            }
+        };
         tokio::task::spawn(transactions);
     }
 }

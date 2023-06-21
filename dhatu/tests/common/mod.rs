@@ -8,10 +8,11 @@ use dhatu::{
     },
     tx::{
         self,
+        dhatu_assets::traits::Asset,
         extrinsics::{
             prelude::{extrinsics::Transaction, ExtrinsicSubmitter},
             transaction_constructor::calldata::Selector,
-        }, dhatu_assets::traits::Asset,
+        },
     },
     types::MandalaClient,
 };
@@ -216,7 +217,10 @@ pub async fn batch_mint(
     }
 
     // execute batch tx
-    futures::future::join_all(txs).await;
+    // maybe execute in parallel?
+    for tx in txs {
+        tx.await;
+    }
 
     assets
 }
