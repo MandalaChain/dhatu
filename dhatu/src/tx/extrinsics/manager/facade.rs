@@ -4,7 +4,7 @@ use crate::{
         callback_executor::Url, extrinsics_tracker::extrinsics::TransactionMessage,
         prelude::enums::Hash,
     },
-    types::{MandalaClient, MandalaExtrinsics, ReceiverChannel, SenderChannel},
+    types::{InternalChannels, MandalaClient, MandalaExtrinsics, ReceiverChannel, SenderChannel},
 };
 
 use super::super::{
@@ -22,9 +22,10 @@ pub struct ExtrinsicFacade {
 
 impl ExtrinsicFacade {
     /// create new extrinsics facade.
-    pub fn new(_client: MandalaClient) -> Self {
-        let (tx_sender_channel, tx_receiver_channel) = Self::create_channel();
-
+    pub fn new(
+        tx_sender_channel: SenderChannel<TransactionMessage>,
+        tx_receiver_channel: ReceiverChannel<TransactionMessage>,
+    ) -> Self {
         let callback_executor = Executor::new();
         let tx_watcher = ExtrinsicWatcher::new();
 
@@ -78,13 +79,5 @@ impl ExtrinsicFacade {
             .await;
 
         Ok(tx)
-    }
-
-    /// create new channels for message communcation.
-    pub fn create_channel() -> (
-        SenderChannel<TransactionMessage>,
-        ReceiverChannel<TransactionMessage>,
-    ) {
-        tokio::sync::mpsc::unbounded_channel::<TransactionMessage>()
     }
 }

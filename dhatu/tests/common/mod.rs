@@ -66,7 +66,7 @@ fn generate_salt() -> Vec<u8> {
 }
 
 pub async fn setup_dummy_721_contract(client: &MandalaClient) -> subxt::utils::AccountId32 {
-    let contract_code = get_code_hash(client).await;
+    let contract_code = deploy_erc721_dummy_contract(client).await;
     let mut constructor_selector = Selector::from_raw(CONSTRUCTOR_SELECTOR).unwrap();
     let calldata = encode_calldata(constructor_selector);
     let salt = generate_salt();
@@ -107,23 +107,17 @@ fn encode_calldata(constructor_selector: Selector) -> Vec<u8> {
     calldata
 }
 
-async fn get_code_hash(client: &MandalaClient) -> CodeStored {
-    let contract_code = std::fs::read("tests/common/erc721.wasm").expect("should read wasm file");
+pub async fn deploy_erc721_dummy_contract(client: &MandalaClient) -> CodeStored {
+    let tx_payload = get_dummy_deploy_contract_payload();
 
-    let tx_payload =
-        test_types::api::tx()
-            .contracts()
-            .upload_code(contract_code, None, Determinism::Enforced);
+    let signer = mock_alice_pair();
 
-    let signer = sp_keyring::Sr25519Keyring::Alice.pair();
-    let signer: PairSigner<PolkadotConfig, sp_core::sr25519::Pair> = PairSigner::new(signer);
+    let upload_code = initiate_deploy_contract_txs(client, tx_payload, signer).await;
 
-    let upload_code = client
-        .inner()
-        .tx()
-        .sign_and_submit_then_watch_default(&tx_payload, &signer)
+    let upload_code_events = upload_code
+        .submit_and_watch()
         .await
-        .expect("should deploy a new dummy contract transaction successfuly! ")
+        .expect("should submit tx successfully")
         .wait_for_finalized_success()
         .await
         .expect("should upload contract successfully");
@@ -139,7 +133,7 @@ async fn get_code_hash(client: &MandalaClient) -> CodeStored {
         code_hash: static_code_hash,
     };
 
-    let contract_code = upload_code
+    let contract_code = upload_code_events
         .find_first::<contracts::events::CodeStored>()
         .unwrap()
         .unwrap_or(static_code_hash_event);
@@ -149,6 +143,37 @@ async fn get_code_hash(client: &MandalaClient) -> CodeStored {
     contract_code
 }
 
+pub fn mock_alice_pair() -> PairSigner<PolkadotConfig, Pair> {
+    let signer = sp_keyring::Sr25519Keyring::Alice.pair();
+    let signer: PairSigner<PolkadotConfig, sp_core::sr25519::Pair> = PairSigner::new(signer);
+    signer
+}
+
+pub fn get_dummy_deploy_contract_payload() -> subxt::tx::Payload<contracts::calls::types::UploadCode>
+{
+    let contract_code = std::fs::read("tests/common/erc721.wasm").expect("should read wasm file");
+
+    let tx_payload =
+        test_types::api::tx()
+            .contracts()
+            .upload_code(contract_code, None, Determinism::Enforced);
+    tx_payload
+}
+
+pub async fn initiate_deploy_contract_txs(
+    client: &MandalaClient,
+    tx_payload: subxt::tx::Payload<contracts::calls::types::UploadCode>,
+    signer: PairSigner<PolkadotConfig, Pair>,
+) -> subxt::tx::SubmittableExtrinsic<PolkadotConfig, subxt::OnlineClient<PolkadotConfig>> {
+    let upload_code = client
+        .inner()
+        .tx()
+        .create_signed(&tx_payload, &signer, Default::default())
+        .await
+        .expect("should create a new dummy contract signed transaction successfuly! ");
+
+    upload_code
+}
 
 pub async fn mint(client: &MandalaClient, address: PublicAddress, to: Pair, token_id: u32) {
     let mut mint_function_selector = Selector::from_raw(MINT_FUNCTION_SELECTOR).unwrap();

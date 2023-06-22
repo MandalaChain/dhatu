@@ -21,19 +21,6 @@ pub struct DhatuAssetsFacade {
 }
 
 impl DhatuAssetsFacade {
-    /// create a new notifier and receiver for migration transaction result.
-    ///
-    /// note that the notifier and receiver is unbounded.
-    #[cfg(feature = "tokio")]
-    pub fn create_channels() -> (
-        MigrationTransactionResultNotifier,
-        MigrationTransactionResultReceiver,
-    ) {
-        tokio::sync::mpsc::unbounded_channel()
-    }
-}
-
-impl DhatuAssetsFacade {
     pub fn new(mandala_client: MandalaClient) -> Self {
         Self {
             client: mandala_client,
@@ -55,7 +42,7 @@ impl DhatuAssetsFacade {
     /// note that the it will send the transaction result on every transaction instead of waiting
     /// all of the transaction to complete.
     ///
-    /// you can create the notifier and receiver using `DhatuAssetsFacade::create_channels()`.
+    /// you can create the notifier and receiver using [internal channels](crate::types::InternalChannels).
     pub fn migrate(
         &self,
         assets: Vec<impl Asset>,
