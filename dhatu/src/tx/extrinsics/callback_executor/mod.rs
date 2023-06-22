@@ -16,6 +16,12 @@ pub struct Executor {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Url(pub(crate) reqwest::Url);
 
+impl ToString for Url {
+    fn to_string(&self) -> String {
+        self.0.to_string()
+    }
+}
+
 impl Url {
     /// create new url from string slice.
     pub fn new(url: &str) -> Result<Self, Error> {

@@ -25,6 +25,7 @@ pub struct InternalChannels<Message> {
     sender: SenderChannel<Message>,
 }
 
+
 impl<Message> From<SenderChannel<Message>> for InternalChannels<Message> {
     fn from(value: SenderChannel<Message>) -> Self {
         Self {
@@ -49,7 +50,7 @@ impl<Message> InternalChannels<Message> {
         Default::default()
     }
 
-    /// must be called only once, will panic if called twice
+    /// must be called only once, will panic if called twice.
     pub fn get_receiver(&mut self) -> ReceiverChannel<Message> {
         self.receiver.take().expect("should be called only once")
     }
@@ -93,7 +94,7 @@ impl From<TransactionProgress> for MandalaTransactionProgress {
 #[derive(Clone)]
 pub struct MandalaClient(pub(crate) OnlineClient<MandalaConfig>);
 
-impl From<OnlineClient<MandalaConfig>> for MandalaClient{
+impl From<OnlineClient<MandalaConfig>> for MandalaClient {
     fn from(value: OnlineClient<MandalaConfig>) -> Self {
         Self(value)
     }

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use serde::Serialize;
 use sp_core::H256;
-use subxt::{blocks::ExtrinsicEvents};
+use subxt::blocks::ExtrinsicEvents;
 
 use crate::types::MandalaConfig;
 
@@ -17,6 +17,32 @@ pub enum ExtrinsicStatus {
     Failed(Reason),
     /// transaction is included in a finalized block.
     Success(ExtrinsicResult),
+}
+
+impl ExtrinsicStatus {
+    /// Returns `true` if the extrinsic status is [`Pending`].
+    ///
+    /// [`Pending`]: ExtrinsicStatus::Pending
+    #[must_use]
+    pub fn is_pending(&self) -> bool {
+        matches!(self, Self::Pending)
+    }
+
+    /// Returns `true` if the extrinsic status is [`Failed`].
+    ///
+    /// [`Failed`]: ExtrinsicStatus::Failed
+    #[must_use]
+    pub fn is_failed(&self) -> bool {
+        matches!(self, Self::Failed(..))
+    }
+
+    /// Returns `true` if the extrinsic status is [`Success`].
+    ///
+    /// [`Success`]: ExtrinsicStatus::Success
+    #[must_use]
+    pub fn is_success(&self) -> bool {
+        matches!(self, Self::Success(..))
+    }
 }
 
 impl Default for ExtrinsicStatus {

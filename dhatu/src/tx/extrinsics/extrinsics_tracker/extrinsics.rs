@@ -176,17 +176,17 @@ impl Transaction {
 }
 
 #[cfg(test)]
-mod transaction_tests{
-    use crate::registrar::signer::TxBuilder;
-    use crate::tx::extrinsics::manager::facade::ExtrinsicFacade;
-    use std::str::FromStr;
-    pub(crate) use subxt::OnlineClient;
-    use crate::tx::extrinsics::extrinsics_submitter::ExtrinsicSubmitter;
-    use crate::types::MandalaConfig;
-    use crate::registrar::key_manager::prelude::PublicAddress;
-    use crate::types::MandalaExtrinsics;
+mod transaction_tests {
     use super::*;
+    use crate::registrar::key_manager::prelude::PublicAddress;
+    use crate::registrar::signer::TxBuilder;
+    use crate::tx::extrinsics::extrinsics_submitter::ExtrinsicSubmitter;
+    use crate::tx::extrinsics::manager::facade::ExtrinsicFacade;
+    use crate::types::MandalaConfig;
+    use crate::types::MandalaExtrinsics;
+    use std::str::FromStr;
     use std::sync::mpsc;
+    pub(crate) use subxt::OnlineClient;
 
     fn mock_pair() -> sp_core::sr25519::Pair {
         sp_keyring::Sr25519Keyring::Alice.pair()
@@ -195,29 +195,29 @@ mod transaction_tests{
         OnlineClient::<MandalaConfig>::new().await.unwrap()
     }
     async fn create_tx_progress() -> MandalaTransactionProgress {
-    let address = "5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb";
-    let new_address = PublicAddress::from_str(address).unwrap();
-    let pair = mock_pair();
-    let node_client = mock_client().await;
+        let address = "5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb";
+        let new_address = PublicAddress::from_str(address).unwrap();
+        let pair = mock_pair();
+        let node_client = mock_client().await;
 
-    let value = 10000;
-    // Create the payload using the `construct` function from `BalanceTransfer`
-    let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(new_address, value);
-    let extrinsic = TxBuilder::signed(&node_client, pair, payload)
-        .await
-        .unwrap().0;
+        let value = 10000;
+        // Create the payload using the `construct` function from `BalanceTransfer`
+        let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(new_address, value);
+        let extrinsic = TxBuilder::signed(&node_client.into(), pair, payload)
+            .await
+            .unwrap()
+            .0;
 
-    // Create a mock MandalaExtrinsics object
-    let tx = MandalaExtrinsics::new(extrinsic);
-    let tx_progress = ExtrinsicSubmitter::submit(tx).await.unwrap();
+        // Create a mock MandalaExtrinsics object
+        let tx = MandalaExtrinsics::new(extrinsic);
+        let tx_progress = ExtrinsicSubmitter::submit(tx).await.unwrap();
 
-    tx_progress
-}
+        tx_progress
+    }
     // Create a sample MandalaTransactionProgress and other required variables
     #[tokio::test]
-   async fn new_transaction_tests(){
+    async fn new_transaction_tests() {
         let tx_progress = create_tx_progress().await;
-        let (sender, _receiver) = ExtrinsicFacade::create_channel();
         let callback = "https://example.net/a/b/c.png";
 
         let reqwest_url = reqwest::Url::parse(callback).expect("Failed to parse the callback URL");
@@ -225,27 +225,27 @@ mod transaction_tests{
 
         let extrinsic_hash = tx_progress.0.extrinsic_hash();
 
-        let result = Transaction::new(tx_progress, Some(sender), Some(url));
+        let result = Transaction::new(tx_progress, None, Some(url));
 
         assert_eq!(result.id, extrinsic_hash);
-
-
     }
     #[tokio::test]
     async fn test_process_transaction() {
         // Create a mock MandalaTransactionProgress
         let tx_progress = create_tx_progress().await;
-        let (sender, _receiver) = ExtrinsicFacade::create_channel();
         let callback = "https://example.net/a/b/c.png";
-          let reqwest_url = reqwest::Url::parse(callback).expect("Failed to parse the callback URL");
+        let reqwest_url = reqwest::Url::parse(callback).expect("Failed to parse the callback URL");
         let url = Url(reqwest_url);
 
-        let mut result_receiver = Transaction::process_transaction(tx_progress, Some(sender), Some(url));
+        let mut result_receiver = Transaction::process_transaction(tx_progress, None, Some(url));
 
         let result = result_receiver.try_recv();
 
         // Add assertions or further checks as needed
-        assert!(result.is_err(), "Result receiver should not have received any values yet");
+        assert!(
+            result.is_err(),
+            "Result receiver should not have received any values yet"
+        );
     }
     #[tokio::test]
     async fn wait_tests() {
@@ -256,26 +256,23 @@ mod transaction_tests{
 
         let status = Transaction::wait(tx_progress).await;
         // Assert the expected outcome based on the mock implementation
-       match status {
-        ExtrinsicStatus::Success(_) => {
-            // Handle the success case
-            // Add assertions or further checks as needed
-            assert!(true, "Extrinsic was finalized successfully");
-        }
-        ExtrinsicStatus::Failed(reason) => {
-            // Handle the failure case
-            // Add assertions or further checks as needed
-            // assert!(false, "Extrinsic failed to finalize");
-            panic!("{:?}", reason);
-        }
-        ExtrinsicStatus::Pending => {
-            // Handle the pending case
-            // Add assertions or further checks as needed
-            assert!(false, "Extrinsic is still pending");
+        match status {
+            ExtrinsicStatus::Success(_) => {
+                // Handle the success case
+                // Add assertions or further checks as needed
+                assert!(true, "Extrinsic was finalized successfully");
+            }
+            ExtrinsicStatus::Failed(reason) => {
+                // Handle the failure case
+                // Add assertions or further checks as needed
+                // assert!(false, "Extrinsic failed to finalize");
+                panic!("{:?}", reason);
+            }
+            ExtrinsicStatus::Pending => {
+                // Handle the pending case
+                // Add assertions or further checks as needed
+                assert!(false, "Extrinsic is still pending");
+            }
         }
     }
-    }
-
-    
-
 }
