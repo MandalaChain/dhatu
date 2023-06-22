@@ -22,14 +22,15 @@ pub struct ExtrinsicFacade {
 
 impl ExtrinsicFacade {
     /// create new extrinsics facade.
-    pub fn new(
-        tx_sender_channel: SenderChannel<TransactionMessage>,
-        tx_receiver_channel: ReceiverChannel<TransactionMessage>,
-    ) -> Self {
+    pub fn new(mut channels: InternalChannels<TransactionMessage>) -> Self {
+        let tx_receiver_channel = channels.get_receiver();
+
         let callback_executor = Executor::new();
         let tx_watcher = ExtrinsicWatcher::new();
 
         Self::initialize_receive_task(tx_watcher.clone(), callback_executor, tx_receiver_channel);
+
+        let tx_sender_channel = channels.sender().clone();
 
         Self {
             transaction_watcher: tx_watcher,
@@ -48,6 +49,7 @@ impl ExtrinsicFacade {
     ) {
         let recv = async move {
             loop {
+                // its okay to use unwrap
                 let msg = tx_receiver_channel.recv().await.unwrap();
 
                 tx_watcher.stop_watching(msg.id()).await;
@@ -79,5 +81,10 @@ impl ExtrinsicFacade {
             .await;
 
         Ok(tx)
+    }
+
+    /// inner tx watcher
+    pub fn watcher(&self) -> &ExtrinsicWatcher {
+        &self.transaction_watcher
     }
 }
