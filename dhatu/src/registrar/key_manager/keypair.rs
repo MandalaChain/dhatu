@@ -201,14 +201,14 @@ impl FromStr for PrivateKey {
 
     /// can only be interpreted from 64 bytes secret seed hex string. see [here](sp_core::Pair::from_string_with_seed) for more details.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let pair = Pair::from_string(s, None).map_err(|e| KeypairGenerationError::PrivateKey(e))?;
+        let pair = Pair::from_string(s, None).map_err(KeypairGenerationError::PrivateKey)?;
         Ok(Self(pair))
     }
 }
 
 impl From<Keypair> for PrivateKey {
     fn from(value: Keypair) -> Self {
-        PrivateKey(value.keypair.clone())
+        PrivateKey(value.keypair)
     }
 }
 
@@ -228,19 +228,36 @@ impl From<Pair> for PrivateKey {
 mod keypair_tests {
     use std::str::FromStr;
 
-    use sp_core::{sr25519, Pair};
     use super::*;
+    use sp_core::{sr25519, Pair};
 
     #[test]
     fn test_keypair_new() {
         let password_hash = Password::new();
-        let phrase = MnemonicPhrase::new("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
-        let pub_key = PublicAddress::from_str("5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb").unwrap();
-        let pair = sr25519::Pair::from_string("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
+        let phrase = MnemonicPhrase::new(
+            "endorse doctor arch helmet master dragon wild favorite property mercy vault maze",
+            None,
+        )
+        .unwrap();
+        let pub_key =
+            PublicAddress::from_str("5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb").unwrap();
+        let pair = sr25519::Pair::from_string(
+            "endorse doctor arch helmet master dragon wild favorite property mercy vault maze",
+            None,
+        )
+        .unwrap();
 
-        let keypair = Keypair::new(Some(password_hash.clone()), phrase.clone(), pub_key.clone(), pair.clone());
+        let keypair = Keypair::new(
+            Some(password_hash.clone()),
+            phrase.clone(),
+            pub_key.clone(),
+            pair.clone(),
+        );
 
-        assert_eq!(keypair.password_hash().unwrap().as_str(), password_hash.as_str());
+        assert_eq!(
+            keypair.password_hash().unwrap().as_str(),
+            password_hash.as_str()
+        );
         assert_eq!(*keypair.phrase(), phrase);
         assert_eq!(*keypair.pub_key(), pub_key);
         assert_eq!(keypair.keypair.public(), pair.public());
@@ -291,21 +308,35 @@ mod public_address_tests {
         let public_address: PublicAddress = keypair.clone().into();
         assert_eq!(public_address, keypair.pub_key);
     }
-    
+
     #[test]
     fn test_from_pair_to_public_address() {
-        let keypair = sr25519::Pair::from_string("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
+        let keypair = sr25519::Pair::from_string(
+            "endorse doctor arch helmet master dragon wild favorite property mercy vault maze",
+            None,
+        )
+        .unwrap();
         let public_address: PublicAddress = keypair.clone().into();
-        assert_eq!(public_address, PublicAddress::from_str(keypair.public().to_ss58check().as_str()).unwrap());
+        assert_eq!(
+            public_address,
+            PublicAddress::from_str(keypair.public().to_ss58check().as_str()).unwrap()
+        );
     }
 
     #[test]
     fn test_from_private_key_to_public_address() {
-        let keypair = sr25519::Pair::from_string("endorse doctor arch helmet master dragon wild favorite property mercy vault maze", None).unwrap();
+        let keypair = sr25519::Pair::from_string(
+            "endorse doctor arch helmet master dragon wild favorite property mercy vault maze",
+            None,
+        )
+        .unwrap();
         let private_key = PrivateKey { 0: keypair };
 
         let public_address: PublicAddress = private_key.clone().into();
-        assert_eq!(public_address, PublicAddress::from_str(private_key.0.public().to_ss58check().as_str()).unwrap());
+        assert_eq!(
+            public_address,
+            PublicAddress::from_str(private_key.0.public().to_ss58check().as_str()).unwrap()
+        );
     }
 }
 
@@ -315,7 +346,8 @@ mod mnemonic_phrase_tests {
 
     #[test]
     fn test_new_with_valid_phrase() {
-        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        let phrase =
+            "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
         let password = Some(Password::new());
         let result = MnemonicPhrase::new(phrase, password);
         assert!(result.is_ok());
@@ -324,7 +356,8 @@ mod mnemonic_phrase_tests {
 
     #[test]
     fn test_new_with_invalid_phrase() {
-        let phrase = "sample tornado pen frog valley library velvet figure guitar powder mirror churn";
+        let phrase =
+            "sample tornado pen frog valley library velvet figure guitar powder mirror churn";
         let password = Some(Password::new());
         let result = MnemonicPhrase::new(phrase, password);
         assert!(result.is_err());
@@ -332,7 +365,8 @@ mod mnemonic_phrase_tests {
 
     #[test]
     fn test_new_without_password() {
-        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        let phrase =
+            "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
         let result = MnemonicPhrase::new(phrase, None);
         assert!(result.is_ok());
         assert_eq!(result.unwrap().inner(), phrase);
@@ -340,7 +374,8 @@ mod mnemonic_phrase_tests {
 
     #[test]
     fn test_inner() {
-        let phrase = "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
+        let phrase =
+            "endorse doctor arch helmet master dragon wild favorite property mercy vault maze";
         let mnemonic = MnemonicPhrase::new(phrase, None).unwrap();
         assert_eq!(mnemonic.inner(), phrase);
     }
@@ -348,8 +383,8 @@ mod mnemonic_phrase_tests {
 
 #[cfg(test)]
 mod private_key_tests {
-    use crate::registrar::key_manager::KeyManager;
     use super::*;
+    use crate::registrar::key_manager::KeyManager;
 
     #[test]
     fn test_public_address() {

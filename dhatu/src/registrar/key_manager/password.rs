@@ -104,7 +104,6 @@ impl Password {
 
         random_string
     }
-    
 }
 #[cfg(test)]
 mod password_tests {
@@ -120,22 +119,21 @@ mod password_tests {
     fn test_password_from_str_valid() {
         let password_str = "2ff7a050bef5dd0b2982f6538287acde";
         let password = Password::from_str(password_str).unwrap();
-        assert_eq!(password.0, password_str,"valid password");
+        assert_eq!(password.0, password_str, "valid password");
     }
 
     #[test]
     fn test_password_from_str_invalid() {
         let password_str = "shortpwd";
         let result = Password::from_str(password_str);
-        assert!(result.is_err(),"invalid password");
+        assert!(result.is_err(), "invalid password");
     }
-     #[test]
+    #[test]
     fn test_gen_hash() {
         let email = "test@example.com";
         let password = "password123";
 
         let hash = Password::gen_hash(email, password);
-
 
         let expected_hash = Password::gen_hash(email, password);
 
@@ -144,7 +142,7 @@ mod password_tests {
         let expected_hash_str = Password::to_hex(expected_hash);
 
         // Perform assertions on the hash or its properties
-        assert_eq!(hash_str, expected_hash_str,"hash");
+        assert_eq!(hash_str, expected_hash_str, "hash");
     }
 
     #[test]
@@ -175,7 +173,7 @@ mod password_tests {
     #[test]
 
     fn test_generate_random_string() {
-         // Define the desired length of the random string
+        // Define the desired length of the random string
         let length = DEFAULT_PASSWORD_LENGTH;
 
         // Generate a random string using the generate_random_string function
@@ -186,9 +184,5 @@ mod password_tests {
 
         // Check if the generated string only contains alphanumeric characters
         assert!(random_string.chars().all(|c| c.is_ascii_alphanumeric()));
-
     }
- 
 }
-
-

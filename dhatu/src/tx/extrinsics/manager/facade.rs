@@ -22,7 +22,7 @@ pub struct ExtrinsicFacade {
 
 impl ExtrinsicFacade {
     /// create new extrinsics facade.
-    pub fn new(client: MandalaClient) -> Self {
+    pub fn new(_client: MandalaClient) -> Self {
         let (tx_sender_channel, tx_receiver_channel) = Self::create_channel();
 
         let callback_executor = Executor::new();
@@ -37,7 +37,7 @@ impl ExtrinsicFacade {
     }
 
     /// internal function. should not be exposed to the user.
-    /// 
+    ///
     /// this will stop watching the transaction and execute the callback if there's any.
     /// this will be executed in a separate tokio task.
     fn initialize_receive_task(

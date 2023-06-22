@@ -4,14 +4,20 @@
 
 use sp_core::sr25519::Pair;
 
-use crate::{tx::extrinsics::{
-    prelude::{extrinsics::Transaction as RunningTransaction, reserve::FundsReserve},
-}, types::NodeClient};
+use crate::{
+    tx::extrinsics::prelude::{
+        extrinsics::Transaction as RunningTransaction, reserve::FundsReserve,
+    },
+    types::NodeClient,
+};
 
-use super::{types::{
-    MigrationTask as Task, MigrationTransaction as Transaction, MigrationTransactionPayload,
-    MigrationTransactionResultNotifier,
-}, transaction, };
+use super::{
+    transaction,
+    types::{
+        MigrationTask as Task, MigrationTransaction as Transaction, MigrationTransactionPayload,
+        MigrationTransactionResultNotifier,
+    },
+};
 
 pub(crate) trait MigrationTask {
     fn construct_payload(
@@ -32,8 +38,7 @@ pub(crate) trait MigrationProcess {
     fn start(&mut self);
 }
 
-pub(crate) trait MigrationTransactionBuilder
-{
+pub(crate) trait MigrationTransactionBuilder {
     fn new() -> Self;
 
     fn set_signer(&mut self, signer: Pair) -> &mut Self;
@@ -61,7 +66,4 @@ pub(crate) trait MigrationTransactionAttributes {
     fn inner_tx(&self) -> Option<&Transaction>;
 }
 
-pub(crate) trait MigrationTransaction:
-    MigrationTransactionAttributes
-{
-}
+pub(crate) trait MigrationTransaction: MigrationTransactionAttributes {}

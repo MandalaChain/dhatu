@@ -71,6 +71,26 @@ impl Transaction {
 
         status.clone()
     }
+
+    fn infer_err(e: subxt::Error) -> ExtrinsicStatus {
+        match e {
+            subxt::Error::Io(_) => todo!(),
+            subxt::Error::Codec(_) => todo!(),
+            subxt::Error::Rpc(_) => todo!(),
+            subxt::Error::Serialization(_) => todo!(),
+            subxt::Error::Metadata(_) => todo!(),
+            subxt::Error::MetadataDecoding(_) => todo!(),
+            subxt::Error::Runtime(e) => ExtrinsicStatus::Failed(format!("{e}").into()),
+            subxt::Error::Decode(_) => todo!(),
+            subxt::Error::Encode(_) => todo!(),
+            subxt::Error::Transaction(_) => todo!(),
+            subxt::Error::Block(_) => todo!(),
+            subxt::Error::StorageAddress(_) => todo!(),
+            subxt::Error::Unknown(_) => todo!(),
+            subxt::Error::Other(_) => todo!(),
+            _ => todo!(),
+        }
+    }
 }
 
 impl Transaction {
@@ -124,7 +144,7 @@ impl Transaction {
 
         match status {
             Ok(tx) => ExtrinsicStatus::Success(tx.into()),
-            Err(e) => ExtrinsicStatus::Failed(e.to_string().into()),
+            Err(e) => Self::infer_err(e),
         }
     }
     /// create channel for sending transaction status.

@@ -1,17 +1,12 @@
-use sp_core::{sr25519::Pair};
+use sp_core::sr25519::Pair;
 
 use crate::{
-    registrar::signer::TxBuilder,
-    tx::extrinsics::{
-        prelude::{
-            extrinsics,
-            ExtrinsicSubmitter,
-            transfer_nft_contract::{
-                constructor::TransferNFT,
-            },
-             reserve::FundsReserve,
-        },
-    }, types::NodeClient,
+    registrar::{signer::TxBuilder, key_manager::prelude::PublicAddress},
+    tx::extrinsics::{prelude::{
+        extrinsics, reserve::FundsReserve, transfer_nft_contract::constructor::TransferNFT,
+        ExtrinsicSubmitter,
+    }, transaction_constructor::calldata::Selector},
+    types::NodeClient,
 };
 
 use super::{
@@ -59,13 +54,13 @@ impl MigrationTransaction {
     /// usuallly called first.
     pub fn construct_payload(
         mut self,
-        address: &str,
-        to: &str,
-        token_id: i64,
-        function_selector: &str,
+        address: PublicAddress,
+        to: PublicAddress,
+        token_id: u32,
+        function_selector: Selector,
     ) -> Self {
         let tx =
-            TransferNFT::construct(address, to, token_id, function_selector.to_string()).unwrap();
+            TransferNFT::construct(address, to, token_id, function_selector).unwrap();
 
         self.payload = Some(tx);
 
@@ -81,7 +76,7 @@ impl MigrationTransaction {
             .take()
             .expect("migration payload not constructed");
 
-        let tx = TxBuilder::signed(&client, acc, payload)
+        let tx = TxBuilder::signed(&client.into(), acc, payload)
             .await
             .expect("should sign transaction");
 
@@ -92,7 +87,7 @@ impl MigrationTransaction {
 
     /// ensure enough gas for the transaction.
     /// currently this automatically transfer funds regardless of quota threshold.
-    /// 
+    ///
     /// will send [9mu](STATIC_NFT_TRANSFER_FEE) to the signer.
     pub async fn ensure_enough_gas(self) -> Self {
         let account = self.signer.clone().into();
@@ -121,9 +116,7 @@ impl MigrationTransaction {
     }
 }
 
-impl MigrationTransactionAttributes
-    for MigrationTransaction
-{
+impl MigrationTransactionAttributes for MigrationTransaction {
     fn signer(&self) -> &Pair {
         &self.signer
     }
