@@ -7,6 +7,8 @@ use subxt::{ext::scale_encode::EncodeAsFields, tx::PairSigner};
 
 use crate::types::{MandalaClient, MandalaExtrinsics};
 
+use super::key_manager::prelude::PrivateKey;
+
 pub trait WrappedExtrinsic<T: EncodeAsFields> {
     fn into_inner(self) -> subxt::tx::Payload<T>;
 }
@@ -25,10 +27,10 @@ impl TxBuilder {
     /// create a new signed transaction given a transaction payload
     pub async fn signed<T: EncodeAsFields>(
         client: &MandalaClient,
-        acc: Pair,
+        acc: PrivateKey,
         payload: impl WrappedExtrinsic<T>,
     ) -> Result<MandalaExtrinsics, crate::error::Error> {
-        let signer = PairSigner::new(acc);
+        let signer = PairSigner::new(acc.0);
 
         let tx = client
             .0
@@ -66,10 +68,10 @@ impl TxBuilder {
 
 #[cfg(test)]
 mod tests {
+    use crate::runtime_types::api as mandala;
     use std::str::FromStr;
     use subxt::error::DispatchError;
     pub(crate) use subxt::OnlineClient;
-    use crate::runtime_types::api as mandala;
 
     use sp_core::{crypto::Ss58Codec, Pair};
     use subxt::{
@@ -151,7 +153,7 @@ mod tests {
         let payload = mock_payload();
 
         let pair = mock_pair();
-        let extrinsic = TxBuilder::signed(&node_client, pair, payload)
+        let extrinsic = TxBuilder::signed(&node_client, pair.into(), payload)
             .await
             .unwrap()
             .0;

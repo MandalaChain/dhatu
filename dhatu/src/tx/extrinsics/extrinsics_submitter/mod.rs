@@ -49,7 +49,7 @@ mod extrinsic_submitter_tests {
         let value = rand::random();
         // Create the payload using the `construct` function from `BalanceTransfer`
         let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(new_address, value);
-        let extrinsic = TxBuilder::signed(&node_client.into(), pair, payload)
+        let extrinsic = TxBuilder::signed(&node_client.into(), pair.into(), payload)
             .await
             .unwrap()
             .0;
@@ -75,7 +75,7 @@ mod extrinsic_submitter_tests {
         let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(new_address, value);
 
         // Introduce a failure by using an invalid client for signing
-        let extrinsic = TxBuilder::signed(&node_client.into(), pair, payload)
+        let extrinsic = TxBuilder::signed(&node_client.into(), pair.into(), payload)
             .await
             .unwrap()
             .0;

@@ -76,7 +76,7 @@ impl MigrationTransaction {
             .take()
             .expect("migration payload not constructed");
 
-        let tx = TxBuilder::signed(&client.into(), acc, payload)
+        let tx = TxBuilder::signed(&client.into(), acc.into(), payload)
             .await
             .expect("should sign transaction");
 

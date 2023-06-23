@@ -65,7 +65,7 @@ async fn should_transfer_nft() {
     )
     .expect("static values are valid");
 
-    let tx = dhatu::registrar::signer::TxBuilder::signed(&client, alice, payload)
+    let tx = dhatu::registrar::signer::TxBuilder::signed(&client, alice.into(), payload)
         .await
         .expect("static values are valid");
 
