@@ -132,15 +132,21 @@ impl MandalaClient {
     }
 }
 
+/// a blockchain currency unit. abstracts away the pains of dealing with decimals.
+/// this struct automatically parses the decimals and amount and converts them to a valid `u128` under the hood.
+///
+/// use this to mainly deal with currency. e.g transfering, balances, etc.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Unit {
     amount: Decimal,
     decimals: u8,
 }
 
-const GENERIC_SUBSTRATE_DECIMALS: u8 = 12;
+pub const GENERIC_SUBSTRATE_DECIMALS: u8 = 12;
 
 impl Unit {
+    /// create a new blockchain currency unit. the decimals will default to 
+    /// [generic substrate decimals](GENERIC_SUBSTRATE_DECIMALS) if not specified.
     pub fn new(amount: &str, decimals: Option<u8>) -> Result<Self, crate::error::Error> {
         let decimals = decimals.unwrap_or(GENERIC_SUBSTRATE_DECIMALS);
 
@@ -150,12 +156,14 @@ impl Unit {
         Ok(Self { amount, decimals })
     }
 
+    /// converts the unit to a valid [u128] value.
     pub fn as_u128(&self) -> u128 {
         self.amount
             .to_u128()
             .expect("valid conversion should not fail")
     }
-
+    
+    /// get the decimals representation of this unit
     pub fn decimals(&self) -> u8 {
         self.decimals
     }
