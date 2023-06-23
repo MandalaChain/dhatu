@@ -138,8 +138,12 @@ pub struct Unit {
     decimals: u8,
 }
 
+const GENERIC_SUBSTRATE_DECIMALS: u8 = 12;
+
 impl Unit {
-    pub fn new(amount: &str, decimals: u8) -> Result<Self, crate::error::Error> {
+    pub fn new(amount: &str, decimals: Option<u8>) -> Result<Self, crate::error::Error> {
+        let decimals = decimals.unwrap_or(GENERIC_SUBSTRATE_DECIMALS);
+
         let _decimals = Self::calculate_decimals(decimals);
         let amount = Self::calculate_amount(amount, _decimals)?;
 
@@ -177,19 +181,19 @@ mod tests {
 
     #[test]
     fn test_unit() {
-        let unit = Unit::new("9", 12).unwrap();
+        let unit = Unit::new("9", None).unwrap();
         assert_eq!(unit.as_u128(), 9_000_000_000_000);
     }
 
     #[test]
     fn test_with_decimals() {
-        let unit = Unit::new("0.9", 12).unwrap();
+        let unit = Unit::new("0.9", None).unwrap();
         assert_eq!(unit.as_u128(), 900_000_000_000);
 
-        let unit = Unit::new("2.1", 12).unwrap();
+        let unit = Unit::new("2.1", None).unwrap();
         assert_eq!(unit.as_u128(), 2_100_000_000_000);
 
-        let unit = Unit::new("2.01", 12).unwrap();
+        let unit = Unit::new("2.01", None).unwrap();
         assert_eq!(unit.as_u128(), 2_010_000_000_000);
     }
 }
