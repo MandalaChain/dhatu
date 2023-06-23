@@ -203,7 +203,7 @@ mod transaction_tests {
         let value = 10000;
         // Create the payload using the `construct` function from `BalanceTransfer`
         let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(new_address, value);
-        let extrinsic = TxBuilder::signed(&node_client.into(), pair, payload)
+        let extrinsic = TxBuilder::signed(&node_client.into(), pair.into(), payload)
             .await
             .unwrap()
             .0;
