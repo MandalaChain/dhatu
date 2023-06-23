@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use serde::Serialize;
 use sp_core::H256;
-use subxt::{blocks::ExtrinsicEvents, rpc::types::SubstrateTxStatus};
+use subxt::blocks::ExtrinsicEvents;
 
 use crate::types::MandalaConfig;
 
@@ -17,6 +17,32 @@ pub enum ExtrinsicStatus {
     Failed(Reason),
     /// transaction is included in a finalized block.
     Success(ExtrinsicResult),
+}
+
+impl ExtrinsicStatus {
+    /// Returns `true` if the extrinsic status is [`Pending`].
+    ///
+    /// [`Pending`]: ExtrinsicStatus::Pending
+    #[must_use]
+    pub fn is_pending(&self) -> bool {
+        matches!(self, Self::Pending)
+    }
+
+    /// Returns `true` if the extrinsic status is [`Failed`].
+    ///
+    /// [`Failed`]: ExtrinsicStatus::Failed
+    #[must_use]
+    pub fn is_failed(&self) -> bool {
+        matches!(self, Self::Failed(..))
+    }
+
+    /// Returns `true` if the extrinsic status is [`Success`].
+    ///
+    /// [`Success`]: ExtrinsicStatus::Success
+    #[must_use]
+    pub fn is_success(&self) -> bool {
+        matches!(self, Self::Success(..))
+    }
 }
 
 impl Default for ExtrinsicStatus {
@@ -48,14 +74,13 @@ impl From<String> for Reason {
     }
 }
 
-
 /// extrinsic result. contains events associated with the extrinsic.
-/// 
+///
 /// note that for now, to access the raw events, you need to enable `unstable_sp_core` feature flag.
 /// this restriction will be lifted in the future.
-/// 
+///
 /// currently only supports returning the extrinsic hash.
-/// 
+///
 // TODO : provide a way to access the inner events without depending on subxt and sp_core types.
 #[derive(Debug)]
 pub struct ExtrinsicResult(Arc<ExtrinsicEvents<MandalaConfig>>);

@@ -21,19 +21,6 @@ pub struct DhatuAssetsFacade {
 }
 
 impl DhatuAssetsFacade {
-    /// create a new notifier and receiver for migration transaction result.
-    /// 
-    /// note that the notifier and receiver is unbounded.
-    #[cfg(feature = "tokio")]
-    pub fn create_channels() -> (
-        MigrationTransactionResultNotifier,
-        MigrationTransactionResultReceiver,
-    ) {
-        tokio::sync::mpsc::unbounded_channel()
-    }
-}
-
-impl DhatuAssetsFacade {
     pub fn new(mandala_client: MandalaClient) -> Self {
         Self {
             client: mandala_client,
@@ -54,8 +41,8 @@ impl DhatuAssetsFacade {
     ///
     /// note that the it will send the transaction result on every transaction instead of waiting
     /// all of the transaction to complete.
-    /// 
-    /// you can create the notifier and receiver using `DhatuAssetsFacade::create_channels()`.
+    ///
+    /// you can create the notifier and receiver using [internal channels](crate::types::InternalChannels).
     pub fn migrate(
         &self,
         assets: Vec<impl Asset>,
@@ -64,9 +51,10 @@ impl DhatuAssetsFacade {
         reserve: &FundsReserve,
         notifier: MigrationTransactionResultNotifier,
     ) {
-        // TODO : optimize the migration with queue
+        // TODO : optimize the migration with batch transaction
+        // using nonce tracker for the funds reserve and asse owner.
         let mut tx_batch = Vec::new();
-        let client = self.client.inner();
+        let client = self.client.inner_internal();
 
         for asset in assets {
             let tx = MigrationTransactionBuilderStruct::new()
@@ -79,7 +67,7 @@ impl DhatuAssetsFacade {
             let tx = tx
                 .construct_payload(
                     asset.contract_address(),
-                    &to.0,
+                    to.clone(),
                     asset.token_id(),
                     asset.function_selector(),
                 )
@@ -91,7 +79,11 @@ impl DhatuAssetsFacade {
         }
 
         // TODO : refactor this to executes the futures in pararell
-        let transactions = future::join_all(tx_batch);
+        let transactions = async move {
+            for tx in tx_batch {
+                tx.await;
+            }
+        };
         tokio::task::spawn(transactions);
     }
 }

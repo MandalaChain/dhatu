@@ -5,35 +5,61 @@
 use sp_core::sr25519::Pair;
 use subxt::{ext::scale_encode::EncodeAsFields, tx::PairSigner};
 
-use crate::types::{Extrinsic, MandalaExtrinsics};
+use crate::types::{MandalaClient, MandalaExtrinsics};
 
-pub(crate) trait WrappedExtrinsic<T: EncodeAsFields> {
+use super::key_manager::prelude::PrivateKey;
+
+pub trait WrappedExtrinsic<T: EncodeAsFields> {
     fn into_inner(self) -> subxt::tx::Payload<T>;
 }
 
-pub(crate) struct TxBuilder;
+pub struct TxBuilder;
 
 impl TxBuilder {
     /// create a new unsigned transaction from a transaction payload
     pub fn unsigned<T: EncodeAsFields>(
-        client: &crate::types::NodeClient,
+        client: &MandalaClient,
         payload: impl WrappedExtrinsic<T>,
     ) -> Result<MandalaExtrinsics, crate::error::Error> {
-        Ok(client.tx().create_unsigned(&payload.into_inner())?.into())
+        Ok(client.0.tx().create_unsigned(&payload.into_inner())?.into())
     }
 
     /// create a new signed transaction given a transaction payload
     pub async fn signed<T: EncodeAsFields>(
-        client: &crate::types::NodeClient,
+        client: &MandalaClient,
+        acc: PrivateKey,
+        payload: impl WrappedExtrinsic<T>,
+    ) -> Result<MandalaExtrinsics, crate::error::Error> {
+        let signer = PairSigner::new(acc.0);
+
+        let tx = client
+            .0
+            .tx()
+            .create_signed(&payload.into_inner(), &signer, Default::default())
+            .await?
+            .into();
+
+        Ok(tx)
+    }
+
+    /// create a new signed transaction given a transaction payload and account nonce.
+    ///
+    /// 99.99% of the time, you would want `TxBuilder::signed` instead. it detects the nonce automatically.
+    ///
+    /// this is used to mainly create transaction batch due to it needing different nonce for each transaction,
+    /// but the nonce is not updated until the transaction is submitted.
+    pub fn signed_with_nonce<T: EncodeAsFields>(
+        client: &MandalaClient,
         acc: Pair,
+        nonce: u32,
         payload: impl WrappedExtrinsic<T>,
     ) -> Result<MandalaExtrinsics, crate::error::Error> {
         let signer = PairSigner::new(acc);
 
         let tx = client
+            .0
             .tx()
-            .create_signed(&payload.into_inner(), &signer, Default::default())
-            .await?
+            .create_signed_with_nonce(&payload.into_inner(), &signer, nonce, Default::default())?
             .into();
 
         Ok(tx)
@@ -42,9 +68,10 @@ impl TxBuilder {
 
 #[cfg(test)]
 mod tests {
+    use crate::runtime_types::api as mandala;
     use std::str::FromStr;
+    use subxt::error::DispatchError;
     pub(crate) use subxt::OnlineClient;
-    use subxt::{error::DispatchError, PolkadotConfig, SubstrateConfig};
 
     use sp_core::{crypto::Ss58Codec, Pair};
     use subxt::{
@@ -56,13 +83,13 @@ mod tests {
 
     use super::*;
 
-    async fn mock_client() -> crate::types::NodeClient {
-        OnlineClient::<MandalaConfig>::new().await.unwrap()
+    async fn mock_client() -> MandalaClient {
+        MandalaClient::dev().await.expect("node should be running")
     }
 
     // Generate an interface that we can use from the node's metadata.
-    #[subxt::subxt(runtime_metadata_path = "./src/registrar/signer/polkadot_metadata_small.scale")]
-    pub mod polkadot {}
+    // #[subxt::subxt(runtime_metadata_path = "./src/mandala_metadata.scale")]
+    // pub mod mandala {}
 
     // Mock implementation of `WrappedExtrinsic` for testing
     struct MockWrappedExtrinsic<T: EncodeAsFields>(subxt::tx::Payload<T>);
@@ -73,14 +100,10 @@ mod tests {
         }
     }
 
-    fn mock_payload(
-        client: &crate::types::NodeClient,
-    ) -> MockWrappedExtrinsic<polkadot::balances::calls::types::Transfer> {
-        let _metadata = client.metadata();
-
+    fn mock_payload() -> MockWrappedExtrinsic<mandala::balances::calls::types::Transfer> {
         let dest = mock_acc();
 
-        MockWrappedExtrinsic(polkadot::tx().balances().transfer(dest, 0))
+        MockWrappedExtrinsic(mandala::tx().balances().transfer(dest, 0))
     }
 
     fn mock_acc() -> MultiAddress<AccountId32, ()> {
@@ -98,7 +121,7 @@ mod tests {
     #[tokio::test]
     async fn should_create_unsigned_tx() {
         let node_client = mock_client().await;
-        let payload = mock_payload(&node_client);
+        let payload = mock_payload();
 
         let extrinsic_result = TxBuilder::unsigned(&node_client, payload);
 
@@ -127,14 +150,40 @@ mod tests {
     #[tokio::test]
     async fn should_create_signed_tx() {
         let node_client = mock_client().await;
-        let payload = mock_payload(&node_client);
+        let payload = mock_payload();
 
         let pair = mock_pair();
-        let extrinsic = TxBuilder::signed(&node_client, pair, payload)
+        let extrinsic = TxBuilder::signed(&node_client, pair.into(), payload)
             .await
-            .unwrap().0;
+            .unwrap()
+            .0;
 
-        let dry_run_result = extrinsic.dry_run(None).await.unwrap();
+        let _dry_run_result = extrinsic.dry_run(None).await.unwrap();
+        let actual_result = extrinsic.submit().await;
+        assert!(actual_result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn should_create_signed_tx_with_nonce() {
+        let node_client = mock_client().await;
+        let payload = mock_payload();
+
+        let pair = mock_pair();
+
+        let query_signer = PairSigner::<MandalaConfig, sp_core::sr25519::Pair>::new(pair.clone());
+        let query_pair = query_signer.account_id();
+        let nonce = node_client
+            .0
+            .rpc()
+            .system_account_next_index(query_pair)
+            .await
+            .unwrap();
+
+        let extrinsic = TxBuilder::signed_with_nonce(&node_client, pair, nonce, payload)
+            .unwrap()
+            .0;
+
+        let _dry_run_result = extrinsic.dry_run(None).await.unwrap();
         let actual_result = extrinsic.submit().await;
         assert!(actual_result.is_ok());
     }

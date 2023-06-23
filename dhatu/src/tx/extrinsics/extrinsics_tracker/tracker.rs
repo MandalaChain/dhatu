@@ -1,10 +1,10 @@
 use std::{collections::HashMap, sync::Arc};
 
-
 use tokio::sync::RwLock;
 
 use crate::{
-    types::{MandalaClient, MandalaTransactionProgress, SenderChannel}, tx::extrinsics::callback_executor::Url,
+    tx::extrinsics::callback_executor::Url,
+    types::{MandalaClient, MandalaTransactionProgress, SenderChannel},
 };
 
 use super::{
@@ -77,5 +77,70 @@ impl ExtrinsicWatcher {
     async fn watch_tx(&self, tx: Transaction) {
         let mut inner = self.inner.write().await;
         inner.insert(tx.id(), tx);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::registrar::key_manager::prelude::PublicAddress;
+    use crate::registrar::signer::TxBuilder;
+    use crate::tx::extrinsics::extrinsics_submitter::ExtrinsicSubmitter;
+    use crate::tx::extrinsics::manager::facade::ExtrinsicFacade;
+    use crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer;
+    use crate::types::MandalaConfig;
+    use crate::types::MandalaExtrinsics;
+    use crate::types::Unit;
+    use std::str::FromStr;
+    use std::sync::mpsc;
+    pub(crate) use subxt::OnlineClient;
+
+    fn mock_pair() -> sp_core::sr25519::Pair {
+        sp_keyring::Sr25519Keyring::Alice.pair()
+    }
+
+    async fn mock_client() -> crate::types::NodeClient {
+        OnlineClient::<MandalaConfig>::new().await.unwrap()
+    }
+
+    async fn create_tx_progress() -> MandalaTransactionProgress {
+        let address = "5DJk1gegyQJk6BNs7LceZ1akt5e9fpm4gUYGzcfpKaLG9Mmb";
+        let new_address = PublicAddress::from_str(address).unwrap();
+        let pair = mock_pair();
+        let node_client = mock_client().await;
+
+        let value = Unit::new("0.00001", None).expect("static conversion should not fail");
+        // Create the payload using the `construct` function from `BalanceTransfer`
+        let payload = BalanceTransfer::construct(new_address, value);
+        let extrinsic = TxBuilder::signed(&node_client.into(), pair.into(), payload)
+            .await
+            .unwrap()
+            .0;
+
+        // Create a mock MandalaExtrinsics object
+        let tx = MandalaExtrinsics::new(extrinsic);
+        let tx_progress = ExtrinsicSubmitter::submit(tx).await.unwrap();
+
+        tx_progress
+    }
+
+    #[tokio::test]
+    async fn should_watch_unwatch_and_check_tx() {
+        let tx_progress = create_tx_progress().await;
+
+        let watcher = ExtrinsicWatcher::new();
+        let tx_id = watcher.watch(tx_progress, None, None).await;
+
+        let status = watcher.check(&tx_id).await.unwrap();
+
+        match status {
+            ExtrinsicStatus::Pending => {}
+            _ => panic!("should be pending"),
+        }
+
+        watcher.stop_watching(&tx_id).await;
+
+        let status = watcher.check(&tx_id).await;
+        assert!(status.is_none());
     }
 }

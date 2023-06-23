@@ -16,6 +16,12 @@ pub struct Executor {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Url(pub(crate) reqwest::Url);
 
+impl ToString for Url {
+    fn to_string(&self) -> String {
+        self.0.to_string()
+    }
+}
+
 impl Url {
     /// create new url from string slice.
     pub fn new(url: &str) -> Result<Self, Error> {
@@ -105,28 +111,32 @@ impl<Data: Serialize> CallBackBody<Data> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{tx::extrinsics::extrinsics_tracker::enums::{ExtrinsicResult, Reason}, types::MandalaConfig};
     use super::*;
+    use crate::{
+        tx::extrinsics::extrinsics_tracker::enums::{ExtrinsicResult, Reason},
+        types::MandalaConfig,
+    };
 
     #[cfg(test)]
     use mockito;
 
     use serde_json::json;
-    use subxt::{OnlineClient, blocks::ExtrinsicEvents};
+    use subxt::{blocks::ExtrinsicEvents, OnlineClient};
     use tokio::time::{sleep, Duration};
 
     fn mock_url(server_url: String) -> Url {
-        Url::from_str((server_url  + "/callback").as_str()).unwrap()
+        Url::from_str((server_url + "/callback").as_str()).unwrap()
     }
 
     #[tokio::test]
     async fn test_execute_pending_status() {
         let mut server = mockito::Server::new();
 
-        let mock = server.mock("POST", "/callback")
-            .match_body(
-                mockito::Matcher::JsonString(r#"{"status":false,"message":"pending","data":null}"#.to_string())
-            )
+        let mock = server
+            .mock("POST", "/callback")
+            .match_body(mockito::Matcher::JsonString(
+                r#"{"status":false,"message":"pending","data":null}"#.to_string(),
+            ))
             .create();
 
         let executor = Executor::new();
@@ -143,10 +153,12 @@ mod tests {
     async fn test_execute_failed_status() {
         let mut server = mockito::Server::new();
 
-        let mock = server.mock("POST", "/callback")
-            .match_body(
-                mockito::Matcher::JsonString(r#"{"status":false,"message":"failed with reason : NotFound","data":null}"#.to_string())
-            )
+        let mock = server
+            .mock("POST", "/callback")
+            .match_body(mockito::Matcher::JsonString(
+                r#"{"status":false,"message":"failed with reason : NotFound","data":null}"#
+                    .to_string(),
+            ))
             .create();
 
         let executor = Executor::new();
@@ -171,7 +183,7 @@ mod tests {
                 mockito::Matcher::Json(json!({"status": true, "message": "success", "data": extrinsic_result.hash().to_string()}))
             )
             .create();
-            
+
         let executor = Executor::new();
         let status = ExtrinsicStatus::Success(extrinsic_result);
 
@@ -182,7 +194,8 @@ mod tests {
         mock.assert();
     }
 
-    async fn get_extrinsic_events() -> Result<ExtrinsicEvents<MandalaConfig>, Box<dyn std::error::Error>> {
+    async fn get_extrinsic_events(
+    ) -> Result<ExtrinsicEvents<MandalaConfig>, Box<dyn std::error::Error>> {
         let api = OnlineClient::<MandalaConfig>::new().await.unwrap();
         let latest_block = api.blocks().at_latest().await?;
         let body = latest_block.body().await?;

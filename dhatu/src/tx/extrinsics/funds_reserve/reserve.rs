@@ -4,7 +4,7 @@ use crate::registrar::signer::WrappedExtrinsic;
 use crate::tx::extrinsics::prelude::{
     enums::ExtrinsicStatus, extrinsics::Transaction, transfer_balance::constructor::BalanceTransfer,
 };
-use crate::types::MandalaClient;
+use crate::types::{MandalaClient, Unit};
 
 use subxt::dynamic::{At, DecodedValueThunk};
 use subxt::tx::PairSigner;
@@ -56,8 +56,8 @@ impl FundsReserve {
     const SYSTEM_PALLET_ACCOUNT_STORAGE_ENTRY: &'static str = "Account";
 
     ///  check if the account has enough funds to pay for the transaction.
-    pub async fn check_funds(&self, account: PublicAddress, value: u128) -> Result<bool, Error> {
-        let client = self.client().inner();
+    pub async fn check_funds(&self, account: PublicAddress, value: Unit) -> Result<bool, Error> {
+        let client = self.client().inner_internal();
 
         let address = subxt::dynamic::storage(
             Self::SYSTEM_PALLET,
@@ -76,6 +76,7 @@ impl FundsReserve {
 
         let account_balance = Self::infer_balance(result)?;
 
+        let value = value.as_u128();
         match account_balance.cmp(&value) {
             std::cmp::Ordering::Less => Ok(false),
             _ => Ok(true),
@@ -102,9 +103,9 @@ impl FundsReserve {
     pub async fn transfer_funds(
         &self,
         account: PublicAddress,
-        value: u128,
+        value: Unit,
     ) -> Result<ExtrinsicStatus, Error> {
-        let client = self.client().inner();
+        let client = self.client().inner_internal();
 
         let signer = PairSigner::new(self.reserve_signer().0.to_owned());
 
@@ -123,26 +124,33 @@ impl FundsReserve {
 }
 
 impl FundsReserve {
-    // threshold should be the account balance quotas to compare against,
-    // value should be what the transaction will cost
     /// check if the account has enough funds to pay for the transaction, then transfer the funds if it's not enough.
+    ///
+    /// will return `None` if the funds is sufficient
+    ///
+    /// `threshold` : the account balance quotas to compare against
+    ///
+    ///
+    /// `value` : what the transaction will cost
     pub async fn check_and_transfer(
         &self,
         account: PublicAddress,
-        threshold: u128,
-        value: u128,
+        threshold: Unit,
+        value: Unit,
     ) -> Result<Option<ExtrinsicStatus>, Error> {
-        let is_balance_low = self.check_funds(account.clone(), threshold).await?;
+        let is_balance_enough = self.check_funds(account.clone(), threshold).await?;
 
-        match is_balance_low {
-            true => Ok(Some(self.transfer_funds(account, value).await?)),
-            false => Ok(None),
+        match is_balance_enough {
+            false => Ok(Some(self.transfer_funds(account, value).await?)),
+            true => Ok(None),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::registrar::key_manager::KeyManager;
+
     use super::*;
 
     async fn mock_funds_reserve() -> FundsReserve {
@@ -151,13 +159,25 @@ mod tests {
         FundsReserve::new(private_key, client)
     }
 
-    fn mock_address() -> PublicAddress {
+    async fn mock_insufficient_address() -> PublicAddress {
+        KeyManager::new_without_password()
+            .keypair()
+            .to_owned()
+            .into()
+    }
+
+    fn mock_sufficient_address() -> PublicAddress {
         PublicAddress::from(sp_keyring::Sr25519Keyring::Alice.pair())
     }
 
     #[tokio::test]
     async fn test_check_funds_enough_balance() {
-        let result = mock_funds_reserve().await.check_funds(mock_address(), 100).await;
+        let value = Unit::new("0.1", None).expect("static conversion should not fail");
+
+        let result = mock_funds_reserve()
+            .await
+            .check_funds(mock_sufficient_address(), value)
+            .await;
 
         assert!(result.is_ok());
         assert!(result.unwrap());
@@ -165,39 +185,79 @@ mod tests {
 
     #[tokio::test]
     async fn test_check_funds_insufficient_balance() {
-        let result = mock_funds_reserve().await.check_funds(mock_address(), std::u128::MAX).await;
+        let value = Unit::new("0.1", None).expect("static conversion should not fail");
 
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), false)
+        let address = mock_insufficient_address().await;
+
+        let result = mock_funds_reserve()
+            .await
+            .transfer_funds(address.clone(), value)
+            .await
+            .unwrap();
+
+        let value = Unit::new("1", None).expect("static conversion should not fail");
+
+        let result = mock_funds_reserve().await.check_funds(address, value).await;
+
+        let result = result.unwrap();
+        assert_eq!(result, false)
     }
 
     #[tokio::test]
     async fn test_transfer_funds_success() {
-        let result = mock_funds_reserve().await.transfer_funds(mock_address(), 100).await.unwrap();
+        let value = Unit::new("0.1", None).expect("static conversion should not fail");
+
+        let result = mock_funds_reserve()
+            .await
+            .transfer_funds(mock_insufficient_address().await, value)
+            .await
+            .unwrap();
 
         match &result {
             ExtrinsicStatus::Pending => println!("transaction is pending"),
             ExtrinsicStatus::Failed(_) => panic!(),
             ExtrinsicStatus::Success(res) => {
-                let hash_str = res.hash(); 
-                println!("{:?}", hash_str);    
-            },        
+                let hash_str = res.hash();
+                println!("{:?}", hash_str);
+            }
         }
     }
 
     #[tokio::test]
-    async fn test_check_and_transfer_insufficient_balance() {
-        let result = mock_funds_reserve().await.check_and_transfer(mock_address(), 4_500_000_000_000_000_000_000, 5_000_000_000_000_000_000_000).await;
+    async fn test_check_and_transfer_sufficient() {
+        let threshold = Unit::new("4500", None).expect("static conversion should not fail");
+        let value = Unit::new("5000", None).expect("static conversion should not fail");
 
-        assert!(result.is_ok());
-        assert!(result.unwrap().is_none());
+        let result = mock_funds_reserve()
+            .await
+            .check_and_transfer(mock_sufficient_address(), threshold, value)
+            .await;
+
+        let result = result.unwrap();
+        assert!(result.is_none());
     }
 
     #[tokio::test]
-    async fn test_check_and_transfer_success() {
-        let result = mock_funds_reserve().await.check_and_transfer(mock_address(), 25_000, 30_0000).await;
+    async fn test_check_and_transfer_if_insufficient() {
+        let value = Unit::new("0.1", None).expect("static conversion should not fail");
 
-        assert!(result.is_ok());
-        assert!(result.unwrap().is_some());
+        let address = mock_insufficient_address().await;
+
+        let result = mock_funds_reserve()
+            .await
+            .transfer_funds(address.clone(), value)
+            .await
+            .unwrap();
+
+        let threshold = Unit::new("4500", None).expect("static conversion should not fail");
+        let value = Unit::new("5000", None).expect("static conversion should not fail");
+
+        let result = mock_funds_reserve()
+            .await
+            .check_and_transfer(address, threshold, value)
+            .await;
+
+        let result = result.unwrap();
+        assert!(result.is_some());
     }
 }
