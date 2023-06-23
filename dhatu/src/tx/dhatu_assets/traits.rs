@@ -5,14 +5,12 @@ use crate::{
     tx::extrinsics::transaction_constructor::calldata::Selector,
 };
 
-
-
 pub(crate) type AssetDatabaseId = i64;
 pub(crate) type UserEmail = String;
 pub(crate) type TransactionId = H256;
 
 /// trait for mandala blockchain nft assets
-/// assets that implements this trait can be migrated with [asset facade](DhatuAssetsFacade).
+/// assets that implements this trait can be migrated with [asset facade](super::facade::DhatuAssetsFacade).
 pub trait Asset {
     /// return the contract address of given asset.
     fn contract_address(&self) -> PublicAddress;
