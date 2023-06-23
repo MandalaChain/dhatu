@@ -132,6 +132,7 @@ impl MandalaClient {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Unit {
     amount: Decimal,
     decimals: u8,
@@ -139,8 +140,6 @@ pub struct Unit {
 
 impl Unit {
     pub fn new(amount: &str, decimals: u8) -> Result<Self, crate::error::Error> {
-        use rust_decimal::prelude::*;
-
         let _decimals = Self::calculate_decimals(decimals);
         let amount = Self::calculate_amount(amount, _decimals)?;
 
@@ -151,6 +150,10 @@ impl Unit {
         self.amount
             .to_u128()
             .expect("valid conversion should not fail")
+    }
+
+    pub fn decimals(&self) -> u8 {
+        self.decimals
     }
 
     fn calculate_decimals(decimals: u8) -> Decimal {
