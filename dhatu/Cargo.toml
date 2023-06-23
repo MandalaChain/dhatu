@@ -34,6 +34,7 @@ sp-keyring = { version = "24.0.0", optional = true }
 
 # custom erorr
 thiserror = "1.0.40"
+rust_decimal = { version = "1.30.0", features = ["maths"] }
 
 [dev-dependencies]
 # mock traits and structs
@@ -49,13 +50,7 @@ dhatu = { path = "../dhatu", features = ["unstable"] }
 default = ["tokio", "serde"]
 sp_keyring = []
 asset_migration = []
-unstable = [
-    "default",
-    "unstable_sp_core",
-    "subxt",
-    "sp-keyring",
-    "asset_migration",
-]
+unstable = ["default", "unstable_sp_core", "subxt", "sp-keyring", "asset_migration"]
 tokio = []
 serde = []
 unstable_sp_core = []
