@@ -145,8 +145,19 @@ pub struct Unit {
 pub const GENERIC_SUBSTRATE_DECIMALS: u8 = 12;
 
 impl Unit {
-    /// create a new blockchain currency unit. the decimals will default to 
+    /// create a new blockchain currency unit. the decimals will default to
     /// [generic substrate decimals](GENERIC_SUBSTRATE_DECIMALS) if not specified.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let unit = Unit::new("9", None).unwrap();
+    /// assert_eq!(unit.as_u128(), 9_000_000_000_000);
+    ///
+    /// let unit = Unit::new("2.1", None).unwrap();
+    /// assert_eq!(unit.as_u128(), 2_100_000_000_000);
+    ///
+    /// ```
     pub fn new(amount: &str, decimals: Option<u8>) -> Result<Self, crate::error::Error> {
         let decimals = decimals.unwrap_or(GENERIC_SUBSTRATE_DECIMALS);
 
@@ -162,7 +173,7 @@ impl Unit {
             .to_u128()
             .expect("valid conversion should not fail")
     }
-    
+
     /// get the decimals representation of this unit
     pub fn decimals(&self) -> u8 {
         self.decimals
