@@ -31,5 +31,5 @@ pub mod tx;
 pub mod types;
 
 /// raw node runtime types, consist of types that are specific to mandala node.
-/// generated using subxt.
+/// generated using [subxt].
 pub mod runtime_types;
