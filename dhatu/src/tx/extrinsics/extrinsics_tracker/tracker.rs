@@ -87,8 +87,10 @@ mod tests {
     use crate::registrar::signer::TxBuilder;
     use crate::tx::extrinsics::extrinsics_submitter::ExtrinsicSubmitter;
     use crate::tx::extrinsics::manager::facade::ExtrinsicFacade;
+    use crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer;
     use crate::types::MandalaConfig;
     use crate::types::MandalaExtrinsics;
+    use crate::types::Unit;
     use std::str::FromStr;
     use std::sync::mpsc;
     pub(crate) use subxt::OnlineClient;
@@ -107,9 +109,9 @@ mod tests {
         let pair = mock_pair();
         let node_client = mock_client().await;
 
-        let value = 10000;
+        let value = Unit::new("0.00001", None).expect("static conversion should not fail");
         // Create the payload using the `construct` function from `BalanceTransfer`
-        let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(new_address, value);
+        let payload = BalanceTransfer::construct(new_address, value);
         let extrinsic = TxBuilder::signed(&node_client.into(), pair.into(), payload)
             .await
             .unwrap()

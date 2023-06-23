@@ -1,12 +1,15 @@
 use sp_core::sr25519::Pair;
 
 use crate::{
-    registrar::{signer::TxBuilder, key_manager::prelude::PublicAddress},
-    tx::extrinsics::{prelude::{
-        extrinsics, reserve::FundsReserve, transfer_nft_contract::constructor::TransferNFT,
-        ExtrinsicSubmitter,
-    }, transaction_constructor::calldata::Selector},
-    types::NodeClient,
+    registrar::{key_manager::prelude::PublicAddress, signer::TxBuilder},
+    tx::extrinsics::{
+        prelude::{
+            extrinsics, reserve::FundsReserve, transfer_nft_contract::constructor::TransferNFT,
+            ExtrinsicSubmitter,
+        },
+        transaction_constructor::calldata::Selector,
+    },
+    types::{NodeClient, Unit},
 };
 
 use super::{
@@ -18,7 +21,7 @@ use super::{
 };
 
 /// default fees for migration transaction
-const STATIC_NFT_TRANSFER_FEE: u128 = 9_000_000_000; // 9  mili units (9mU)
+const STATIC_NFT_TRANSFER_FEE: &'static str = "0.009"; // 9  mili units (9mU)
 
 /// migration transaction. wrap aroung raw substrate extrinsics.
 /// providing method to ensure enough gas, sign and submit the transaction.
@@ -59,8 +62,7 @@ impl MigrationTransaction {
         token_id: u32,
         function_selector: Selector,
     ) -> Self {
-        let tx =
-            TransferNFT::construct(address, to, token_id, function_selector).unwrap();
+        let tx = TransferNFT::construct(address, to, token_id, function_selector).unwrap();
 
         self.payload = Some(tx);
 
@@ -94,10 +96,10 @@ impl MigrationTransaction {
 
         // future implementation will dynamically check the threshold and then transfer.
         // currently this automatically transfer funds regardless of quota threshold
-        self.reserve
-            .transfer_funds(account, STATIC_NFT_TRANSFER_FEE)
-            .await
-            .unwrap();
+        let value =
+            Unit::new(STATIC_NFT_TRANSFER_FEE, None).expect("static conversion should not fail");
+
+        self.reserve.transfer_funds(account, value).await.unwrap();
 
         self
     }

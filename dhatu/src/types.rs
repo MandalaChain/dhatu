@@ -1,3 +1,9 @@
+use std::ops::Mul;
+
+use rust_decimal::{
+    prelude::{FromPrimitive, ToPrimitive},
+    Decimal,
+};
 use subxt::{
     tx::{SubmittableExtrinsic, TxProgress},
     OnlineClient, PolkadotConfig, SubstrateConfig,
@@ -24,7 +30,6 @@ pub struct InternalChannels<Message> {
     receiver: Option<ReceiverChannel<Message>>,
     sender: SenderChannel<Message>,
 }
-
 
 impl<Message> From<SenderChannel<Message>> for InternalChannels<Message> {
     fn from(value: SenderChannel<Message>) -> Self {
@@ -124,5 +129,79 @@ impl MandalaClient {
             .map_err(MandalaClientErorr::from)?;
 
         Ok(Self(client))
+    }
+}
+
+/// a blockchain currency unit. abstracts away the pains of dealing with decimals.
+/// this struct automatically parses the decimals and amount and converts them to a valid `u128` under the hood.
+///
+/// use this to mainly deal with currency. e.g transfering, balances, etc.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Unit {
+    amount: Decimal,
+    decimals: u8,
+}
+
+pub const GENERIC_SUBSTRATE_DECIMALS: u8 = 12;
+
+impl Unit {
+    /// create a new blockchain currency unit. the decimals will default to 
+    /// [generic substrate decimals](GENERIC_SUBSTRATE_DECIMALS) if not specified.
+    pub fn new(amount: &str, decimals: Option<u8>) -> Result<Self, crate::error::Error> {
+        let decimals = decimals.unwrap_or(GENERIC_SUBSTRATE_DECIMALS);
+
+        let _decimals = Self::calculate_decimals(decimals);
+        let amount = Self::calculate_amount(amount, _decimals)?;
+
+        Ok(Self { amount, decimals })
+    }
+
+    /// converts the unit to a valid [u128] value.
+    pub fn as_u128(&self) -> u128 {
+        self.amount
+            .to_u128()
+            .expect("valid conversion should not fail")
+    }
+    
+    /// get the decimals representation of this unit
+    pub fn decimals(&self) -> u8 {
+        self.decimals
+    }
+
+    fn calculate_decimals(decimals: u8) -> Decimal {
+        use rust_decimal::prelude::*;
+        Self::decimals_multiplier().powu(decimals as u64)
+    }
+
+    fn calculate_amount(amount: &str, decimals: Decimal) -> Result<Decimal, crate::error::Error> {
+        Ok(Decimal::from_str_exact(amount)?.mul(decimals))
+    }
+
+    fn decimals_multiplier() -> Decimal {
+        let multiplier = 10;
+        Decimal::from_u8(multiplier).expect("static values must be a valid conversion")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_unit() {
+        let unit = Unit::new("9", None).unwrap();
+        assert_eq!(unit.as_u128(), 9_000_000_000_000);
+    }
+
+    #[test]
+    fn test_with_decimals() {
+        let unit = Unit::new("0.9", None).unwrap();
+        assert_eq!(unit.as_u128(), 900_000_000_000);
+
+        let unit = Unit::new("2.1", None).unwrap();
+        assert_eq!(unit.as_u128(), 2_100_000_000_000);
+
+        let unit = Unit::new("2.01", None).unwrap();
+        assert_eq!(unit.as_u128(), 2_010_000_000_000);
     }
 }

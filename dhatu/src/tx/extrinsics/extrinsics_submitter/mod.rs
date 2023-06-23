@@ -26,8 +26,10 @@ mod extrinsic_submitter_tests {
     use crate::registrar::key_manager::prelude::PublicAddress;
     use crate::registrar::signer::TxBuilder;
     use crate::tx::extrinsics::extrinsics_submitter::ExtrinsicSubmitter;
+    use crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer;
     use crate::types::MandalaConfig;
     use crate::types::MandalaExtrinsics;
+    use crate::types::Unit;
     use sp_core::crypto::Pair as CryptoPair;
     use sp_core::sr25519::Pair;
     use std::str::FromStr;
@@ -46,9 +48,9 @@ mod extrinsic_submitter_tests {
         let pair = mock_pair();
         let node_client = mock_client().await;
 
-        let value = rand::random();
+        let value = Unit::new("0.00001", None).expect("static conversion should not fail");
         // Create the payload using the `construct` function from `BalanceTransfer`
-        let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(new_address, value);
+        let payload = BalanceTransfer::construct(new_address, value);
         let extrinsic = TxBuilder::signed(&node_client.into(), pair.into(), payload)
             .await
             .unwrap()
@@ -69,10 +71,10 @@ mod extrinsic_submitter_tests {
         let node_client = mock_client().await;
 
         // Assign a invalid value
-        let value: u128 = 0;
+        let value = Unit::new("0", None).expect("static conversion should not fail");
 
         // Create the payload using the `construct` function from `BalanceTransfer`
-        let payload = crate::tx::extrinsics::prelude::transfer_balance::constructor::BalanceTransfer::construct(new_address, value);
+        let payload = BalanceTransfer::construct(new_address, value);
 
         // Introduce a failure by using an invalid client for signing
         let extrinsic = TxBuilder::signed(&node_client.into(), pair.into(), payload)

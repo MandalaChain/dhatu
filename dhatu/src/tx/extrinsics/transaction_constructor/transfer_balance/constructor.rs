@@ -3,6 +3,7 @@ use subxt::utils::{AccountId32, MultiAddress};
 use crate::{
     registrar::{key_manager::prelude::PublicAddress, signer::WrappedExtrinsic},
     tx::extrinsics::transaction_constructor::traits::ValidateHash,
+    types::Unit,
 };
 
 // pallet balance transfer function arguments
@@ -71,9 +72,9 @@ impl BalanceTransferPayload {
 
 impl BalanceTransfer {
     /// construct a balance transfer extrinsic payload
-    pub fn construct(to: PublicAddress, value: u128) -> BalanceTransferPayload {
+    pub fn construct(to: PublicAddress, value: Unit) -> BalanceTransferPayload {
         let dest = subxt::utils::MultiAddress::Id(to.into());
-        let args = BalanceTransferArgs::new(dest, value);
+        let args = BalanceTransferArgs::new(dest, value.as_u128());
 
         BalanceTransferPayload::new(args)
     }
@@ -125,11 +126,11 @@ mod tests {
     #[test]
     fn test_balance_transfer_construct() {
         let to = PublicAddress::from(mock_pair());
-        let value = 100;
+        let value = Unit::new("0.1", None).expect("static values are valid");
 
-        let payload = BalanceTransfer::construct(to, value);
+        let payload = BalanceTransfer::construct(to, value.clone());
 
         assert_eq!(payload.0.call_data().dest, MultiAddress::Id(mock_id()));
-        assert_eq!(payload.0.call_data().value, value);
+        assert_eq!(payload.0.call_data().value, value.as_u128());
     }
 }

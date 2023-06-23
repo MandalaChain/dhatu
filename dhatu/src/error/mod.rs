@@ -35,7 +35,11 @@ pub enum Error {
 
     /// error when parsing function selector
     #[error("error when parsing function selector : {0}")]
-    Selector(#[from] SelectorError)
+    Selector(#[from] SelectorError),
+
+    /// error when parsing blockchain currency unit
+    #[error("unit error : {0}")]
+    Unit(#[from] rust_decimal::Error),
 }
 
 /// error related to keypair password generation.
@@ -109,14 +113,12 @@ pub enum TxBuilderError {
     SignErorr(#[from] subxt::Error),
 }
 
-
-
 /// error that can happen when parsing function selector.
 #[derive(thiserror::Error, Debug)]
-pub enum SelectorError{
+pub enum SelectorError {
     #[error("invalid length. selector length must be 4 bytes long!")]
     InvalidLength,
 
     #[error("invalid hex. selector must be a valid hex string!")]
-    NotHex
+    NotHex,
 }
