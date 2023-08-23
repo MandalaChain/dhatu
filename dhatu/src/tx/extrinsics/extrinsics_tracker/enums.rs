@@ -93,8 +93,8 @@ impl Clone for ExtrinsicResult {
 
 impl ExtrinsicResult {
     #[cfg(feature = "unstable_sp_core")]
-    pub fn into_inner(self) -> ExtrinsicEvents<MandalaConfig> {
-        Arc::try_unwrap(self.0).expect("should be able to unwrap!")
+    pub fn into_inner(self) -> Arc<ExtrinsicEvents<MandalaConfig>> {
+        self.0
     }
 
     #[cfg(feature = "unstable_sp_core")]
