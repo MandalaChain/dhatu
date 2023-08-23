@@ -128,7 +128,8 @@ impl From<ExtrinsicResult> for Hash {
 
 impl From<H256> for Hash {
     fn from(value: H256) -> Self {
-        Self(value.to_string())
+        let hex_str = format!("0x{}", hex::encode(value.as_bytes()));
+        Self(hex_str)
     }
 }
 
