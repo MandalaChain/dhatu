@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use serde::Serialize;
-use sp_core::H256;
 use subxt::blocks::ExtrinsicEvents;
+use subxt::ext::sp_core::H256;
 
 use crate::types::MandalaConfig;
 
@@ -157,7 +157,7 @@ impl Hash {
 #[cfg(test)]
 mod hash_tests {
     use super::*;
-    use sp_core::hexdisplay::HexDisplay;
+    use subxt::ext::sp_core::hexdisplay::HexDisplay;
 
     #[test]
     fn test_from_h256() {

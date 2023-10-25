@@ -5,7 +5,7 @@ pub mod password;
 
 use std::str::FromStr;
 
-use sp_core::{sr25519::Pair as Keys, Pair};
+use subxt::ext::sp_core::{sr25519::Pair as Keys, Pair};
 
 pub(crate) mod prelude {
     pub use super::keypair::*;

@@ -1,6 +1,6 @@
 [package]
 name = "dhatu"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 license = "Apache-2.0"
 description = "dhatu core libraries"
@@ -13,8 +13,7 @@ readme = "../README.md"
 
 [dependencies]
 # substrate stuff ( must be synchronized as these modules does not follow semver!)
-sp-core = { version = "21.0.0", features = ["full_crypto", "std"] }
-subxt = "0.29"
+subxt = { version = "0.32.1", features = ["substrate-compat"] }
 schnorrkel = "0.9.1"
 
 # async stuff
@@ -51,7 +50,13 @@ dhatu = { path = "../dhatu", features = ["unstable"] }
 default = ["tokio", "serde"]
 sp_keyring = []
 asset_migration = []
-unstable = ["default", "unstable_sp_core", "subxt", "sp-keyring", "asset_migration"]
+unstable = [
+    "default",
+    "unstable_sp_core",
+    "subxt",
+    "sp-keyring",
+    "asset_migration",
+]
 tokio = []
 serde = []
 unstable_sp_core = []

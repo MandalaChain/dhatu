@@ -62,7 +62,7 @@ pub enum KeypairGenerationError {
 
     /// error parsing private key.
     #[error("{0}")]
-    PrivateKey(#[from] sp_core::crypto::SecretStringError),
+    PrivateKey(#[from] subxt::ext::sp_core::crypto::SecretStringError),
 
     /// error recovering keypair.
     #[error("{0}")]

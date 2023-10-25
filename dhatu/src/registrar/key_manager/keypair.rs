@@ -1,7 +1,7 @@
 use crate::error::{Error, KeypairGenerationError};
 use futures::FutureExt;
-use sp_core::{crypto::Ss58Codec, sr25519::Pair, Pair as PairTraits};
 use std::str::FromStr;
+use subxt::ext::sp_core::{crypto::Ss58Codec, sr25519::Pair, Pair as PairTraits};
 use subxt::utils::AccountId32;
 
 use super::prelude::Password;
@@ -81,8 +81,8 @@ impl PublicAddress {
     #[cfg(feature = "unstable_sp_core")]
     /// convert this public address to sp_core `AccountId32`.
     /// only available if `unstable` feature flag is enabled.
-    pub fn inner_as_sp_core_acoount_id(&self) -> sp_core::crypto::AccountId32 {
-        sp_core::crypto::AccountId32::from_str(self.inner())
+    pub fn inner_as_sp_core_acoount_id(&self) -> subxt::ext::sp_core::crypto::AccountId32 {
+        subxt::ext::sp_core::crypto::AccountId32::from_str(self.inner())
             .expect("converstion from valid public address shouldn't fail!")
     }
 }
@@ -229,7 +229,7 @@ mod keypair_tests {
     use std::str::FromStr;
 
     use super::*;
-    use sp_core::{sr25519, Pair};
+    use subxt::ext::sp_core::{sr25519, Pair};
 
     #[test]
     fn test_keypair_new() {
@@ -266,7 +266,7 @@ mod keypair_tests {
 
 #[cfg(test)]
 mod public_address_tests {
-    use sp_core::sr25519;
+    use subxt::ext::sp_core::sr25519;
 
     use crate::registrar::key_manager::KeyManager;
 
