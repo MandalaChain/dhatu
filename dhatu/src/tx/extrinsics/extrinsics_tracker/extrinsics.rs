@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use sp_core::H256;
+use subxt::ext::sp_core::H256;
 
 use tokio::sync::{
     mpsc::{Receiver, Sender},
@@ -163,8 +163,8 @@ impl Transaction {
 
         let watcher = async move {
             let Some(new_status) = task_channel.recv().await else {
-            return ;
-        };
+                return;
+            };
             let mut status = status_arc_clone.write().await;
             *status = new_status;
         };
@@ -190,7 +190,7 @@ mod transaction_tests {
     use std::sync::mpsc;
     pub(crate) use subxt::OnlineClient;
 
-    fn mock_pair() -> sp_core::sr25519::Pair {
+    fn mock_pair() -> subxt::ext::sp_core::sr25519::Pair {
         sp_keyring::Sr25519Keyring::Alice.pair()
     }
     async fn mock_client() -> crate::types::NodeClient {

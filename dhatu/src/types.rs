@@ -6,7 +6,7 @@ use rust_decimal::{
 };
 use subxt::{
     tx::{SubmittableExtrinsic, TxProgress},
-    OnlineClient, PolkadotConfig, SubstrateConfig,
+    OnlineClient, PolkadotConfig,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
@@ -158,7 +158,7 @@ impl MandalaClient {
         Ok(Self(client))
     }
 
-    /// create a new ws client that connects to local node. 
+    /// create a new ws client that connects to local node.
     pub async fn dev() -> Result<Self, crate::error::Error> {
         let client = OnlineClient::<MandalaConfig>::new()
             .await

@@ -2,7 +2,7 @@
 //! due to other traits requiring async operation and it would be a maintain hell to maintain
 //! async traits right now.
 
-use sp_core::sr25519::Pair;
+use subxt::ext::sp_core::sr25519::Pair;
 
 use crate::{
     tx::extrinsics::prelude::{

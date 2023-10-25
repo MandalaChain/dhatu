@@ -198,8 +198,10 @@ mod tests {
     ) -> Result<ExtrinsicEvents<MandalaConfig>, Box<dyn std::error::Error>> {
         let api = OnlineClient::<MandalaConfig>::new().await.unwrap();
         let latest_block = api.blocks().at_latest().await?;
-        let body = latest_block.body().await?;
-        for ext in body.extrinsics().iter() {
+
+        let extrinsics = latest_block.extrinsics().await?;
+
+        for ext in extrinsics.iter() {
             let ext = ext?;
             let events = ext.events().await?;
             return Ok(events);

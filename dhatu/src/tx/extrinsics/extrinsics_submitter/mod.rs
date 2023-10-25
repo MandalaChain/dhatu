@@ -30,12 +30,12 @@ mod extrinsic_submitter_tests {
     use crate::types::MandalaConfig;
     use crate::types::MandalaExtrinsics;
     use crate::types::Unit;
-    use sp_core::crypto::Pair as CryptoPair;
-    use sp_core::sr25519::Pair;
     use std::str::FromStr;
+    use subxt::ext::sp_core::crypto::Pair as CryptoPair;
+    use subxt::ext::sp_core::sr25519::Pair;
     pub(crate) use subxt::OnlineClient;
 
-    fn mock_pair() -> sp_core::sr25519::Pair {
+    fn mock_pair() -> subxt::ext::sp_core::sr25519::Pair {
         sp_keyring::Sr25519Keyring::Alice.pair()
     }
     async fn mock_client() -> crate::types::NodeClient {

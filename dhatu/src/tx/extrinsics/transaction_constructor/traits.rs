@@ -1,5 +1,3 @@
-use crate::registrar::key_manager::prelude::PublicAddress;
-
 /// traits used to mark and properly encode arbitrary calldata into a pallet function calldata payload.
 pub trait ValidateHash {
     /// get the pallet name.

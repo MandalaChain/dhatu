@@ -4,7 +4,7 @@ use super::{traits::MigrationTransactionBuilder, transaction::MigrationTransacti
 
 /// builder for [MigrationTransaction]
 pub(crate) struct MigrationTransactionBuilderStruct {
-    signer: Option<sp_core::sr25519::Pair>,
+    signer: Option<subxt::ext::sp_core::sr25519::Pair>,
     notifier: Option<super::types::MigrationTransactionResultNotifier>,
     reserve: Option<FundsReserve>,
     client: Option<NodeClient>,
@@ -21,7 +21,7 @@ impl MigrationTransactionBuilder for MigrationTransactionBuilderStruct {
         }
     }
 
-    fn set_signer(&mut self, signer: sp_core::sr25519::Pair) -> &mut Self {
+    fn set_signer(&mut self, signer: subxt::ext::sp_core::sr25519::Pair) -> &mut Self {
         self.signer = Some(signer);
 
         self
