@@ -128,7 +128,7 @@ You can extend this implementation to:
 ## Resources
 
 - [Dhatu Documentation](https://docs.rs/dhatu/latest/dhatu/)
-- [Mandala Chain Documentation](https://mandalachain.io/docs)
+- [Mandala Chain Documentation](https://docs.mandalachain.io/)
 - [Substrate Documentation](https://docs.substrate.io/)
 - [Subxt Documentation](https://docs.rs/subxt/latest/subxt/)
 
