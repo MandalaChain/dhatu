@@ -1,4 +1,4 @@
-# Dhatu Account Creator
+# Dhatu
 
 Dhatu is a Rust library that provides core functionality for interacting with Substrate-based blockchains, with a primary focus on Mandala-based blockchains. This project demonstrates how to create an account using the Dhatu library.
 
