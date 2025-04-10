@@ -1,6 +1,6 @@
-# Dhatu
+# Dhatu Account Creator
 
-Dhatu is a Rust library that provides core functionality for interacting with Substrate-based blockchains, with a primary focus on Mandala-based blockchains. It aims to abstract away the complexity of blockchain interactions while providing a robust and developer-friendly interface.
+Dhatu is a Rust library that provides core functionality for interacting with Substrate-based blockchains, with a primary focus on Mandala-based blockchains. This project demonstrates how to create an account using the Dhatu library.
 
 ## Features
 
@@ -9,42 +9,95 @@ Dhatu is a Rust library that provides core functionality for interacting with Su
 - **Identity Management**: Robust keypair and identity management system
 - **Runtime Types**: Auto-generated runtime types for Mandala node integration
 - **Error Handling**: Comprehensive error handling system
-- **Extensible Architecture**: Modular design allowing for future extensions to other Substrate-based blockchains
 
-## Components
+## Prerequisites
 
-### Dhatu Core (`dhatu/`)
-
-The core library providing the main functionality:
-
-- **types**: Global crate-level types
-- **tx**: Transaction module with extrinsic abstractions
-- **registrar**: Identity management and keypair handling
-- **runtime_types**: Auto-generated Mandala node runtime types
-- **error**: Error handling system
-- **ext**: External library re-exports
-
-### Mandala Node Runner (`mandala-node-runner/`)
-
-A utility for running and managing Mandala nodes:
-
-- **SubstrateNodeBuilder**: Configurable builder for setting up Substrate nodes
-- **SubstrateNode**: Runtime management of Substrate nodes
-- **Error Handling**: Comprehensive error management for node operations
+- Rust and Cargo installed (version 1.56.0 or later)
+- Basic knowledge of Rust programming
 
 ## Installation
 
-Add the following to your `Cargo.toml`:
-
-```toml
-[dependencies]
-dhatu = { version = "0.2.2", features = ["unstable"] }
-mandala-node-runner = { path = "path/to/mandala-node-runner" }
+1. Create a new Rust project:
+```bash
+cargo new dhatu-account
+cd dhatu-account
 ```
 
-## Features
+2. Add the required dependencies to your `Cargo.toml`:
+```toml
+[package]
+name = "dhatu-account"
+version = "0.1.0"
+edition = "2021"
 
-The library provides several feature flags:
+[dependencies]
+dhatu = { version = "0.2.2", features = ["sp-keyring", "subxt", "unstable_sp_core"] }
+tokio = { version = "1.0", features = ["full"] }
+hex = "0.4.3"
+sp-keyring = "24.0.0"
+sp-core = "21.0.0"
+```
+
+## Implementation
+
+The following code demonstrates how to:
+1. Connect to a blockchain node (using a dummy WebSocket URL)
+2. Create an account using the Sr25519 keyring
+3. Get the public key and account ID
+
+```rust
+use dhatu::ext::sp_core::crypto::{AccountId32, Pair};
+use dhatu::ext::sp_keyring::sr25519::Keyring as Sr25519Keyring;
+use dhatu::ext::subxt::{OnlineClient, SubstrateConfig};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Connect to the blockchain node (replace with your actual WebSocket URL)
+    let api = OnlineClient::<SubstrateConfig>::from_url("wss://your-blockchain-node.com").await?;
+    println!("Connected to blockchain node.");
+
+    // Create a default Alice keypair using the keyring
+    let alice = Sr25519Keyring::Alice;
+    let keypair = alice.pair();
+    let public_key = keypair.public();
+    let account_id = AccountId32::from(public_key);
+
+    println!("Alice's public key: {:?}", public_key);
+    println!("Alice's account id: {:?}", account_id);
+
+    Ok(())
+}
+```
+
+## Running the Project
+
+To run the project:
+```bash
+cargo run
+```
+
+Expected output:
+```
+Connected to blockchain node.
+Alice's public key: d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d (5GrwvaEF...)
+Alice's account id: d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d (5GrwvaEF...)
+```
+
+## Explanation
+
+1. **Connection**: The code connects to a blockchain node using a WebSocket URL. Replace `wss://your-blockchain-node.com` with your actual node's WebSocket URL.
+
+2. **Keypair Generation**: 
+   - Uses `Sr25519Keyring::Alice` to create a predefined keypair
+   - The keyring provides several predefined accounts (Alice, Bob, Charlie, etc.)
+
+3. **Account Information**:
+   - `public_key`: The raw public key in hex format
+   - `account_id`: The SS58-encoded account address (starts with "5GrwvaEF...")
+
+## Library Features
+
+The Dhatu library provides several feature flags:
 
 - `default`: Includes tokio and serde
 - `unstable`: Enables all features including substrate primitives
@@ -55,38 +108,13 @@ The library provides several feature flags:
 - `unstable_sp_core`: Unstable substrate core features
 - `subxt`: Substrate extrinsic support
 
-## Usage
+## Next Steps
 
-### Basic Setup
-
-```rust
-use dhatu::registrar::Keypair;
-use dhatu::tx::Transaction;
-
-// Create a new keypair
-let keypair = Keypair::generate();
-
-// Create and sign a transaction
-let tx = Transaction::new()
-    .with_signer(&keypair)
-    .build();
-```
-
-### Running a Mandala Node
-
-```rust
-use mandala_node_runner::SubstrateNode;
-
-// Start a new node
-let node = SubstrateNode::builder()
-    .arg("--dev")
-    .spawn()?;
-
-// Get the WebSocket port
-let ws_port = node.ws_port();
-
-// Node will be automatically killed when dropped
-```
+You can extend this implementation to:
+- Check account balance
+- Make transactions
+- Create custom keypairs
+- Sign and verify messages
 
 ## Dependencies
 
@@ -97,16 +125,17 @@ let ws_port = node.ws_port();
 - `parity-scale-codec`: SCALE codec
 - `sp-keyring`: Substrate keyring (optional)
 
+## Resources
+
+- [Dhatu Documentation](https://docs.rs/dhatu/latest/dhatu/)
+- [Mandala Chain Documentation](https://mandalachain.io/docs)
+- [Substrate Documentation](https://docs.substrate.io/)
+- [Subxt Documentation](https://docs.rs/subxt/latest/subxt/)
+
 ## License
 
 This project is licensed under the Apache-2.0 License.
 
 ## Contributing
-Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Documentation
-
-For more detailed documentation, please refer to:
-- [Substrate Documentation](https://substrate.dev/docs/en/)
-- [Subxt Documentation](https://docs.rs/subxt/latest/subxt/)
-- [Mandala Documentation](https://github.com/zianksm/dhatu/tree/dev/dhatu#readme)
+Contributions are welcome! Please feel free to submit a Pull Request. 
