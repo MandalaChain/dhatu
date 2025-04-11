@@ -2,7 +2,7 @@
 /// all transactions and payload are signed in byte format
 /// with a struct wrapper for each transaction type and payload.
 /// this enables us to easily treat the payload as a blackbox.
-use sp_core::sr25519::Pair;
+use subxt::ext::sp_core::sr25519::Pair;
 use subxt::{ext::scale_encode::EncodeAsFields, tx::PairSigner};
 
 use crate::types::{MandalaClient, MandalaExtrinsics};
@@ -59,7 +59,12 @@ impl TxBuilder {
         let tx = client
             .0
             .tx()
-            .create_signed_with_nonce(&payload.into_inner(), &signer, nonce, Default::default())?
+            .create_signed_with_nonce(
+                &payload.into_inner(),
+                &signer,
+                nonce as u64,
+                Default::default(),
+            )?
             .into();
 
         Ok(tx)
@@ -70,12 +75,13 @@ impl TxBuilder {
 mod tests {
     use crate::runtime_types::api as mandala;
     use std::str::FromStr;
+    use subxt::backend::legacy::rpc_methods::DryRunResult;
     use subxt::error::DispatchError;
     pub(crate) use subxt::OnlineClient;
 
-    use sp_core::{crypto::Ss58Codec, Pair};
+    use subxt::ext::sp_core::{crypto::Ss58Codec, Pair};
+    use subxt::tx::ValidationResult;
     use subxt::{
-        rpc::types::DryRunResult,
         utils::{AccountId32, MultiAddress},
     };
 
@@ -114,7 +120,7 @@ mod tests {
         subxt::utils::MultiAddress::Id(dest)
     }
 
-    fn mock_pair() -> sp_core::sr25519::Pair {
+    fn mock_pair() -> subxt::ext::sp_core::sr25519::Pair {
         sp_keyring::Sr25519Keyring::Alice.pair()
     }
 
@@ -128,14 +134,14 @@ mod tests {
         assert!(extrinsic_result.is_ok());
 
         let extrinsic = extrinsic_result.unwrap().0;
-        let dry_run_result: DryRunResult = extrinsic.dry_run(None).await.unwrap();
+        let dry_run_result = extrinsic.validate().await.unwrap();
         let actual_result = extrinsic.submit().await;
 
         // should error because the transaction is unsigned and can only be
         // submitted through OCW
         // but it should be possible to include the transaction in the block.
         // that's why instead of validity erorr it's dispatch error
-        if let DryRunResult::DispatchError(err) = dry_run_result {
+        if let ValidationResult::DryRunResult::DispatchError(err) = dry_run_result {
             assert_eq!(
                 format!("{:?}", err),
                 format!("{:?}", DispatchError::BadOrigin)
@@ -170,7 +176,7 @@ mod tests {
 
         let pair = mock_pair();
 
-        let query_signer = PairSigner::<MandalaConfig, sp_core::sr25519::Pair>::new(pair.clone());
+        let query_signer = PairSigner::<MandalaConfig, subxt::ext::sp_core::sr25519::Pair>::new(pair.clone());
         let query_pair = query_signer.account_id();
         let nonce = node_client
             .0

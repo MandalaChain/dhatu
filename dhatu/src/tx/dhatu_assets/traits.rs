@@ -1,4 +1,4 @@
-use sp_core::H256;
+use subxt::ext::sp_core::H256;
 
 use crate::{
     registrar::key_manager::prelude::PublicAddress,

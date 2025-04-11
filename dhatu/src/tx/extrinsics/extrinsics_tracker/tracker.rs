@@ -4,7 +4,7 @@ use tokio::sync::RwLock;
 
 use crate::{
     tx::extrinsics::callback_executor::Url,
-    types::{MandalaClient, MandalaTransactionProgress, SenderChannel},
+    types::{MandalaTransactionProgress, SenderChannel},
 };
 
 use super::{
@@ -95,7 +95,7 @@ mod tests {
     use std::sync::mpsc;
     pub(crate) use subxt::OnlineClient;
 
-    fn mock_pair() -> sp_core::sr25519::Pair {
+    fn mock_pair() -> subxt::ext::sp_core::sr25519::Pair {
         sp_keyring::Sr25519Keyring::Alice.pair()
     }
 

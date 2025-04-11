@@ -19,7 +19,7 @@ use dhatu::{
 use mandala_node_runner;
 use parity_scale_codec::{Compact, Encode};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
-use sp_core::sr25519::Pair;
+use subxt::ext::sp_core::sr25519::Pair;
 use subxt::{tx::PairSigner, utils::AccountId32, PolkadotConfig};
 
 use crate::common::test_types::api::contracts::events::CodeStored;

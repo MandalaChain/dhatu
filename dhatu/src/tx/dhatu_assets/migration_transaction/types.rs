@@ -1,4 +1,4 @@
-use subxt::{tx::SubmittableExtrinsic};
+use subxt::tx::SubmittableExtrinsic;
 
 use crate::{
     tx::extrinsics::{

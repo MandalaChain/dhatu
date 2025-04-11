@@ -84,9 +84,9 @@ impl BalanceTransfer {
 mod tests {
     use super::*;
 
-    use sp_core::{crypto::Ss58Codec, Pair};
     use sp_keyring::sr25519::sr25519;
     use std::str::FromStr;
+    use subxt::ext::sp_core::{crypto::Ss58Codec, Pair};
 
     fn mock_pair() -> sr25519::Pair {
         sp_keyring::Sr25519Keyring::Alice.pair()

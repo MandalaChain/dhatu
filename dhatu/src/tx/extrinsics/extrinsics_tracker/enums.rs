@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use serde::Serialize;
-use sp_core::H256;
 use subxt::blocks::ExtrinsicEvents;
+use subxt::ext::sp_core::H256;
 
 use crate::types::MandalaConfig;
 
@@ -93,8 +93,8 @@ impl Clone for ExtrinsicResult {
 
 impl ExtrinsicResult {
     #[cfg(feature = "unstable_sp_core")]
-    pub fn into_inner(self) -> ExtrinsicEvents<MandalaConfig> {
-        Arc::try_unwrap(self.0).expect("should be able to unwrap!")
+    pub fn into_inner(self) -> Arc<ExtrinsicEvents<MandalaConfig>> {
+        self.0
     }
 
     #[cfg(feature = "unstable_sp_core")]
@@ -128,7 +128,8 @@ impl From<ExtrinsicResult> for Hash {
 
 impl From<H256> for Hash {
     fn from(value: H256) -> Self {
-        Self(value.to_string())
+        let hex_str = format!("0x{}", hex::encode(value.as_bytes()));
+        Self(hex_str)
     }
 }
 
@@ -150,5 +151,23 @@ impl Hash {
         use std::str::FromStr;
 
         H256::from_str(self.inner_as_str()).expect("internal conversion shouldn't fail!")
+    }
+}
+
+#[cfg(test)]
+mod hash_tests {
+    use super::*;
+    use subxt::ext::sp_core::hexdisplay::HexDisplay;
+
+    #[test]
+    fn test_from_h256() {
+        let h256 = H256::random();
+
+        let hex_display_h256 = HexDisplay::from(&h256.0);
+        let h256_str = format!("0x{}", hex_display_h256.to_string());
+
+        let hash_str = Hash::from(h256).to_string();
+
+        assert_eq!(hash_str, h256_str)
     }
 }

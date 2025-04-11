@@ -1,12 +1,6 @@
-use std::{marker::PhantomData, str::FromStr};
-use subxt::{
-    ext::scale_decode::visitor::types::Compact,
-    utils::{AccountId32, MultiAddress},
-};
+use std::str::FromStr;
 
-use crate::{error::SelectorError, registrar::key_manager::prelude::PublicAddress};
-
-use super::traits::{ScaleEncodeable, ValidateHash};
+use crate::error::SelectorError;
 
 /// contract function selector representation.
 /// typically used when we want to call a contract function.

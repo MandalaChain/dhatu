@@ -4,7 +4,7 @@ use crate::{
         callback_executor::Url, extrinsics_tracker::extrinsics::TransactionMessage,
         prelude::enums::Hash,
     },
-    types::{InternalChannels, MandalaClient, MandalaExtrinsics, ReceiverChannel, SenderChannel},
+    types::{InternalChannels, MandalaExtrinsics, ReceiverChannel, SenderChannel},
 };
 
 use super::super::{

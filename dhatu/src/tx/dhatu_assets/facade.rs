@@ -2,15 +2,14 @@ use crate::{
     registrar::key_manager::prelude::{PrivateKey, PublicAddress},
     types::MandalaClient,
 };
-use futures::{future, FutureExt};
+use futures::FutureExt;
 
 use crate::tx::extrinsics::prelude::reserve::FundsReserve;
 
 use super::{
     migration_transaction::{
-        builder::MigrationTransactionBuilderStruct,
-        traits::MigrationTransactionBuilder,
-        types::{MigrationTransactionResultNotifier, MigrationTransactionResultReceiver},
+        builder::MigrationTransactionBuilderStruct, traits::MigrationTransactionBuilder,
+        types::MigrationTransactionResultNotifier,
     },
     traits::Asset,
 };

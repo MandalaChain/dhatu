@@ -1,4 +1,4 @@
-use sp_core::sr25519::Pair;
+use subxt::ext::sp_core::sr25519::Pair;
 
 use crate::{
     registrar::{key_manager::prelude::PublicAddress, signer::TxBuilder},
@@ -21,7 +21,7 @@ use super::{
 };
 
 /// default fees for migration transaction
-const STATIC_NFT_TRANSFER_FEE: &'static str = "0.009"; // 9  mili units (9mU)
+const STATIC_NFT_TRANSFER_FEE: &str = "0.009"; // 9  mili units (9mU)
 
 /// migration transaction. wrap aroung raw substrate extrinsics.
 /// providing method to ensure enough gas, sign and submit the transaction.
